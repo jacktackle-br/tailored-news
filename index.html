@@ -1,237 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Daily Brief — July 2, 2026</title>
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
 <style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
   :root {
-    --bg: #fbfaf7;
-    --fg: #1c1b19;
-    --muted: #6b6a66;
-    --rule: #e3e0d8;
-    --card: #ffffff;
-    --accent: #7a1f2b;
-    --link: #8a2432;
-    --left: #21507a;
-    --right: #8a3324;
-    --chip: #efece4;
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
   }
   @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #16161a;
-      --fg: #e9e7e1;
-      --muted: #9d9b94;
-      --rule: #2c2c33;
-      --card: #1d1d22;
-      --accent: #e0919b;
-      --link: #e89aa5;
-      --left: #7fb0dd;
-      --right: #e0a08d;
-      --chip: #26262c;
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
     }
   }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
   body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--fg);
-    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, "Times New Roman", serif;
-    line-height: 1.7;
-    font-size: 18px;
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
   }
-  .wrap { max-width: 720px; margin: 0 auto; padding: 22px 20px 80px; }
-  header.top { border-bottom: 2px solid var(--accent); padding-bottom: 16px; margin-bottom: 8px; }
-  .kicker { font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
-  h1.brand { font-size: 1.9rem; margin: 4px 0 2px; letter-spacing: -0.01em; }
-  .date { color: var(--muted); font-size: 0.98rem; font-style: italic; }
-  .ideas-link {
-    display: inline-block; margin-top: 12px; font-size: 0.95rem;
-    color: var(--link); text-decoration: none; border: 1px solid var(--rule);
-    padding: 7px 12px; border-radius: 8px; background: var(--card);
-  }
-  .ideas-link:hover { border-color: var(--accent); }
-  h2.topic {
-    font-size: 1.28rem; margin: 40px 0 10px; padding-top: 8px;
-    color: var(--accent); border-top: 1px solid var(--rule); padding-top: 22px;
-  }
-  h2.topic .em { font-size: 1.1rem; margin-right: 8px; }
-  details {
-    background: var(--card); border: 1px solid var(--rule);
-    border-radius: 12px; padding: 4px 18px; margin: 12px 0;
-  }
-  details[open] { padding-bottom: 14px; }
-  summary {
-    cursor: pointer; font-weight: 700; font-size: 1.08rem;
-    padding: 12px 0; list-style: none; line-height: 1.45;
-  }
-  summary::-webkit-details-marker { display: none; }
-  summary::before {
-    content: "+"; color: var(--accent); font-weight: 700;
-    margin-right: 10px; display: inline-block; width: 0.9em;
-  }
-  details[open] summary::before { content: "\2013"; }
-  .story p { margin: 12px 0; }
-  .lbl {
-    display: inline-block; font-size: 0.72rem; font-weight: 700;
-    letter-spacing: 0.08em; text-transform: uppercase;
-    padding: 2px 8px; border-radius: 5px; background: var(--chip);
-    color: var(--muted); margin-right: 6px; vertical-align: 0.12em;
-  }
-  .facts .lbl { color: var(--fg); }
-  .take-left .lbl { color: #fff; background: var(--left); }
-  .take-right .lbl { color: #fff; background: var(--right); }
-  .col .lbl { background: transparent; color: var(--accent); border: 1px solid var(--rule); }
-  .story .sources { font-size: 0.82rem; color: var(--muted); margin-top: 14px; border-top: 1px dashed var(--rule); padding-top: 8px; }
-  .story .sources a { color: var(--link); }
-  a { color: var(--link); }
-  footer { margin-top: 48px; border-top: 1px solid var(--rule); padding-top: 16px; font-size: 0.82rem; color: var(--muted); }
-  .note { font-size: 0.9rem; color: var(--muted); font-style: italic; margin: 6px 0 0; }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
 </style>
+</head>
+<body>
 
-<div class="wrap">
-<header class="top">
-  <div class="kicker">Tailored News · Daily Brief</div>
-  <h1 class="brand">The Daily Brief</h1>
-  <div class="date">Thursday, July 2, 2026</div>
-  <a class="ideas-link" href="ideas.html">This week in History &amp; Ideas &rarr;</a>
-</header>
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
 
-<!-- ===================== POLITICS ===================== -->
-<h2 class="topic"><span class="em">&#127963;&#65039;</span>Politics &amp; Current Events</h2>
+<main class="page">
 
-<details open>
-  <summary>Supreme Court upholds birthright citizenship, striking down Trump's Day-One order</summary>
-  <div class="story">
-    <p class="facts"><span class="lbl">The Facts</span> On June 30, the final day of its term, the Supreme Court struck down President Trump's January 2025 executive order seeking to deny citizenship to children born in the U.S. to undocumented or temporarily present parents. Chief Justice John Roberts wrote for the Court, joined by Justice Amy Coney Barrett and the three liberal justices, holding that the Fourteenth Amendment's Citizenship Clause guarantees citizenship to nearly all children born on U.S. soil: "The Framers of the Fourteenth Amendment extended that promise to every free-born person in this land. We keep that promise today." Justices Thomas, Alito and Gorsuch dissented.</p>
-    <p class="facts"><span class="lbl">A note on the count</span> Outlets have described the outcome two ways, and both are correct. The <em>judgment</em> — the order is invalid — was 6&ndash;3. But on the underlying <em>constitutional</em> question, only five justices held that the Fourteenth Amendment itself compels birthright citizenship: Justice Kavanaugh concurred in the result on narrower statutory grounds, finding the order violated a 1950s citizenship statute rather than the Constitution, and pointedly suggested Congress could rewrite that statute. That 5&ndash;4 split on the constitutional merits is the source of the disagreement in how the case is being characterized (per SCOTUSblog and NPR).</p>
-    <p class="take-left"><span class="lbl">The Left-Leaning Take</span> Commentators at Slate and Vox framed the win as real but fragile. Their alarm centers on Kavanaugh's concurrence, which they read as "a road map for a right-wing Congress to complete Trump's failed job" — inviting lawmakers to amend the statute and create, in Slate's words, "an underclass of noncitizens who, by accident of birth, are denied basic rights" and are "detainable and deportable to countries they've never set foot in." The dissenters' "revisionist" history of the Fourteenth Amendment is treated as the deeper long-term threat.</p>
-    <p class="take-right"><span class="lbl">The Right-Leaning Take</span> The mainstream-right reaction was split and largely subdued. Much MAGA anger fell on Justice Barrett for joining the majority, while Kavanaugh — whose vote also went against Trump's order — drew far less fire because conservatives read his concurrence as handing Congress a lawful path to restrict birthright citizenship by statute (a framing amplified across the right). On the underlying policy, National Review has consistently argued the administration overreached procedurally: better to legislate than to "swat a fly with a sledgehammer" by executive fiat.</p>
-    <p class="take-right"><span class="lbl">Intra-Right (anti-Trump)</span> David French — a never-Trump conservative (columnist at The New York Times and The Dispatch), writing here as a guest at The Bulwark — argued the case was so clear it "should've been 9&ndash;0," criticizing the three full dissenters for entertaining what he views as a fringe reading of the Citizenship Clause. (Labeled as the anti-Trump right; not the mainstream-right position.)</p>
-    <p class="col"><span class="lbl">Columnist</span> David French (NYT / The Dispatch; this piece published as a guest at The Bulwark): the ruling vindicates a settled constitutional guarantee, and the fact that three justices dissented at all is the genuinely worrying signal — not the result itself.</p>
-    <p class="sources"><strong>Sources:</strong> <a href="https://www.npr.org/2026/06/30/nx-s1-5839358/birthright-citizenship-decision-scotus-trump">NPR</a> · <a href="https://www.cnbc.com/2026/06/30/supreme-court-birthright-citizenship-ruling.html">CNBC</a> · <a href="https://www.scotusblog.com/2026/06/breaking-down-the-birthright-citizenship-decision/">SCOTUSblog</a> · <a href="https://www.cnn.com/2026/06/30/politics/takeaways-supreme-court-rebukes-trump-on-birthright-citizenship-barely">CNN</a> · <a href="https://slate.com/news-and-politics/2026/06/supreme-court-birthright-citizenship-scandal-brett-kavanaugh.html">Slate</a> · <a href="https://www.thebulwark.com/p/david-french-the-birthright-citizenship">The Bulwark</a></p>
-  </div>
-</details>
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Thursday, July 2, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
 
-<details>
-  <summary>SAVE America Act revolt stalls the House, forcing an early July 4 recess</summary>
-  <div class="story">
-    <p class="facts"><span class="lbl">The Facts</span> Speaker Mike Johnson sent the House into its Fourth of July recess early after a bloc of conservatives ground legislative business to a halt over the SAVE America Act, President Trump's priority bill requiring documentary proof of citizenship to register to vote and tightening mail-in ballot rules. On June 30, roughly 14 Republicans voted down a procedural rule; a coalition led by Reps. Anna Paulina Luna (R-Fla.) and Chip Roy (R-Texas) demanded the voting provisions be inserted directly into the annual defense policy bill, with Luna calling Johnson's plan "a procedural head fake." Leaders canceled Wednesday and Thursday votes; the House is scheduled to return July 13.</p>
-    <p class="facts"><span class="lbl">Context</span> The revolt caps weeks of Trump using leverage to force the bill — canceling a signing ceremony for a bipartisan housing package and, per earlier reporting, tying it to surveillance-authority renewal. Senate Republican leaders have repeatedly told Trump the votes are not there to pass the measure, which the chamber has already failed to advance.</p>
-    <p class="take-left"><span class="lbl">The Left-Leaning Take</span> Progressive analysts (echoing the Brennan Center and Center for American Progress) call SAVE a "show your papers" voter-suppression bill, citing an estimate that more than 21 million citizens lack immediate access to documents proving citizenship and would face burdens — in some cases traveling hours in person — to register or update a registration after moving. They frame the House chaos as Trump prioritizing an unpopular, unworkable mandate over housing and defense.</p>
-    <p class="take-right"><span class="lbl">The Right-Leaning Take</span> The right is divided on tactics, not the goal. National Review's editorial line has warned the bill is not "worth the cost" and that noncitizen voting shouldn't be addressed by "swat[ting] a fly with a sledgehammer." Institutionalist conservatives fault the Luna–Roy bloc for holding the defense bill hostage; populists counter that election integrity is exactly the fight the base sent them to have.</p>
-    <p class="sources"><strong>Sources:</strong> <a href="https://www.washingtonpost.com/business/2026/06/30/congress-considers-bypassing-filibuster-pass-trump-voting-restrictions/">Washington Post</a> · <a href="https://www.cbsnews.com/news/house-gop-agenda-stalls-save-america-act/">CBS News</a> · <a href="https://www.inquirer.com/politics/nation/congress-republicans-recess-donald-trump-20260701.html">Philadelphia Inquirer</a> · <a href="https://www.brennancenter.org/our-work/analysis-opinion/save-act-and-election-power-grab">Brennan Center</a></p>
-  </div>
-</details>
+  <!-- EVENING:SLOT:START -->
+  <!-- Evening briefing (Politics + Global Affairs) is injected here by the evening run.
+       Empty after a morning run. Do not remove these markers. -->
+  <!-- EVENING:SLOT:END -->
 
-<details>
-  <summary>Battle for the Senate takes shape as Democrats grow bullish for 2026</summary>
-  <div class="story">
-    <p class="facts"><span class="lbl">The Facts</span> With the primary calendar well underway, the map for control of the Senate is largely set. Democrats need to hold all their seats and flip four to take the majority for the final two years of Trump's term. In CNN's July rankings, North Carolina — where former Gov. Roy Cooper is running — is the seat most likely to flip. Analysts tie Democratic momentum to broad disapproval of Trump's handling of the economy and the war with Iran. In primary results, Democrats have also settled several down-ballot nominations, including Melat Kiros winning a Denver-area U.S. House primary.</p>
-    <p class="take-left"><span class="lbl">The Left-Leaning Take</span> The left sees a genuine opening: a favorable issue environment (economy, war fatigue) plus strong recruits like Cooper make a once-implausible Senate flip credible, and the party should press its advantage in Sun Belt and Rust Belt battlegrounds.</p>
-    <p class="take-right"><span class="lbl">The Right-Leaning Take</span> Conservatives caution that midterm "momentum" narratives are routinely overstated a year out, that the seat math still forces Democrats to win in red-leaning territory, and that candidate quality and turnout — not national mood polling — will decide these races.</p>
-    <p class="sources"><strong>Sources:</strong> <a href="https://www.cnn.com/2026/07/02/politics/senate-race-rankings-july-2026">CNN Politics</a> · <a href="https://en.wikipedia.org/wiki/2026_United_States_elections">2026 U.S. elections (overview)</a> · <a href="https://www.nbcnews.com/politics">NBC News Politics</a></p>
-  </div>
-</details>
+  <!-- MORNING:START -->
 
-<!-- ===================== FOREIGN AFFAIRS ===================== -->
-<h2 class="topic"><span class="em">&#127760;</span>Foreign Affairs</h2>
+  <!-- ===================== POLITICS ===================== -->
+  <section class="section" id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
 
-<details open>
-  <summary>Massive Russian barrage hits Kyiv; NATO neighbors scramble as Ukraine strikes Russian oil</summary>
-  <div class="story">
-    <p class="facts"><span class="lbl">The Facts</span> Russia launched one of its largest aerial assaults of the war overnight into July 2 — President Zelensky said more than 70 missiles and roughly 500 drones struck Kyiv and other cities. Death tolls reported across outlets ranged from at least 17 to 25 killed, with 85-plus injured; more than 20 sites in Kyiv were hit, including residential blocks, a hotel, a research institute and an ambulance station. Zelensky cut short a visit to Ireland after intelligence warned of the strike; many residents sheltered overnight in metro stations. Poland scrambled fighter jets and Finland restricted airspace as a precaution.</p>
-    <p class="facts"><span class="lbl">Analysis</span> Moscow framed the barrage as retaliation for a sustained Ukrainian campaign against Russian oil refineries and energy infrastructure, which it says has caused fuel shortages. The exchange marks an intensifying tit-for-tat: Ukraine degrading Russia's economically vital energy sector while Russia leans on mass drone-and-missile saturation against Ukrainian cities. The spillover jitters among NATO members underscore how little margin for miscalculation remains along the alliance's eastern flank.</p>
-    <p class="sources"><strong>Sources:</strong> <a href="https://www.npr.org/2026/07/02/nx-s1-5878894/russia-attacks-ukraines-capital-killing-more-than-a-dozen-people">NPR</a> · <a href="https://www.cnbc.com/2026/07/02/russia-launches-missile-drone-strikes-ukraine-kyiv.html">CNBC</a> · <a href="https://abcnews.com/International/kyiv-fire-missile-drone-attack-russian-strike-mayor/story?id=134395585">ABC News</a> · <a href="https://www.aljazeera.com/amp/news/2026/7/2/kyiv-attacked-after-ukraines-zelenskyy-warns-of-massive-russian-strike">Al Jazeera</a></p>
-  </div>
-</details>
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">The Supreme Court</span>
+          <h2 class="story-headline">Supreme Court upholds birthright citizenship, striking down Trump's Day-One order</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On June 30, the final day of its term, the Court struck down President Trump's January 2025 executive order denying citizenship to children born in the U.S. to undocumented or temporarily present parents. Chief Justice Roberts, joined by Justice Barrett and the three liberal justices, held that the Fourteenth Amendment's Citizenship Clause guarantees citizenship to nearly all children born on U.S. soil: "The Framers of the Fourteenth Amendment extended that promise to every free-born person in this land. We keep that promise today." Thomas, Alito and Gorsuch dissented.</p>
+          <p>Both "6&ndash;3" and "5&ndash;4" are being reported, and both are right: the <em>judgment</em> was 6&ndash;3, but only five justices grounded it in the Constitution. Justice Kavanaugh concurred on narrower statutory grounds — the order violated a 1950s citizenship law — and pointedly noted Congress could rewrite that statute.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>A real win, but fragile (Slate, Vox). The alarm is Kavanaugh's concurrence — read as "a road map for a right-wing Congress to complete Trump's failed job," one that could create "an underclass of noncitizens who, by accident of birth, are denied basic rights."</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>The reaction split. Much MAGA anger fell on Barrett; Kavanaugh drew less fire because his concurrence hands Congress a lawful, statutory path. National Review's long-standing line: address noncitizen voting by legislation, don't "swat a fly with a sledgehammer."</p>
+          </div>
+        </div>
+        <aside class="columnist">
+          <span class="columnist-byline">Columnist &mdash; David French, NYT / The Dispatch (guest column, The Bulwark)</span>
+          <p>The ruling vindicates a settled guarantee; the case "should've been 9&ndash;0," and that three justices dissented at all is the genuinely worrying signal — not the result.</p>
+        </aside>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/06/30/nx-s1-5839358/birthright-citizenship-decision-scotus-trump">NPR</a>, <a href="https://www.scotusblog.com/2026/06/breaking-down-the-birthright-citizenship-decision/">SCOTUSblog</a>, <a href="https://www.cnn.com/2026/06/30/politics/takeaways-supreme-court-rebukes-trump-on-birthright-citizenship-barely">CNN</a>, <a href="https://slate.com/news-and-politics/2026/06/supreme-court-birthright-citizenship-scandal-brett-kavanaugh.html">Slate</a>, <a href="https://www.thebulwark.com/p/david-french-the-birthright-citizenship">The Bulwark</a></div>
+      </div>
+    </details>
 
-<details>
-  <summary>U.S.–Iran talks in Doha end without breakthrough as Strait of Hormuz toll fight looms</summary>
-  <div class="story">
-    <p class="facts"><span class="lbl">The Facts</span> Two days of indirect U.S.–Iran talks in Doha concluded July 1 with implementation steps but no lasting breakthrough, building on an interim agreement reached two weeks earlier that paused the 2026 conflict (now past its 125th day). Negotiators agreed a goods-purchase mechanism for a first tranche of frozen Iranian assets, a communications channel to flag violations, and a shared focus on restoring reliable passage through the Strait of Hormuz. Vice President Vance said the talks were "going well."</p>
-    <p class="facts"><span class="lbl">Analysis</span> Beneath the optimism, core disputes are unresolved: Washington rejects any Iranian-led toll mechanism in the strait while Tehran asserts joint sovereignty over the corridor with Oman; no frozen funds have actually moved; and the nuclear-inspection question persists behind vaguer "denuclearization" language. Iranian officials have signaled they intend to begin charging shipping tolls in mid-August once a toll-free window expires — a deadline that could reignite the crisis if talks stall.</p>
-    <p class="sources"><strong>Sources:</strong> <a href="https://www.rappler.com/world/middle-east/us-iran-indirect-talks-doha-strait-hormuz-july-1-2026/">Rappler</a> · <a href="https://www.cnn.com/2026/07/01/world/live-news/iran-war-trump">CNN</a> · <a href="https://www.aljazeera.com/news/liveblog/2026/7/2/iran-war-live-positive-progress-as-us-tehran-wrap-up-indirect-talks">Al Jazeera</a> · <a href="https://commonslibrary.parliament.uk/research-briefings/cbp-10637/">UK House of Commons Library</a></p>
-  </div>
-</details>
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Capitol Hill</span>
+          <h2 class="story-headline">SAVE America Act revolt stalls the House, forcing an early July 4 recess</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Speaker Mike Johnson sent the House into recess early after conservatives ground business to a halt over the SAVE America Act — Trump's bill requiring documentary proof of citizenship to register to vote and tightening mail-in rules. Roughly 14 Republicans voted down a procedural rule on June 30; a bloc led by Reps. Anna Paulina Luna and Chip Roy demanded the provisions be inserted into the annual defense bill, with Luna calling Johnson's plan "a procedural head fake." The House returns July 13.</p>
+          <p>Senate GOP leaders have repeatedly told Trump the votes are not there; the chamber has already failed to advance the measure.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>A "show your papers" voter-suppression bill (Brennan Center, CAP): more than 21 million citizens lack immediate access to citizenship documents. The chaos shows Trump prioritizing an unworkable mandate over housing and defense.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Divided on tactics, not the goal. National Review warns the bill isn't "worth the cost"; institutionalists fault the holdouts for hostage-taking the defense bill, while populists say election integrity is the fight the base sent them to have.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/business/2026/06/30/congress-considers-bypassing-filibuster-pass-trump-voting-restrictions/">Washington Post</a>, <a href="https://www.cbsnews.com/news/house-gop-agenda-stalls-save-america-act/">CBS News</a>, <a href="https://www.brennancenter.org/our-work/analysis-opinion/save-act-and-election-power-grab">Brennan Center</a></div>
+      </div>
+    </details>
 
-<details>
-  <summary>Amnesty: RSF committed crimes against humanity and ethnic cleansing in Sudan's el-Fasher</summary>
-  <div class="story">
-    <p class="facts"><span class="lbl">The Facts</span> A new Amnesty International report released July 1 concludes that Sudan's paramilitary Rapid Support Forces (RSF) committed crimes against humanity and ethnic cleansing during their campaign to seize el-Fasher in North Darfur. Titled "City Under Siege, Children Under Fire," the report documents murder, forcible transfer, torture, rape, sexual slavery, enslavement, extermination and persecution against civilians between early 2024 and October 2025 — many from the Zaghawa ethnic group, whose homes RSF fighters burned after residents had fled. Amnesty says the documented acts, alongside crimes under separate investigation, "may be relevant to the crime of genocide." Findings rest on 247 interviews plus analysis of 89 open-source videos and satellite imagery.</p>
-    <p class="facts"><span class="lbl">Analysis</span> The report sharpens international pressure over a war that has produced one of the world's gravest humanitarian catastrophes with comparatively little Western attention. Amnesty says it wrote to RSF commander Gen. Mohamed Hamdan Dagalo ("Hemedti") on June 10 detailing the findings and had received no response by publication.</p>
-    <p class="sources"><strong>Sources:</strong> <a href="https://www.amnesty.org/en/latest/news/2026/07/sudan-rsf-atrocities-in-el-fasher-a-stain-on-the-conscience-of-humanity-new-report/">Amnesty International</a> · <a href="https://www.aljazeera.com/news/2026/7/1/amnesty-says-rsf-committed-ethnic-cleansing-in-sudans-el-fasher">Al Jazeera</a></p>
-  </div>
-</details>
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">The Midterms</span>
+          <h2 class="story-headline">Battle for the Senate takes shape as Democrats grow bullish for 2026</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>With the primary calendar underway, the Senate map is largely set: Democrats must hold all their seats and flip four to win the majority for the final two years of Trump's term. In CNN's July rankings, North Carolina — where former Gov. Roy Cooper is running — is the seat most likely to flip. Analysts tie the momentum to disapproval of Trump's handling of the economy and the war with Iran.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>A genuine opening: a favorable issue environment plus strong recruits like Cooper make a Senate flip credible. Press the advantage across the Sun Belt and Rust Belt.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Midterm "momentum" a year out is routinely overstated; the math still forces Democrats to win red-leaning states, and candidate quality and turnout — not mood polling — decide these races.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnn.com/2026/07/02/politics/senate-race-rankings-july-2026">CNN Politics</a>, <a href="https://www.nbcnews.com/politics">NBC News</a></div>
+      </div>
+    </details>
+  </section>
 
-<!-- ===================== SCIENCE, ENERGY & CLIMATE ===================== -->
-<h2 class="topic"><span class="em">&#128300;</span>Science, Energy &amp; Climate</h2>
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section class="section" id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
 
-<details open>
-  <summary>Astronomers find a potentially habitable super-Earth just 25 light-years away</summary>
-  <div class="story">
-    <p><span class="lbl">The Discovery</span> Astronomers have identified Gliese 3378b, a rocky "super-Earth" about 25 light-years from Earth orbiting in its star's habitable zone. The planet is roughly 2.3 times Earth's mass with a 21.45-day orbit, and it receives about 90% of the stellar radiation Earth gets from the Sun — squarely in the temperate "sweet spot." The team used radial-velocity measurements from the Habitable-zone Planet Finder on the Hobby-Eberly Telescope (McDonald Observatory, Texas) and the NEID spectrometer on the WIYN Telescope (Kitt Peak, Arizona).</p>
-    <p><span class="lbl">The Caveat</span> Whether the planet holds an atmosphere — the prerequisite for the temperature and chemistry life would need — is unknown. Gliese 3378b sits near what researchers call the "cosmic shoreline," the boundary beyond which stellar radiation can strip a planet's atmosphere away. Its proximity nonetheless makes it a prime near-term target for atmospheric follow-up, the kind of nearby, well-characterized world that next-generation telescopes are built to interrogate.</p>
-    <p class="sources"><strong>Sources:</strong> <a href="https://www.sci.news/astronomy/potentially-habitable-super-earth-gliese-3378b-14886.html">Sci.News</a> · <a href="https://www.space.com/astronomy/exoplanets/astronomers-discover-a-potentially-habitable-planet-just-25-light-years-away-this-one-is-exciting">Space.com</a> · <a href="https://science.nasa.gov/universe/exoplanets/discovery-alert-a-super-earth-in-the-habitable-zone/">NASA Science</a></p>
-  </div>
-</details>
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Ukraine</span>
+          <h2 class="story-headline">Massive Russian barrage hits Kyiv as NATO neighbors scramble</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Russia launched one of its largest aerial assaults of the war overnight into July 2 — Zelensky said more than 70 missiles and roughly 500 drones struck Kyiv and other cities. Reported death tolls ranged from at least 17 to 25 killed, with 85-plus injured; over 20 sites in Kyiv were hit, including residential blocks, a hotel, a research institute and an ambulance station. Poland scrambled jets and Finland restricted airspace.</p>
+          <p>Moscow framed the strike as retaliation for Ukraine's sustained campaign against Russian oil refineries. The escalating tit-for-tat — Ukraine degrading Russia's energy sector, Russia saturating Ukrainian cities — leaves little margin for miscalculation along NATO's eastern flank.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/07/02/nx-s1-5878894/russia-attacks-ukraines-capital-killing-more-than-a-dozen-people">NPR</a>, <a href="https://www.cnbc.com/2026/07/02/russia-launches-missile-drone-strikes-ukraine-kyiv.html">CNBC</a>, <a href="https://www.aljazeera.com/amp/news/2026/7/2/kyiv-attacked-after-ukraines-zelenskyy-warns-of-massive-russian-strike">Al Jazeera</a></div>
+      </div>
+    </details>
 
-<details>
-  <summary>Electrification accelerates: Tesla posts record Q2, and "virtual power plants" go mainstream</summary>
-  <div class="story">
-    <p><span class="lbl">The Facts</span> Tesla reported 480,126 deliveries in the second quarter of 2026, up 25% year-over-year — its strongest-ever Q2 and its first year-over-year delivery growth after two consecutive years of decline; Rivian delivered 12,194 vehicles from its Normal, Illinois plant over the same period. Beyond the headline numbers, utilities and regulators are increasingly embracing "virtual power plants" — coordinated networks of rooftop solar, home batteries, plugged-in EVs and smart thermostats that can replicate much of the value of a centralized power plant.</p>
-    <p><span class="lbl">Why it matters</span> The through-line is electrification: as transport and buildings shift onto the grid, demand-side flexibility (EVs and batteries that can soak up or feed back power) is becoming part of the grid's supply toolkit rather than just a load. That reframes the EV not only as a car but as a distributed grid asset — a shift with real implications for how much new generation and transmission the energy transition actually requires.</p>
-    <p class="sources"><strong>Sources:</strong> <a href="https://electrek.co/">Electrek</a> · <a href="https://www.canarymedia.com/articles/clean-energy/big-stories-2026-renewables-power-grid">Canary Media</a></p>
-  </div>
-</details>
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Iran</span>
+          <h2 class="story-headline">U.S.&ndash;Iran talks in Doha end without breakthrough as Hormuz toll fight looms</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Two days of indirect U.S.&ndash;Iran talks in Doha concluded July 1 with implementation steps but no lasting breakthrough, building on an interim deal that paused the 2026 conflict (now past its 125th day). The sides agreed a goods-purchase mechanism for a first tranche of frozen assets, a channel to flag violations, and a shared focus on restoring passage through the Strait of Hormuz. VP Vance said talks were "going well."</p>
+          <p>Core disputes remain: Washington rejects any Iranian-led toll mechanism while Tehran asserts joint sovereignty with Oman; no frozen funds have moved; and the nuclear-inspection question persists. Iran signals it will begin charging shipping tolls in mid-August once a toll-free window expires — a possible flashpoint.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.rappler.com/world/middle-east/us-iran-indirect-talks-doha-strait-hormuz-july-1-2026/">Rappler</a>, <a href="https://www.cnn.com/2026/07/01/world/live-news/iran-war-trump">CNN</a>, <a href="https://www.aljazeera.com/news/liveblog/2026/7/2/iran-war-live-positive-progress-as-us-tehran-wrap-up-indirect-talks">Al Jazeera</a></div>
+      </div>
+    </details>
 
-<details>
-  <summary>The grid becomes the bottleneck as solar heads for the top of the power mix</summary>
-  <div class="story">
-    <p><span class="lbl">The Facts</span> Electricity demand is now rising almost everywhere — driven by data centers, rising incomes and the electrification of transport and heating — and analysts (IEA, BloombergNEF) project solar will become the world's single largest source of electricity within about six years, on the back of a supply glut and steadily falling prices. But the grid itself has emerged as the binding constraint: more than 2,500 gigawatts of projects sit stalled in interconnection queues worldwide, and roughly $5.8 trillion in grid upgrades is forecast to be needed between 2026 and 2035.</p>
-    <p><span class="lbl">Why it matters</span> The story of the transition is shifting from "can we build enough clean generation?" to "can we build the wires, queues and storage to actually use it?" One emerging stopgap: battery systems are increasingly bridging the gap between surging data-center demand and what the grid can deliver, letting projects come online years before network upgrades catch up — a workaround that also underscores how far grid investment still lags.</p>
-    <p class="sources"><strong>Sources:</strong> <a href="https://www.iea.org/reports/electricity-2026/executive-summary">IEA Electricity 2026</a> · <a href="https://about.bnef.com/insights/clean-energy/new-energy-outlook/">BloombergNEF</a> · <a href="https://www.canarymedia.com/articles/clean-energy/big-stories-2026-renewables-power-grid">Canary Media</a></p>
-  </div>
-</details>
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Sudan / Darfur</span>
+          <h2 class="story-headline">Amnesty: RSF committed crimes against humanity and ethnic cleansing in el-Fasher</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>A July 1 Amnesty International report concludes Sudan's paramilitary RSF committed crimes against humanity and ethnic cleansing while seizing el-Fasher in North Darfur. "City Under Siege, Children Under Fire" documents murder, forcible transfer, torture, rape, sexual slavery and extermination against civilians from early 2024 to October 2025 — many from the Zaghawa ethnic group — and says the acts "may be relevant to the crime of genocide." Findings rest on 247 interviews plus 89 open-source videos and satellite imagery.</p>
+          <p>The report sharpens pressure over a war that has produced one of the world's gravest humanitarian catastrophes with little Western attention. Amnesty says RSF commander Gen. Hemedti had not responded by publication.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.amnesty.org/en/latest/news/2026/07/sudan-rsf-atrocities-in-el-fasher-a-stain-on-the-conscience-of-humanity-new-report/">Amnesty International</a>, <a href="https://www.aljazeera.com/news/2026/7/1/amnesty-says-rsf-committed-ethnic-cleansing-in-sudans-el-fasher">Al Jazeera</a></div>
+      </div>
+    </details>
+  </section>
 
-<!-- ===================== SPORTS ===================== -->
-<h2 class="topic"><span class="em">&#9917;</span>Sports</h2>
+  <!-- ============ SCIENCE, TECH, ENERGY & CLIMATE ============ -->
+  <section class="section" id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
 
-<details open>
-  <summary>World Cup 2026: USA reach the last 16 but lose Balogun to red card; heavyweight knockouts roll on</summary>
-  <div class="story">
-    <p><span class="lbl">The Facts</span> The co-hosts advanced to the knockout round-of-16 with a 2&ndash;0 win over Bosnia-Herzegovina, goals from Folarin Balogun and Malik Tillman. The result was soured when Balogun was sent off in the second half, ruling him out of the USA's next match against Belgium. The tournament's marquee Thursday slate featured a blockbuster round-of-32 card: Portugal vs. Croatia in Toronto — a 2016 Euro-final rematch still headlined by Cristiano Ronaldo and Luka Modrić — plus Spain vs. Austria at SoFi Stadium and Switzerland vs. Algeria in Vancouver.</p>
-    <p>With the field down to Europe's and the Americas' strongest sides, the bracket is tightening toward the business end of a sprawling 48-team, three-nation World Cup. The USA's Belgium tie now looms as a defining test — made harder by the loss of their in-form striker to suspension.</p>
-    <p class="sources"><strong>Sources:</strong> <a href="https://www.skysports.com/football/news/11095/13558805/world-cup-2026-usa-2-0-bosnia-herzegovina-florian-balogun-scores-and-is-sent-off-as-usa-book-belgium-clash">Sky Sports</a> · <a href="https://www.espn.com/soccer/story/_/id/48939282/2026-fifa-world-cup-fixtures-results-match-schedule-group-stage-knockout-rounds-bracket">ESPN</a> · <a href="https://sports.yahoo.com/soccer/live/world-cup-2026-bracket-scores-results-schedule-live-updates-round-of-32-173000083.html">Yahoo Sports</a></p>
-  </div>
-</details>
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Astronomy</span>
+          <h2 class="story-headline">A potentially habitable super-Earth found just 25 light-years away</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Astronomers identified Gliese 3378b, a rocky "super-Earth" about 25 light-years away orbiting in its star's habitable zone — roughly 2.3 Earth masses, a 21.45-day orbit, receiving about 90% of the stellar radiation Earth gets from the Sun. It was found via radial-velocity data from the Habitable-zone Planet Finder (Hobby-Eberly Telescope) and the NEID spectrometer (WIYN Telescope).</p>
+          <p>Whether it holds an atmosphere is unknown — it sits near the "cosmic shoreline," where stellar radiation can strip a planet's air away. Its proximity nonetheless makes it a prime near-term target for atmospheric follow-up.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.sci.news/astronomy/potentially-habitable-super-earth-gliese-3378b-14886.html">Sci.News</a>, <a href="https://www.space.com/astronomy/exoplanets/astronomers-discover-a-potentially-habitable-planet-just-25-light-years-away-this-one-is-exciting">Space.com</a>, <a href="https://science.nasa.gov/universe/exoplanets/discovery-alert-a-super-earth-in-the-habitable-zone/">NASA</a></div>
+      </div>
+    </details>
 
-<details>
-  <summary>English football: summer transfer window in full swing across the Premier League</summary>
-  <div class="story">
-    <p><span class="lbl">The Facts</span> With England's domestic season done and much of the national-team attention on the World Cup, the Premier League's summer window (open since June 15, closing 11pm BST on September 1) is the domestic story. Among the early moves being tracked across BBC Sport, Sky Sports and ESPN: Newcastle United's Anthony Gordon heading to Barcelona, and Tottenham sealing a pair of shrewd free transfers. Every one of the 20 clubs is expected to see significant ins and outs before deadline day.</p>
-    <p>It is the quiet-loud rhythm of an English football summer — no league fixtures, but a daily churn of fees, medicals and "here we go" rumors that will shape the 2026&ndash;27 title and relegation pictures long before a ball is kicked.</p>
-    <p class="sources"><strong>Sources:</strong> <a href="https://www.skysports.com/football/news/11095/13546618/transfer-news-summer-transfer-window-2026-premier-league-deals-ins-and-outs">Sky Sports</a> · <a href="https://www.espn.co.uk/football/story/_/id/48955344/premier-league-2026-summer-transfers-all-confirmed-ins-outs-every-club">ESPN</a> · <a href="https://www.premierleague.com/en/transfers/2026-27/summer">Premier League</a></p>
-  </div>
-</details>
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Technology</span>
+          <h2 class="story-headline">Taiwan raids widen a probe into alleged Nvidia AI-chip smuggling to China</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Taiwanese authorities reportedly raided offices tied to Super Micro Computer and other firms as part of a widening investigation into alleged smuggling of Nvidia AI chips to China. Prosecutors are examining shipments of high-end AI servers that may violate U.S. export controls — the latest sign that the contest over advanced-AI hardware is spilling into enforcement, courts and supply chains.</p>
+          <p>The case underscores how central chip-export policy has become to the AI build-out: the same accelerators driving data-center demand (and the accompanying power crunch) are now the object of geopolitical control, evasion and prosecution.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://techstartups.com/2026/07/01/top-tech-news-today-july-1-2026/">Tech Startups (roundup)</a></div>
+      </div>
+    </details>
 
-<details>
-  <summary>Arsenal: Hincapié made permanent, and a move for teen winger Jeremy Monga</summary>
-  <div class="story">
-    <p><span class="lbl">From the ArseBlog stands</span> The Gunners' summer is up and running. Arsenal ratified Piero Hincapié's move on July 1, exercising the purchase option in his loan to sign the versatile Ecuadorian defender from Bayer Leverkusen on a five-year deal for a reported £34.5m — a tidy piece of business for a player who can cover left-back and centre-half. The mood around the fanbase (ArseBlog's stock-in-trade) is cautiously upbeat: a proven, adaptable defender locked down early is exactly the kind of pre-season certainty supporters crave.</p>
-    <p><span class="lbl">Corroboration</span> The Athletic's David Ornstein reports Arsenal are in direct talks with Leicester City over 16-year-old winger Jeremy Monga — the third-youngest player in Premier League history, behind Arsenal's own Max Dowman and Ethan Nwaneri — with Real Madrid, Manchester City and Chelsea also circling. Arsenal have additionally been linked with Club Brugge's Christos Tzolis (~£35m), while goalkeeper Karl Hein is set to join Werder Bremen. A recruitment drive built around youth and squad depth is taking clear shape.</p>
-    <p class="sources"><strong>Sources:</strong> <a href="https://arseblog.news/category/transfers/">Arseblog News</a> · <a href="https://www.arsenal.com/news/piero-hincapie-joins-arsenal-permanent-deal">Arsenal.com</a> · <a href="https://www.si.com/soccer/arsenal-confirm-first-major-signing-2026-27">Sports Illustrated (via The Athletic's Ornstein)</a></p>
-  </div>
-</details>
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Energy &amp; Electrification</span>
+          <h2 class="story-headline">Electrification accelerates: Tesla posts record Q2 as "virtual power plants" go mainstream</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Tesla reported 480,126 Q2 deliveries, up 25% year-over-year — its strongest-ever Q2 and first YoY growth after two down years; Rivian delivered 12,194. Meanwhile, utilities are increasingly embracing "virtual power plants" — coordinated networks of rooftop solar, home batteries, plugged-in EVs and smart thermostats that replicate much of a centralized plant's value.</p>
+          <p>The through-line is electrification: as transport and buildings move onto the grid, demand-side flexibility becomes part of the supply toolkit — reframing the EV as a distributed grid asset, not just a car.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://electrek.co/">Electrek</a>, <a href="https://www.canarymedia.com/articles/clean-energy/big-stories-2026-renewables-power-grid">Canary Media</a></div>
+      </div>
+    </details>
 
-<details>
-  <summary>MLB: midseason nightcaps as Brewers edge Reds, Giants top Diamondbacks</summary>
-  <div class="story">
-    <p><span class="lbl">The Facts</span> Around the July 2 slate, the Milwaukee Brewers beat the Cincinnati Reds 4&ndash;2 — a go-ahead RBI from Mitchell in the seventh proving decisive — while the San Francisco Giants downed the Arizona Diamondbacks 6&ndash;4. With the season past its midpoint and the All-Star break approaching, division races and wild-card positioning are the throughline of the daily schedule.</p>
-    <p class="sources"><strong>Sources:</strong> <a href="https://www.espn.com/mlb/scoreboard/_/date/20260702">ESPN MLB Scoreboard</a></p>
-  </div>
-</details>
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Climate &amp; the Grid</span>
+          <h2 class="story-headline">The grid becomes the bottleneck as solar heads for the top of the power mix</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Electricity demand is rising almost everywhere — data centers, rising incomes, electrified transport and heat — and analysts (IEA, BloombergNEF) project solar will become the world's single largest electricity source within about six years. But the grid is now the binding constraint: more than 2,500 gigawatts of projects sit stalled in interconnection queues, and roughly $5.8 trillion in grid upgrades is forecast for 2026&ndash;2035.</p>
+          <p>The transition's question is shifting from "enough clean generation?" to "enough wires, queues and storage to use it?" One stopgap: batteries increasingly bridge surging data-center demand and what the grid can deliver — a workaround that also shows how far grid investment lags.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.iea.org/reports/electricity-2026/executive-summary">IEA Electricity 2026</a>, <a href="https://about.bnef.com/insights/clean-energy/new-energy-outlook/">BloombergNEF</a></div>
+      </div>
+    </details>
+  </section>
 
-<footer>
-  <p>Tailored News · Daily Brief for Thursday, July 2, 2026 (America/Los_Angeles). Facts drawn from Tier-1 wire and news desks (AP, Reuters, NPR, BBC, NYT, WaPo, WSJ) with SCOTUSblog/Lawfare weighting on legal stories; Left/Right takes synthesized from opinion outlets and never used to select stories. Automated brief — sources linked per story.</p>
-  <p class="note">Some columns and reports may be partly paywalled; takes reflect only what was publicly visible.</p>
-</footer>
-</div>
+  <!-- ===================== SPORTS ===================== -->
+  <section class="section" id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">World Cup 2026</span>
+          <h2 class="story-headline">USA reach the last 16 but lose Balogun to a red card as heavyweight knockouts roll on</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The co-hosts beat Bosnia-Herzegovina 2&ndash;0 (Folarin Balogun, Malik Tillman) to reach the round of 16, but Balogun was sent off and will miss the next match against Belgium. Thursday's marquee card featured Portugal vs. Croatia in Toronto — a 2016 Euro-final rematch still led by Ronaldo and Modrić — plus Spain vs. Austria and Switzerland vs. Algeria.</p>
+          <p>With the field narrowing in a 48-team, three-nation tournament, the USA's Belgium tie now looms as a defining test, made harder by the loss of their in-form striker.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.skysports.com/football/news/11095/13558805/world-cup-2026-usa-2-0-bosnia-herzegovina-florian-balogun-scores-and-is-sent-off-as-usa-book-belgium-clash">Sky Sports</a>, <a href="https://www.espn.com/soccer/story/_/id/48939282/2026-fifa-world-cup-fixtures-results-match-schedule-group-stage-knockout-rounds-bracket">ESPN</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">English Football</span>
+          <h2 class="story-headline">Premier League summer window in full swing with the season on pause</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>With the domestic season done and much attention on the World Cup, the Premier League's summer window (open since June 15, closing 11pm BST on September 1) is the English-football story. Among early moves tracked across BBC Sport, Sky and ESPN: Newcastle's Anthony Gordon heading to Barcelona and Tottenham sealing a pair of shrewd free transfers. All 20 clubs expect significant ins and outs before deadline day.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.skysports.com/football/news/11095/13546618/transfer-news-summer-transfer-window-2026-premier-league-deals-ins-and-outs">Sky Sports</a>, <a href="https://www.premierleague.com/en/transfers/2026-27/summer">Premier League</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal</span>
+          <h2 class="story-headline">Hincapié made permanent, and a move for teenage winger Jeremy Monga</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The Gunners' summer is up and running. Arsenal ratified Piero Hincapié's move on July 1, exercising the loan's purchase option to sign the versatile Ecuadorian defender from Bayer Leverkusen on a five-year deal for a reported £34.5m. The mood around the fanbase (ArseBlog's stock-in-trade) is cautiously upbeat — a proven, adaptable defender locked down early.</p>
+          <p>Corroborating the fan buzz, The Athletic's David Ornstein reports Arsenal in direct talks with Leicester over 16-year-old winger Jeremy Monga — the third-youngest player in Premier League history, behind Arsenal's own Max Dowman and Ethan Nwaneri — with Real Madrid, Man City and Chelsea also circling. Club Brugge's Christos Tzolis has also been linked; keeper Karl Hein is set to join Werder Bremen.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.news/category/transfers/">Arseblog News</a>, <a href="https://www.arsenal.com/news/piero-hincapie-joins-arsenal-permanent-deal">Arsenal.com</a>, <a href="https://www.si.com/soccer/arsenal-confirm-first-major-signing-2026-27">Ornstein / The Athletic</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">MLB</span>
+          <h2 class="story-headline">Midseason nightcaps: Brewers edge Reds, Giants top Diamondbacks</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Around the July 2 slate, Milwaukee beat Cincinnati 4&ndash;2 (a go-ahead RBI from Mitchell in the seventh) and San Francisco downed Arizona 6&ndash;4. With the season past its midpoint and the All-Star break nearing, division races and wild-card positioning are the throughline.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.espn.com/mlb/scoreboard/_/date/20260702">ESPN MLB</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+
+</body>
+</html>

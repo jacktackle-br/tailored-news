@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template
+     Self-contained: system fonts, inline CSS, no dependencies.
+     Design tokens live in :root; dark mode mirrors them below.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;        /* comfortable reading column */
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+
+  /* Dark tokens apply when the OS prefers dark (unless the reader forced
+     light), OR when the reader explicitly chose dark via the toggle. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:        #17140f;
+      --paper-raised: #201c15;
+      --ink:          #ece5d6;
+      --ink-soft:     #b3aa96;
+      --ink-faint:    #7c7361;
+      --rule:         #3a3427;
+      --rule-soft:    #2c281f;
+      --accent:       #d68a5f;
+      --take-left:    #7f92a3;
+      --take-right:   #b39a6f;
+      --take-left-bg:  #1c1f22;
+      --take-right-bg: #221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:        #17140f;
+    --paper-raised: #201c15;
+    --ink:          #ece5d6;
+    --ink-soft:     #b3aa96;
+    --ink-faint:    #7c7361;
+    --rule:         #3a3427;
+    --rule-soft:    #2c281f;
+    --accent:       #d68a5f;
+    --take-left:    #7f92a3;
+    --take-right:   #b39a6f;
+    --take-left-bg:  #1c1f22;
+    --take-right-bg: #221d13;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 1.125rem;
+    line-height: 1.62;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  .page {
+    max-width: calc(var(--measure) + var(--pad) * 2);
+    margin: 0 auto;
+    padding: 0 var(--pad) 5rem;
+  }
+
+  /* ---------- Masthead ---------- */
+  .masthead {
+    text-align: center;
+    padding: 2.75rem 0 1.5rem;
+  }
+  .masthead-title {
+    font-size: clamp(2.5rem, 11vw, 4rem);
+    line-height: 0.95;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    margin: 0;
+  }
+  .masthead-rule {
+    border: 0;
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    height: 4px;
+    margin: 1.25rem auto 0;
+  }
+  .masthead-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    white-space: nowrap;
+    transition: border-color 0.15s;
+  }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .section-label {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .section-header::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+
+  /* ---------- Story (all sections) ---------- */
+  .story {
+    border-top: 1px solid var(--rule-soft);
+    padding: 0.35rem 0;
+  }
+  .story:first-of-type { border-top: 0; }
+
+  .story > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 0.9rem 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: 1rem;
+  }
+  .story > summary::-webkit-details-marker { display: none; }
+
+  .story-headline {
+    font-size: clamp(1.4rem, 5vw, 1.7rem);
+    line-height: 1.18;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .story-kicker {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 0.45rem;
+  }
+  .story-toggle {
+    font-family: var(--mono);
+    font-size: 1.4rem;
+    line-height: 1;
+    color: var(--ink-faint);
+    margin-top: 0.15rem;
+    transition: transform 0.2s ease;
+    user-select: none;
+  }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+
+  /* facts block — neutral baseline */
+  .facts { color: var(--ink); }
+
+  /* ---------- Takes ---------- */
+  .takes {
+    margin-top: 1.4rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.9rem;
+  }
+  @media (max-width: 33rem) {
+    .takes { grid-template-columns: 1fr; }
+  }
+  .take {
+    padding: 0.9rem 1.1rem;
+    border-radius: 2px;
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+  .take p { margin: 0; }
+  .take-label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.64rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    color: var(--ink-soft);
+  }
+  /* subtle asymmetry: left take flush, right take inset */
+  .take--left {
+    background: var(--take-left-bg);
+    border-left: 2px solid var(--take-left);
+  }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right {
+    background: var(--take-right-bg);
+    border-left: 2px solid var(--take-right);
+  }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist {
+    margin-top: 1.4rem;
+    padding-left: 1.1rem;
+    border-left: 1px solid var(--rule);
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+  .columnist p { margin: 0; }
+  .columnist-byline {
+    display: block;
+    font-family: var(--mono);
+    font-style: normal;
+    font-size: 0.64rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 0.4rem;
+  }
+
+  /* ---------- Footer ---------- */
+  .colophon {
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 4px double var(--rule);
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    text-align: center;
+    line-height: 1.8;
+  }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) {
+    body { font-size: 1.1875rem; }
+  }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle {
+    position: fixed;
+    top: 0.9rem;
+    right: 0.9rem;
+    z-index: 20;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.8rem;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%);
+  }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Thursday, July 2, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+  <!-- ===================== POLITICS ===================== -->
+  <section class="section" id="politics">
+    <div class="section-header">
+      <span class="section-label">Politics &amp; Current Events</span>
+    </div>
+
+    <!-- SIGNATURE STORY CARD: facts + left take + right take + columnist -->
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Capitol Hill</span>
+          <h2 class="story-headline">Senate clears $1.4 trillion spending framework after all-night session</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The Senate voted 54&ndash;46 shortly after 3 a.m. to advance a budget framework that funds the government through the next fiscal year, ending a two-week standoff over defense and domestic spending caps. Four members of the majority crossed the aisle on the final procedural vote.</p>
+          <p>The measure now moves to the House, where leadership has signaled a floor vote before the holiday recess. The framework sets topline numbers but defers most program-level decisions to appropriators.</p>
+        </div>
+
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>The compromise protects funding for health and education programs that were on the chopping block, and moderates who held the line deserve credit for refusing deeper cuts to the safety net.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Topline restraint is welcome, but deferring the hard choices to appropriators means the real fight over waste and program bloat is simply postponed, not won.</p>
+          </div>
+        </div>
+
+        <aside class="columnist">
+          <span class="columnist-byline">Columnist &mdash; David French, The New York Times</span>
+          <p>&ldquo;The interesting story here isn&rsquo;t the topline. It&rsquo;s that four senators decided the political cost of a shutdown outweighed the base&rsquo;s appetite for a brawl &mdash; a small sign that the fever may be breaking.&rdquo;</p>
+        </aside>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">The Courts</span>
+          <h2 class="story-headline">Supreme Court agrees to hear challenge to federal agency rulemaking power</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The Court granted certiorari in a case testing how much deference courts owe to agency interpretations of ambiguous statutes. Oral arguments are expected in the fall term, with a decision likely by next summer.</p>
+        </div>
+
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Stripping agencies of interpretive authority would hand technical decisions on public health and the environment to judges with no relevant expertise, and to the litigants best able to afford the fight.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Unelected agencies have written de facto law for decades. Returning statutory interpretation to the courts and Congress restores the accountability the Constitution actually contemplates.</p>
+          </div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section class="section" id="foreign-affairs">
+    <div class="section-header">
+      <span class="section-label">Foreign Affairs</span>
+    </div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Brussels</span>
+          <h2 class="story-headline">EU agrees framework for long-term reconstruction fund, defers on membership timeline</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>European leaders emerged from a two-day summit with agreement on a multi-year reconstruction instrument but no firm date for the accession talks that several eastern members had pushed to accelerate. Officials described the deal as &ldquo;money now, membership later.&rdquo;</p>
+          <p>Diplomats said the financing package was easier to sell domestically than any commitment on enlargement, which requires unanimity and remains blocked by at least two capitals.</p>
+        </div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Indo-Pacific</span>
+          <h2 class="story-headline">Regional navies begin largest joint exercise in a decade amid rising tensions</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>More than a dozen nations began coordinated maritime drills this week, framed by organizers as a routine readiness exercise. Analysts read the timing and scale as a deliberate signal following months of contested incidents near key shipping lanes.</p>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section class="section" id="sports">
+    <div class="section-header">
+      <span class="section-label">Sports</span>
+    </div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">English Football</span>
+          <h2 class="story-headline">Title race tightens as leaders drop points at struggling mid-table side</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>A late equaliser away from home cut the table-toppers&rsquo; lead to two points with six matches to play, throwing the Premier League title race open for the first time since the winter. The chasing pack now controls its own destiny.</p>
+        </div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal</span>
+          <h2 class="story-headline">Arsenal secure statement win as summer signing repays the fee</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Arsenal produced their most complete performance of the campaign, with the club&rsquo;s marquee summer arrival scoring twice and setting up a third. The result keeps the Gunners firmly in the conversation on both domestic and European fronts.</p>
+        </div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Tennis</span>
+          <h2 class="story-headline">Grass-court season delivers a first-time finalist and a generational upset</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>A qualifier ranked outside the top fifty reached a maiden final after ousting two seeded players in straight sets, the deepest run by an unseeded player at the event in over a decade.</p>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+
+</body>
+</html>
