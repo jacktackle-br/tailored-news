@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Sunday, October 11, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+
+<!-- EVENING:SLOT:START -->
+<div class="edition-band"><span class="kick">The Evening Edition</span><span class="big">Evening Briefing</span><span class="when">Updated Sunday, October 11, 2026</span></div>
+
+  <section class="section" id="evening-politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Russia &middot; Sanctions &middot; Congress</span>
+          <h2 class="story-headline">Four GOP senators join Democrats in demanding Trump &ldquo;immediately reverse course&rdquo; on his Russian diesel deal, while Bessent and Barrasso defend it</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On <strong>Sunday</strong>, a bipartisan group of senators released a statement urging the administration to &ldquo;immediately reverse course&rdquo; on Friday&rsquo;s deal with Moscow to import Russian diesel. The Republicans were <strong>Susan Collins, Lisa Murkowski, Thom Tillis and John Curtis</strong>; the Democrats included <strong>Jeanne Shaheen and Richard Blumenthal</strong>. Outlets disagree on the count: AP says six senators, while CNN and The Hill say seven and include Ron Wyden. The senators say the deal runs counter to a 2022 law barring Russian energy imports until Moscow ends its aggression against Ukraine. They also say the administration did not consult Congress or submit the justification the law requires. Tillis, who is retiring, said &ldquo;there&rsquo;s a legitimate case for saying the president&rsquo;s not following the law.&rdquo; Murkowski said Trump should use the sanctions law against Russia, not around it.</p>
+          <p>Trump says Russia will supply more than <strong>300,000 tons</strong> of diesel immediately, 500,000 tons in November and 1&nbsp;million tons after that. A Treasury general license exempts Russian diesel loaded onto tankers as of Friday from US sanctions until <strong>April 2027</strong>. Treasury Secretary Scott Bessent defended the deal on Fox News on Sunday, saying the administration has the legal authority and the deal is good for Americans because it will lower fuel prices. Senate Majority Whip John Barrasso told CBS&rsquo;s &ldquo;Face the Nation&rdquo; that Trump is focused on costs for consumers, farmers and truckers. The fight comes three weeks before the Nov.&nbsp;3 midterms and a day after Trump said Ukraine needs &ldquo;a new leader who can make a deal&rdquo; and that Zelensky &ldquo;better damn well stop&rdquo; hitting Russian refineries. Energy analysts quoted by Fortune and Al Jazeera doubt the volumes will move pump prices much.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Mother&nbsp;Jones argues that Trump is blaming Ukraine for a fuel-price spike driven mainly by his own Iran war and the closure of Hormuz. On this view, relief for Russian diesel is a pre-midterm political patch paid for by Kyiv. <em>(Mother Jones, this month; no in-window Slate, Vox or Guardian opinion piece on the senators&rsquo; statement found.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No National&nbsp;Review, Dispatch, WSJ editorial or Reason piece on the deal turned up in-window. The pro-administration case, from Bessent and Barrasso, is that cheaper diesel for farmers and truckers comes first and existing law allows it. The opposing case comes from the GOP senators themselves and Rep. Don Bacon, who called Russian fuel &ldquo;the wrong answer.&rdquo; <strong>Intra-right disagreement:</strong> The Bulwark, from the anti-Trump right, calls the deal disgraceful and says Zelensky is &ldquo;striking Putin where it hurts most&rdquo;; this is not the mainstream-right position.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/business/articles/2026-10-11/six-senators-call-for-trump-administration-to-immediately-reverse-course-on-russian-diesel-plan">AP (via US News), Oct 11</a>, <a href="https://www.cnn.com/2026/10/11/politics/us-russia-diesel-deal-bipartisan-criticism">CNN, Oct 11</a>, <a href="https://www.washingtonpost.com/world/2026/10/11/trumps-zelensky-attack-russia-diesel-deal-draw-criticism-us-abroad/">Washington Post, Oct 11</a>, <a href="https://www.usnews.com/news/world/articles/2026-10-11/prominent-republican-senator-says-trumps-russian-diesel-deal-may-be-illegal">Reuters (via US News), Oct 11</a>, <a href="https://www.npr.org/2026/10/10/nx-s1-5996938/u-s-and-russia-tout-diesel-deal-to-ease-sanctions-and-reopen-fuel-flows">NPR, Oct 10</a>, <a href="https://www.aljazeera.com/news/2026/10/11/republican-senator-says-trump-diesel-agreement-with-russia-may-be-illegal">Al Jazeera, Oct 11</a>, <a href="https://www.motherjones.com/politics/2026/10/trump-blames-ukraine-for-our-skyrocketing-fuel-prices/">Mother Jones</a>, <a href="https://www.thebulwark.com/p/trumps-putin-deal-is-a-disgraceful">The Bulwark</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Pentagon &middot; Death Penalty</span>
+          <h2 class="story-headline">Trump says he&rsquo;ll &ldquo;make a decision&rdquo; on Hegseth&rsquo;s plan to livestream the Fort Hood shooter&rsquo;s firing-squad execution, as GOP and church critics pile on</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On <strong>Saturday</strong>, Trump stepped back from fully endorsing Defense Secretary Pete Hegseth&rsquo;s announcement that the execution of <strong>Nidal Hasan</strong> will be livestreamed. Hasan is the former Army major who killed 13 people at Fort Hood in 2009. &ldquo;There are two thoughts: don&rsquo;t show it and show it. So I&rsquo;ll make a decision ultimately,&rdquo; Trump said. He added that he &ldquo;wasn&rsquo;t involved in that decision&rdquo; but understood it. The Pentagon says Trump approved the use of an Army firing squad. Hegseth set the execution for <strong>1&nbsp;p.m. on Dec.&nbsp;3</strong> at Fort Hood, the same day of the week and hour as the attack. If it is livestreamed, it would be the first public execution in the US in nearly a century and the first ever streamed.</p>
+          <p>CNN reports that Army and Pentagon officials were caught off guard by the announcement. Republican critics include Sen. Thom Tillis (&ldquo;beyond disgusting&rdquo;), Sen. John Curtis and Rep. Austin Scott, who said livestreamed executions are &ldquo;what jihadists do.&rdquo; Vice President Vance said he would not watch. Sen. Mark Kelly called for Hegseth&rsquo;s firing. Archbishop Paul Coakley, president of the US Conference of Catholic Bishops, called the plan &ldquo;a barbaric promotion of a culture of death.&rdquo;</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Mother&nbsp;Jones calls it a &ldquo;snuff film,&rdquo; and Slate argues Hegseth chose a uniquely unsympathetic prisoner to make a publicity stunt hard to oppose. Both say the spectacle risks making Hasan a martyr while doing nothing for deterrence. <em>(Pieces ran earlier this week, after Hegseth&rsquo;s announcement.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Unusually, the mainstream right is largely opposed. National Review&rsquo;s Corner calls the plan disgusting, arguing that the death of a human being, even a deserved one, is not for show. The Dispatch&rsquo;s &ldquo;Showtime in Pete Hegseth&rsquo;s America&rdquo; frames it as postliberal performance politics. Reason questions what a state-run stream is for. <strong>Intra-right disagreement:</strong> The Bulwark, from the anti-Trump right, calls it Hegseth&rsquo;s &ldquo;pathetic tough-guy act.&rdquo; <em>(Pieces ran Oct.&nbsp;9&ndash;10.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/politics/2026/10/10/trump-make-decision-hegseth-plan-live-streamed-public-execution/">Washington Post, Oct 10</a>, <a href="https://www.cnn.com/2026/10/10/politics/pentagon-scramble-hegseth-public-execution">CNN, Oct 10</a>, <a href="https://www.npr.org/2026/10/09/nx-s1-5996529/firing-squad-livestream-execution-fort-hood-shooter">NPR, Oct 9</a>, <a href="https://www.nbcnews.com/politics/donald-trump/trump-execution-fort-hood-livestream-rcna602672">NBC News</a>, <a href="https://www.motherjones.com/politics/2026/10/hegseth-livestream-snuff-film-pentagon-firing-squad-nidal-hasan/">Mother Jones</a>, <a href="https://slate.com/news-and-politics/2026/10/pete-hegseth-fort-hood-shooter-livestream-execution-stunt.html">Slate</a>, <a href="https://www.nationalreview.com/corner/well-screen-the-execution-too-the-firing-squad-on-live-stream/">National Review</a>, <a href="https://thedispatch.com/newsletter/boilingfrogs/hasan-execution-livestream-hegseth-trump-postliberalism/">The Dispatch</a>, <a href="https://reason.com/2026/10/09/livestreaming-an-execution/">Reason, Oct 9</a>, <a href="https://www.thebulwark.com/p/hegseths-livestreamed-execution-exposes">The Bulwark</a></div>
+      </div>
+    </details>
+  </section>
+
+  <section class="section" id="evening-foreign">
+    <div class="section-header"><span class="section-label">Global Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Ukraine &middot; Russia</span>
+          <h2 class="story-headline">Trump declares a Russia&ndash;Ukraine &ldquo;energy ceasefire&rdquo; Kyiv learned of on social media, and within hours Russia hits Kharkiv&rsquo;s power plant</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On <strong>Sunday</strong>, Trump posted on Truth Social that an &ldquo;ENERGY CEASEFIRE&rdquo; between Russia and Ukraine was &ldquo;effective immediately&rdquo; and that both sides had agreed. He gave no terms, the White House did not clarify the post, and Moscow did not immediately comment. Zelensky said he learned of it through social media and was waiting for details. Hours later, Russia struck Kharkiv&rsquo;s combined heat-and-power plant (CHP-5) at least twice, setting it on fire; Kyiv&rsquo;s presidential office confirmed the timing. Euronews also reported a drone hit on a power plant in Kyiv, causing outages, though accounts differ on that strike. Zelensky said Ukraine backs an energy truce and would stop hitting Russian refineries if Russia stops attacking Ukraine&rsquo;s grid. He said Russia carried out more than <strong>200 strikes</strong> on Ukrainian power generation and transmission in the past week.</p>
+          <p><em>Analysis:</em> The announcement follows Trump&rsquo;s diesel deal with Moscow and his Saturday demand that Kyiv stop hitting refineries. That makes the &ldquo;ceasefire&rdquo; look like it is mainly about protecting Russian fuel output, which matters to US pump prices before the midterms. Trump made a similar claim in mid-September that neither side confirmed. Until the Kremlin signs on, Ukraine bears the risk: if it stops hitting refineries, Russia keeps a free hand against Ukraine&rsquo;s grid going into winter. CNN reports that European capitals see the diesel deal as driving a wedge through the Western alliance.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/world/articles/2026-10-11/ukraine-awaits-details-of-ceasefire-proposals-from-us-russia-maintains-attacks-zelenskiy-says">Reuters (via US News), Oct 11</a>, <a href="https://www.cnn.com/2026/10/11/politics/trump-ukraine-russia-energy-ceasefire">CNN, Oct 11</a>, <a href="https://www.euronews.com/2026/10/11/energy-ceasefire-agreed-between-russia-and-ukraine-trump-says">Euronews, Oct 11</a>, <a href="https://euromaidanpress.com/2026/10/11/hours-after-trump-declared-an-energy-ceasefire-russia-hit-kharkiv-power-plant-one-of-200-plus-strikes-on-ukraines-grid-this-week-zelenskyy-says/">Euromaidan Press, Oct 11</a>, <a href="https://www.cnn.com/2026/10/11/europe/trump-diesel-deal-putin-latam-intl">CNN analysis, Oct 11</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Iran War &middot; Diplomacy</span>
+          <h2 class="story-headline">Iran calls Washington&rsquo;s reply to its seven conditions &ldquo;insufficient&rdquo; and says Hormuz stays shut until they are met</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On <strong>Sunday</strong>, Mohsen Rezaei, secretary of Iran&rsquo;s Supreme National Security Council, said the US had accepted some of Tehran&rsquo;s seven conditions but its response was &ldquo;insufficient,&rdquo; with other points left unclear. He said the Strait of Hormuz would not reopen to the US, and there would be no negotiations, until all the conditions are met. He said Washington had sent proposals through Pakistan, Qatar and Iraq, and that Tehran would not return to the previous format of talks. The conditions include lifting the US blockade, releasing frozen Iranian funds and ending attacks on all fronts, including Israel&rsquo;s campaign in Lebanon. Together they amount roughly to a return to June&rsquo;s memorandum of understanding. Trump had earlier called Iran&rsquo;s seven-day plan &ldquo;not acceptable.&rdquo;</p>
+          <p><em>Analysis:</em> Hormuz is still closed, and that keeps the fuel-price squeeze on, which explains much of the week&rsquo;s other news, including the Russian diesel deal. A growing Houthi threat to the Red Sea, after the strike on Riyadh&rsquo;s airport that the State Department blamed on the group, gives Tehran another source of leverage. This search found no official US response to Rezaei, and most quotes come through Iranian state media. Treat Tehran&rsquo;s description of what Washington accepted as unverified.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/world/articles/2026-10-11/iran-says-us-response-to-its-proposal-to-reopen-hormuz-was-insufficient">Wire report (via US News), Oct 11</a>, <a href="https://www.cbsnews.com/live-updates/iran-war-trump-us-elections-saudi-arabia-yemen-houthis/">CBS News live updates</a>, <a href="https://en.irna.ir/news/86289861/Security-chief-US-response-to-Iran-s-7-conditions-insufficient">IRNA (Iranian state media)</a>, <a href="https://www.aljazeera.com/news/2026/10/4/iran-says-strait-of-hormuz-to-remain-closed-until-us-meets-conditions">Al Jazeera, Oct 4 (background)</a></div>
+      </div>
+    </details>
+  </section>
+
+  <div class="edition-return">Earlier today &mdash; the Morning Brief &darr;</div>
+<!-- EVENING:SLOT:END -->
+
+  <!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Press Freedom &middot; Justice Department</span>
+          <h2 class="story-headline">The Justice Department opens an antitrust probe of ABC, CBS, NBC, CNN and Fox over the White House TV pool&rsquo;s coverage boycott</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On <strong>Saturday night</strong>, the Justice Department confirmed it is investigating the five networks that make up the White House television pool (ABC, CBS, NBC, CNN and Fox News) under the <strong>Sherman Act</strong>. The New York Times reported it first. A DOJ official said civil investigative demands went out on Friday. According to the Times, they seek &ldquo;communications and materials related to the White House TV pool.&rdquo; A department spokesperson said: &ldquo;Group boycotts among commercial competitors can violate the Sherman Act&hellip; The Antitrust Division is simply investigating to determine whether these news organizations have violated the antitrust laws.&rdquo;</p>
+          <p>The probe stems from last month&rsquo;s press-access fight. After the White House barred CNN, MS&nbsp;NOW and Politico in mid-September, the TV pool stopped covering pool events. A federal judge then found the ban likely unconstitutional and temporarily halted it. Credentials were restored on Sept.&nbsp;24, and pool coverage has resumed. NBC, CBS and CNN declined to comment. ABC said it had not yet been notified. Jonathan Kanter, the Biden-era antitrust chief, said the pool&rsquo;s coordination is &ldquo;no more an antitrust violation than the reporters coming together to form the pool in the first place.&rdquo; Bruce Brown of the Reporters Committee for Freedom of the Press called the probe &ldquo;an even more brazen attempt to try to intimidate journalists&rdquo; and a pretext for seeking records.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece turned up yet; the story broke late Saturday. Press-freedom groups quoted in news coverage make the argument the left is likely to press. They say antitrust law is being turned into a tool to punish coverage decisions, and that the real goal is discovery into newsroom communications. <em>(No listed opinion-outlet pieces found.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window National&nbsp;Review, Dispatch, WSJ editorial or Reason piece turned up. The administration&rsquo;s case, in the DOJ statement, is that competitors jointly refusing to cover events is a textbook &ldquo;group boycott&rdquo; and deserves the same scrutiny as any other industry. <em>(Official&rsquo;s argument only; no listed-outlet pieces found.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/business/2026/10/10/doj-investigating-five-tv-networks-over-white-house-pool-coverage/">Washington Post, Oct 10</a>, <a href="https://www.cnn.com/2026/10/10/media/trump-doj-probing-tv-networks-nbc-cbs-fox-abc-cnn-white-house">CNN, Oct 10</a>, <a href="https://www.usnews.com/news/politics/articles/2026-10-10/justice-department-probes-tv-networks-over-trump-pool-coverage-new-york-times-reports">Reuters (via US News), Oct 10</a>, <a href="https://www.detroitnews.com/story/news/politics/2026/10/10/justice-department-probes-tv-networks-over-trump-pool-boycott/92198938007/">Detroit News, Oct 10</a>, <a href="https://www.rte.ie/news/us/2026/1011/1594879-trump-tv-pool-boycott/">RT&Eacute;, Oct 11</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">The Nobel &middot; White House</span>
+          <h2 class="story-headline">Trump says Norway bears an &ldquo;indelible stain&rdquo; for giving the Peace Prize to Navi Pillay, who calls his sanctions on her old court &ldquo;unacceptable&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Trump kept up his attacks on <strong>Saturday</strong> over Friday&rsquo;s Nobel Peace Prize. The prize went to <strong>Navi Pillay</strong> of South Africa, a former UN human rights chief and former International Criminal Court judge. She also chaired the UN commission that concluded Israel committed genocide in Gaza. At a Syracuse rally Friday night, Trump called the award &ldquo;an indelible stain on the country of Norway&rdquo; and said, &ldquo;We will not forget, Norway.&rdquo; He described Pillay as someone &ldquo;nobody has ever heard of.&rdquo; In Truth Social posts on Friday night and Saturday, the Washington Post reports, he said she &ldquo;very obviously, hates Israel&rdquo; and that &ldquo;I should have won 8 Nobel Peace Prizes, not just 1.&rdquo;</p>
+          <p>Hours after the award, Secretary of State Rubio announced US sanctions on the ICC as an institution (see Foreign Affairs). Coverage reports no stated link between the two. Speaking by video from Nuremberg on Saturday, Pillay called the sanctions &ldquo;unheard of, unacceptable&rdquo; and said hundreds of court staff feel threatened, according to AFP. Israeli Prime Minister Netanyahu said the committee had &ldquo;lost its moral compass.&rdquo;</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece turned up; Guardian coverage found was straight news. <em>(No listed opinion-outlet pieces found.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window National&nbsp;Review, Dispatch, WSJ editorial or Reason piece turned up. The administration&rsquo;s line, from Rubio, is that the ICC sanctions &ldquo;defend US sovereignty&rdquo; and that the president &ldquo;will never allow&rdquo; the court to prosecute Americans. <em>(Official&rsquo;s argument only; no listed-outlet pieces found.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/politics/2026/10/10/trump-fumes-norway-nobel-peace-prize-winner-navi-pillay-over-award/">Washington Post, Oct 10</a>, <a href="https://www.cnbc.com/2026/10/10/trump-norway-has-indelible-stain-nobel-peace-prize-snub.html">CNBC, Oct 10</a>, <a href="https://www.usnews.com/news/world/articles/2026-10-09/trump-says-norway-has-indelible-stain-for-not-awarding-him-nobel-peace-prize">Reuters (via US News), Oct 9</a>, <a href="https://www.freemalaysiatoday.com/category/world/2026/10/10/nobel-peace-laureate-pillay-calls-us-sanctions-on-icc-unacceptable">AFP (via FMT), Oct 10</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Iran War &middot; Pentagon</span>
+          <h2 class="story-headline">The Pentagon quietly raises the official US death toll in the Iran war to 21, and House Democrats call the accounting &ldquo;an embarrassment&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Late Friday, the Defense Department raised its official count of US service members killed in the war with Iran to <strong>21</strong>: 11 in hostile action and 10 non-hostile deaths, with 865 wounded, the Washington Post reported Saturday. The new deaths include Maj. Sorffly Davius, who died in Kuwait on March&nbsp;6, and a Navy sailor who died by suicide.</p>
+          <p>Reps. Adam Smith and Chrissy Houlahan, both Armed Services Democrats, called the delayed revisions &ldquo;an embarrassment.&rdquo; The revision lands as the war and its fuel-price effects shape the closing weeks before the Nov.&nbsp;3 midterms.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece turned up. Democratic lawmakers in the Post&rsquo;s report say the late corrections suggest the administration is understating the war&rsquo;s human cost. <em>(No listed opinion-outlet pieces found.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window National&nbsp;Review, Dispatch, WSJ editorial or Reason piece turned up. <em>(No listed-outlet pieces found.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/national-security/2026/10/10/pentagon-raises-official-toll-troops-killed-during-war-with-iran-21/">Washington Post, Oct 10</a></div>
+      </div>
+    </details>
+
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">International Law &middot; The ICC</span>
+          <h2 class="story-headline">Allies and the UN close ranks around the International Criminal Court after Washington sanctions the court itself</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Friday the State Department designated the <strong>International Criminal Court itself</strong> under Executive Order 14203. Until now US sanctions had targeted only individual judges and prosecutors. The designation blocks court assets under US jurisdiction and generally bars Americans from dealing with it. A Treasury general license gives about <strong>180 days</strong> to wind down business, with carve-outs for operations, IT and cloud services, pensions and detainee matters. State says the window gives the court&rsquo;s 125 member states time to show &ldquo;meaningful progress&rdquo; on US concerns. Those concerns are the Afghanistan probe of US personnel and the warrants for Israeli leaders; neither the US nor Israel is a party to the Rome Statute. Rubio said the US would keep working to &ldquo;dismantle the ICC piece by piece&rdquo;; some outlets render it &ldquo;brick by brick.&rdquo;</p>
+          <p>Reactions came through Saturday. UN Secretary-General Guterres called the move &ldquo;a serious blow&rdquo; to international criminal justice. The ICC called it &ldquo;unprecedented.&rdquo; The European Commission called it &ldquo;deeply regrettable,&rdquo; and Council President Costa pledged political, financial and practical support. Belgium urged the EU to activate its Blocking Statute, and the Dutch government, as host country, pledged to defend the court. Foreign ministers of the UK, France, Germany, Italy, the Netherlands, Denmark, Canada and Japan said they &ldquo;strongly disagree.&rdquo;</p>
+          <p><em>Analysis:</em> Sanctioning the institution makes the court&rsquo;s banks, cloud providers and IT contractors the real pressure point. The test over the next six months is whether European firms follow US sanctions law or an EU Blocking Statute that forbids them to. The timing, hours after a former ICC judge won the Nobel Peace Prize, makes the confrontation more pointed (see Politics).</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/10/10/nx-s1-5996606/u-s-imposes-sweeping-sanctions-on-international-criminal-court">NPR, Oct 10</a>, <a href="https://www.aljazeera.com/news/2026/10/10/why-is-the-us-sanctioning-the-international-criminal-court">Al Jazeera, Oct 10</a>, <a href="https://www.washingtonpost.com/world/2026/10/09/trump-hits-international-criminal-court-with-new-us-sanctions/">Washington Post, Oct 9</a>, <a href="https://www.euronews.com/2026/10/09/eu-calls-us-sanctions-on-international-criminal-court-regrettable">Euronews, Oct 9</a>, <a href="https://www.state.gov/releases/office-of-the-spokesman/2026/10/imposing-sanctions-on-the-international-criminal-court-2/">State Department</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Israel &amp; Palestine</span>
+          <h2 class="story-headline">Abbas postpones the first Palestinian elections in two decades to 2027, as Gaza&rsquo;s ceasefire turns one with the killing still not over</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Palestinian Authority President <strong>Mahmoud Abbas</strong> issued a decree, reported Saturday by the official Wafa agency, moving Legislative Council elections from <strong>Nov.&nbsp;28, 2026</strong> to <strong>Sept.&nbsp;11, 2027</strong>. The new date is combined with a presidential vote. AP says the decree was signed Friday. The PA cited Israeli military operations, settlement expansion and settler violence, restrictions in the West Bank and East Jerusalem, and Israel&rsquo;s withholding of tax revenues. The PLO Executive Committee backed the delay. Critics note that Abbas, 90, was elected in 2005 to a four-year term and now rules by decree. Israel&rsquo;s foreign minister accused him of &ldquo;fooling the international community.&rdquo;</p>
+          <p>The decree came on the first anniversary of the US-brokered Gaza ceasefire. Gaza&rsquo;s Health Ministry reported 9 people killed in the previous 24 hours, including a child, and says more than 1,480 have been killed since the truce began; Israel says it targeted militants. Jared Kushner called the situation &ldquo;far from perfect,&rdquo; pointing to the return of all hostages and a rise in aid, but said &ldquo;there is still hard work ahead.&rdquo; Hamas disarmament, agreed in principle in July, has not happened, and Israel still holds roughly two-thirds of the Strip behind the &ldquo;Yellow Line.&rdquo; Little movement is expected before Israel&rsquo;s Oct.&nbsp;27 election.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/world/2026/10/10/palestinian-election-postponed/db09f72c-c4ad-11f1-8170-681419af1cc9_story.html">Washington Post (AP), Oct 10</a>, <a href="https://www.aljazeera.com/news/2026/10/10/abbas-postpones-palestinian-legislative-elections-to-september-2027">Al Jazeera, Oct 10</a>, <a href="https://www.aljazeera.com/news/2026/10/10/israeli-forces-kill-six-in-gaza-including-a-child">Al Jazeera (Gaza), Oct 10</a></div>
+      </div>
+    </details>
+
+  </section>
+
+  <!-- ===================== SCIENCE, TECH, ENERGY & CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; AI Safety</span>
+          <h2 class="story-headline">Microsoft&rsquo;s Satya Nadella calls for an &ldquo;emergency brake&rdquo; on advanced AI: assume the model is compromised, and keep the controls outside it</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>In a post on X on <strong>Saturday</strong>, Microsoft CEO Satya Nadella laid out what he called the need for an emergency brake on AI models. &ldquo;We must assume a model is compromised and contain it from the start,&rdquo; he wrote. He listed four principles. An authorized human should always be able to pause or shut down a model mid-task. The model should be kept separate from the &ldquo;harness&rdquo; that orchestrates its work. Controls and safeguards should sit outside the model. And every meaningful action should leave &ldquo;tamper-proof human readable evidence.&rdquo;</p>
+          <p>TechCrunch notes the post comes as leading labs acknowledge more incidents in which they appeared to lose control of model behavior. It is a statement of principle, not a product or policy change. Still, it is notable for coming from the head of the company that is perhaps the biggest distributor of frontier models.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://techcrunch.com/2026/10/10/microsofts-satya-nadella-says-ai-models-need-an-emergency-brake/">TechCrunch, Oct 10</a>, <a href="https://www.business-standard.com/technology/artificial-intelligence/microsoft-ceo-satya-nadella-calls-for-emergency-brake-on-advanced-ai-126101100065_1.html">Business Standard, Oct 11</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Energy &middot; The Grid</span>
+          <h2 class="story-headline">After Isaias, Panhandle utilities race to restore power, with outages near 90% in some counties and FPL aiming for 95% restored by Monday</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The grid recovery from <strong>Hurricane Isaias</strong> began in earnest Saturday. Outages peaked near <strong>950,000</strong> customers, and Gov. DeSantis said about 448,000 Florida customers were still dark at his latest update. At 7&nbsp;a.m. Saturday the share of customers without power was roughly 90% in Santa Rosa County, 89% in Holmes, 86% in Washington, 85% in Walton and 75% in Escambia. The CHELCO electric cooperative lost power to about 68,900 members, around 90% of its system. At least four deaths have been reported.</p>
+          <p>Florida Power &amp; Light had restored more than 43,000 customers by early Saturday afternoon. It is prioritizing hospitals, 911 centers and first responders, and is targeting 95% restoration by the end of Monday. Municipal utilities, including Kissimmee Utility Authority and Orlando Utilities Commission, sent mutual-aid crews west. Distribution networks in pine-heavy, rural counties are slow to rebuild after a Category&nbsp;2 storm. Co-ops serving them face the longest restoration times, which is why such storms keep testing proposals for undergrounding and microgrids.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.news4jax.com/weather/2026/10/10/desantis-gives-update-after-isaias-slams-the-florida-panhandle-leaving-many-without-power/">News4Jax, Oct 10</a>, <a href="https://www.clickorlando.com/news/local/2026/10/10/kissimmee-utility-crews-deploy-to-panhandle-to-help-restore-power-after-isaias/">ClickOrlando, Oct 10</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Space &middot; Launch</span>
+          <h2 class="story-headline">SpaceX lofts 21 more data-relay satellites for the Pentagon&rsquo;s low-orbit mesh network after a five-day scrub</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>A Falcon&nbsp;9 lifted off from Vandenberg Space Force Base at <strong>12:39&nbsp;a.m. PDT Saturday</strong>. It carried 21 data-transport satellites for the Space Development Agency&rsquo;s Proliferated Warfighter Space Architecture, a mesh of optically linked satellites in low Earth orbit meant to move targeting and sensor data between US forces. It was the fourth of nine Tranche&nbsp;1 launches and brings 84 of the planned 126 transport satellites into orbit. A first attempt on Oct.&nbsp;5 was halted 58 seconds before liftoff.</p>
+          <p>The booster landed back at Vandenberg, and SpaceX cut its webcast after touchdown at the SDA&rsquo;s request before confirming that all 21 satellites had deployed. Reports differ on which contractor built this batch; some credit Northrop Grumman.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.space.com/space-exploration/launches-spacecraft/spacex-falcon-9-rocket-launch-data-transport-satellites-military-proliferated-architecture">Space.com, Oct 10</a>, <a href="https://teslanorth.com/2026/10/10/spacex-falcon-9-sda-tranche-1-launch">Tesla North, Oct 10</a></div>
+      </div>
+    </details>
+
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">MLB &middot; ALDS Game&nbsp;5</span>
+          <h2 class="story-headline">Guardians complete a comeback from 0&ndash;2 down, beating the White Sox 2&ndash;0 behind Gavin Williams&rsquo; 12 strikeouts and a Ram&iacute;rez homer</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Cleveland won the deciding Game&nbsp;5 of the AL Division Series <strong>2&ndash;0</strong> on Saturday to take the series 3&ndash;2 after losing the first two games. Jos&eacute; Ram&iacute;rez supplied the only runs with a two-run homer in the fourth off Sean Burke, on a curveball just 0.74 feet off the ground. Per ESPN, that is the lowest pitch hit for a postseason home run in the pitch-tracking era. <strong>Gavin Williams</strong>, who earned the save in Game&nbsp;4, struck out 12 in a scoreless start, tying Charles Nagy&rsquo;s franchise postseason record. Guardians pitchers struck out 21 in all, the most ever in a winner-take-all postseason game.</p>
+          <p>Cleveland is the seventh team in the Wild Card era to come back from 0&ndash;2 in a best-of-five. It now faces Tampa Bay, which swept the Yankees, in the ALCS starting Monday in St. Petersburg.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.bostonglobe.com/2026/10/10/sports/guardians-clinch-al-division-series-white-sox-mlb-playoffs/">Boston Globe (AP), Oct 10</a>, <a href="https://www.espn.com/mlb/recap?gameId=401907994">ESPN recap, Oct 10</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">English Football &middot; Premier League</span>
+          <h2 class="story-headline">Ten-man Spurs snatch a stoppage-time draw at Old Trafford, Chelsea hit Bournemouth for five, and Liverpool host leaders City on Sunday</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The Premier League returned from the international break on Saturday. At Old Trafford, Bryan Mbeumo put <strong>Manchester United</strong> ahead around the 73rd minute. Five minutes later <strong>Tottenham</strong> lost Rodrigo Bentancur to a red card for a head-butt on Luke Shaw, but Dominic Solanke headed in a stoppage-time equalizer to make it <strong>1&ndash;1</strong>. Spurs moved off the bottom of the table. Roberto De Zerbi told Match of the Day his side deserved to be two up at halftime and praised their character with ten men. Elsewhere, <strong>Chelsea beat Bournemouth 5&ndash;1</strong>, with two goals from Jo&atilde;o Pedro and two from Henderson, the second a late long-range free kick.</p>
+          <p>Sunday&rsquo;s headline game is <strong>Liverpool v Manchester City</strong> at Anfield (16:30 BST). City lead the table with a perfect 15 points, and Liverpool sit sixth on 9. It is City&rsquo;s first match since an independent commission&rsquo;s verdict against them on the long-running financial charges. The club is appealing, and Enzo Maresca insists the club&rsquo;s titles are &ldquo;absolutely not&rdquo; tainted. <em>(BBC Sport could not be reached this run; results from dated NBC, beIN and ESPN reports.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.nbcsports.com/soccer/live/manchester-united-vs-tottenham-hotspur-live-updates-score-goals-highlights-stats-2026-october-10">NBC Sports, Oct 10</a>, <a href="https://www.beinsports.com/en-us/soccer/premier-league/articles/live-blog-manchester-united-vs-tottenham-hotspur-premier-league-2026-10-10">beIN Sports, Oct 10</a>, <a href="https://www.beinsports.com/en-us/soccer/premier-league/articles/chelsea-5-1-bournemouth-henderson-leads-the-way-in-five-star-victory-2026-10-10">beIN Sports (Chelsea), Oct 10</a>, <a href="https://www.espn.com/soccer/report/_/gameId/401878775">ESPN, Oct 10</a>, <a href="https://tothelaneandback.com/2026/10/11/roberto-de-zerbi-tottenham-deserved-win-manchester-united/">To The Lane And Back, Oct 11</a>, <a href="https://www.mancity.com/news/mens/liverpool-v-city-premier-league-match-preview-october-2026-63926279">Man City preview</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal</span>
+          <h2 class="story-headline">Arsenal 2&ndash;1 Leeds: Calafiori levels and substitute Bruno Guimar&atilde;es strikes from distance as the champions draw level with City</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Arsenal came from behind at the Emirates on Saturday. James Justin gave Leeds the lead on 55 minutes, and <strong>Riccardo Calafiori</strong> equalized from close range seven minutes later after a Ben White header. Mikel Arteta then made a triple change, sending on Bruno Guimar&atilde;es, Viktor Gy&ouml;keres and Jurri&euml;n Timber. On 70 minutes <strong>Guimar&atilde;es</strong> finished a team move from outside the box for the winner, his second Premier League goal of the season and his second as a substitute. Havertz passed his late fitness test to start up front. Arsenal&rsquo;s xG was 2.58 to Leeds&rsquo; 0.68, and they move level with Manchester City on 15 points.</p>
+          <p>ArseBlog&rsquo;s report salutes a response after the Brighton defeat. Arteta said his side &ldquo;had a point to prove&rdquo; and got its identity back. On Guimar&atilde;es, he said the midfielder &ldquo;wasn&rsquo;t at that level at Brighton&hellip; today much better&rdquo; but is still short of full condition after missing pre-season. Guimar&atilde;es said he wants to give his manager &ldquo;a little bit of a headache.&rdquo; Down the age groups, the U18s beat Birmingham 3&ndash;2 and the U21s drew 2&ndash;2 with Sunderland, where Mylo Bernard made his U21 debut. <em>(The Athletic&rsquo;s Arsenal desk could not be reached this run; corroboration is from ESPN and dated match reports.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.news/2026/10/report-arsenal-2-1-leeds-inc-goals-2/">Arseblog News</a>, <a href="https://arseblog.news/2026/10/arsenal-u18s-win-again-while-u21s-draw-with-sunderland">Arseblog News (academy), Oct 11</a>, <a href="https://www.espn.com/soccer/report/_/gameId/401879268">ESPN, Oct 10</a>, <a href="https://www.espn.com/soccer/story/_/id/50147861/mikel-arteta-says-arsenal-got-identity-back-leeds-win-had-point-prove">ESPN (Arteta)</a>, <a href="https://readarsenal.com/2026/10/10/arteta-reaction-arsenal-2-1-leeds-guimaraes/">ReadArsenal, Oct 10</a></div>
+      </div>
+    </details>
+
+  </section>
+
+  <!-- MORNING:END -->
+
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
