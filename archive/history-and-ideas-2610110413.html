@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>History &amp; Ideas — Tailored News</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — History & Ideas (weekly)
+     Shares the daily-brief design system verbatim.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;
+    --take-left:    #5a6b7a;
+    --take-right:   #8a7350;
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:        #17140f;
+      --paper-raised: #201c15;
+      --ink:          #ece5d6;
+      --ink-soft:     #b3aa96;
+      --ink-faint:    #7c7361;
+      --rule:         #3a3427;
+      --rule-soft:    #2c281f;
+      --accent:       #d68a5f;
+      --take-left:    #7f92a3;
+      --take-right:   #b39a6f;
+      --take-left-bg:  #1c1f22;
+      --take-right-bg: #221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:        #17140f;
+    --paper-raised: #201c15;
+    --ink:          #ece5d6;
+    --ink-soft:     #b3aa96;
+    --ink-faint:    #7c7361;
+    --rule:         #3a3427;
+    --rule-soft:    #2c281f;
+    --accent:       #d68a5f;
+    --take-left:    #7f92a3;
+    --take-right:   #b39a6f;
+    --take-left-bg:  #1c1f22;
+    --take-right-bg: #221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 1.125rem;
+    line-height: 1.62;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  .page {
+    max-width: calc(var(--measure) + var(--pad) * 2);
+    margin: 0 auto;
+    padding: 0 var(--pad) 5rem;
+  }
+
+  /* ---------- Masthead ---------- */
+  .masthead {
+    text-align: center;
+    padding: 2.75rem 0 1.5rem;
+  }
+  .masthead-title {
+    font-size: clamp(2.5rem, 11vw, 4rem);
+    line-height: 0.95;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    margin: 0;
+  }
+  .masthead-subtitle {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-top: 0.7rem;
+  }
+  .masthead-rule {
+    border: 0;
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    height: 4px;
+    margin: 1.25rem auto 0;
+  }
+  .masthead-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    white-space: nowrap;
+    transition: border-color 0.15s;
+  }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Standfirst ---------- */
+  .standfirst {
+    max-width: 30rem;
+    margin: 2.5rem auto 0;
+    text-align: center;
+    font-style: italic;
+    font-size: 1.2rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    text-wrap: pretty;
+  }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3rem; }
+
+  /* ---------- Essay (story) ---------- */
+  .story {
+    border-top: 1px solid var(--rule-soft);
+    padding: 0.35rem 0;
+  }
+  .story:first-of-type {
+    border-top: 4px double var(--rule);
+    margin-top: 2.5rem;
+  }
+
+  .story > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 1.4rem 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: 1rem;
+  }
+  .story > summary::-webkit-details-marker { display: none; }
+
+  .story-domain {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.55rem;
+  }
+  .story-headline {
+    font-size: clamp(1.5rem, 5.5vw, 1.95rem);
+    line-height: 1.16;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .story-toggle {
+    font-family: var(--mono);
+    font-size: 1.4rem;
+    line-height: 1;
+    color: var(--ink-faint);
+    margin-top: 0.15rem;
+    transition: transform 0.2s ease;
+    user-select: none;
+  }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+
+  .story-body { padding-bottom: 1.75rem; }
+  .story-body p { margin: 0 0 1.1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  /* essayistic drop-cap on the opening paragraph */
+  .story-body > p:first-child::first-letter {
+    font-size: 3.1rem;
+    line-height: 0.8;
+    float: left;
+    padding: 0.05em 0.12em 0 0;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .sources {
+    font-family: var(--mono);
+    font-size: 0.64rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-top: 1.4rem;
+    padding-top: 0.6rem;
+    border-top: 1px dashed var(--rule);
+  }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Footer ---------- */
+  .colophon {
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 4px double var(--rule);
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    text-align: center;
+    line-height: 1.8;
+  }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) {
+    body { font-size: 1.1875rem; }
+  }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle {
+    position: fixed;
+    top: 0.9rem;
+    right: 0.9rem;
+    z-index: 20;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.8rem;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%);
+  }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">History &amp; Ideas</h1>
+    <div class="masthead-subtitle">A weekly reading from Tailored News</div>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Week of October 5, 2026</span>
+      <!-- edition: Sunday, October 11, 2026 -->
+      <a class="masthead-link" href="index.html">&larr; Back to the daily brief</a>
+    </div>
+  </header>
+
+  <p class="standfirst">Three longer reads for the week &mdash; the kind of thing worth turning over slowly with a second cup of coffee.</p>
+
+  <section class="section">
+
+    <!-- ESSAY 1 -->
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-domain">History &middot; Archaeology of the Ancient Mediterranean</span>
+          <h2 class="story-headline">A bronze ring from Cleopatra&rsquo;s sunken palace island carries a rare image of the lost Lighthouse of Alexandria</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <p>Divers from the European Institute for Underwater Archaeology (IEASM), working with Egypt&rsquo;s antiquities ministry, have recovered a <strong>bronze signet ring engraved with the Pharos</strong>, the great lighthouse of Alexandria. It came from the submerged island of <strong>Antirhodos</strong> in the city&rsquo;s eastern harbor, the site of a royal palace associated with Mark Antony and Cleopatra. The institute calls it the &ldquo;first of its kind known to exist.&rdquo; Its design matches the lighthouse on second-century coins, which suggests a date in roughly that period, though no firm date or owner has been given. Researchers think the ring was used to press the lighthouse&rsquo;s image into wax or clay, sealing letters and amphoras or validating documents. That would point to the palace having had administrative duties tied to the lighthouse itself.</p>
+        <p>The Pharos was one of the Seven Wonders of the ancient world and stood for more than 1,500 years before earthquakes toppled it. It is a strange kind of famous: everyone knows it existed, and almost nobody knows exactly what it looked like. Our picture rests on coins, mosaics, medieval Arab travelers&rsquo; descriptions and blocks hauled from the harbor floor. A seal is a different kind of evidence. It is a working object that someone used to put the tower&rsquo;s image on official business. The independent researcher Andrew Chugg has already read an asymmetric detail at the top of the engraving as a plume of smoke from a lamp held by the summit statue. That reading is speculative, but it shows how a thumb-sized object can still reopen arguments about a building that has been gone for 700 years.</p>
+        <div class="sources">Sources: <a href="https://archaeology.org/news/2026/10/08/ring-with-lighthouse-of-alexandria-image-recovered/">Archaeology Magazine, Oct 8</a>, <a href="https://www.thenationalnews.com/news/mena/2026/10/07/new-image-of-an-ancient-wonder-divers-find-ring-showing-lighthouse-of-alexandria-at-sunken-palace/">The National, Oct 7</a>, <a href="https://www.smithsonianmag.com/smart-news/this-one-of-a-kind-bronze-ring-offers-a-tantalizing-glimpse-at-the-lighthouse-of-alexandria-a-lost-wonder-of-the-ancient-world-180989661/">Smithsonian</a>, <a href="https://www.livescience.com/archaeology/ancient-egyptians/bronze-ring-with-lighthouse-of-alexandria-engraving-discovered-at-palace-on-submerged-island-in-egypt">Live Science</a></div>
+      </div>
+    </details>
+
+    <!-- ESSAY 2 -->
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-domain">Natural Sciences &middot; Human Origins</span>
+          <h2 class="story-headline">Spears, poles, bark trays and a club with no known parallel: a Spanish rock shelter gives the clearest view yet of the Neanderthals&rsquo; vanished woodwork</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <p>A team led by <strong>Palmira Saladi&eacute;</strong>, publishing in <em>Science Advances</em> on Oct.&nbsp;7, has catalogued <strong>597 wooden remains</strong> from 16 levels of <strong>Abric Rom&agrave;n&iacute;</strong>, a rock shelter near Barcelona occupied by Neanderthals roughly 62,000 to 40,000 years ago. Most of the wood rotted long ago. What survived are hollows in calcified sediment, first noticed in 1995, which the team filled with resin to cast the missing objects. Thirteen show deliberate working. They include structural poles that may have held up shelters, possible digging sticks, two spears with shafts deliberately cleaned of branches, and four concave pieces of charred bark that may have been trays for food or embers. There is also a club-like object with a distinct handle and head that has no known parallel. Scots pine dominates, but some possible containers are juniper, which suggests the makers chose woods for particular jobs.</p>
+        <p>The find matters because it fills a gap in the record. Wood was almost certainly most of what Neanderthals made and used, but stone is nearly all that survives, so our picture of them has been shaped by what lasts rather than what mattered. Prehistorians call this the &ldquo;invisible&rdquo; material culture. Glimpsing it at Abric Rom&agrave;n&iacute; shows people who planned ahead, chose materials for their properties and organized living space. It adds to a decades-long reappraisal that has steadily narrowed the cognitive gap once assumed between Neanderthals and our own species.</p>
+        <div class="sources">Sources: <a href="https://phys.org/news/2026-10-rare-wooden-tools-reveal-neanderthals.html">Phys.org, Oct 2026</a>, <a href="https://archaeologymag.com/2026/10/neanderthal-woodworking-was-more-advanced/">Archaeology Magazine (archaeologymag), Oct 2026</a>, <a href="https://www.science.org/content/article/neanderthals-were-skilled-woodworkers-first-its-kind-tool-trove-reveals">Science News</a>, <a href="https://gizmodo.com/a-wooden-club-and-other-rare-finds-reveal-invisible-side-of-neanderthal-life-2000822875">Gizmodo</a></div>
+      </div>
+    </details>
+
+    <!-- ESSAY 3 -->
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-domain">Philosophy &amp; Religion &middot; Political Thought</span>
+          <h2 class="story-headline">Before &ldquo;sustainability&rdquo; had a name, Barbara Ward argued that saving the planet and sharing its wealth were one moral project</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <p>In an Aeon essay published Oct.&nbsp;9, <strong>Or Rosenboim</strong>, a historian of political thought at the University of Bologna, makes the case for reviving <strong>Barbara Ward</strong> (1914&ndash;1981). Ward was a British economist and Catholic public intellectual who wrote <em>Spaceship Earth</em> (1966) and helped shape the 1972 UN Stockholm Conference on the Human Environment. Rosenboim argues that Ward was among the first to treat prosperity, equality between nations and the protection of nature as a single problem. Her proposals were concrete. She wanted rich countries to train local experts in poorer ones, ship them food surpluses, and give up about 1% of national income through a levy for global redistribution. Underneath them was one conviction: a planetary community needs moral unity, not just physical interconnection.</p>
+        <p>Religion is what makes the essay more than a recovered biography. In Rosenboim&rsquo;s reading, Ward&rsquo;s motive was moral and religious. Christianity was to supply the unity behind a new planetary order, though her later writing moved away from explicitly Christian framing. That raises a question for climate politics today, which talks endlessly about &ldquo;global justice&rdquo; but rarely says where the obligation comes from. Rosenboim&rsquo;s wider scholarship is candid that such mid-century visions rested on Western-centered moral assumptions. Ward&rsquo;s value may lie less in her answers than in her insistence that a shared planet makes a moral claim, not just an engineering problem.</p>
+        <div class="sources">Sources: <a href="https://aeon.co/essays/why-we-should-heed-barbara-wards-vision-of-planetary-justice">Aeon (Rosenboim), Oct 9</a>, <a href="https://intellectualhistory.web.ox.ac.uk/article/planetary-orders-and-global-divisions-in-the-political-thought-of-barbara-ward-1938-1979">Oxford Centre for Intellectual History (background)</a></div>
+      </div>
+    </details>
+
+  </section>
+
+  <footer class="colophon">
+    <div>Tailored News &middot; History &amp; Ideas &middot; Weekly</div>
+    <div><a href="index.html">&larr; Return to the daily brief</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+
+</body>
+</html>
