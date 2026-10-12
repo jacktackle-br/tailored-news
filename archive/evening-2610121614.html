@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Monday, October 12, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+
+<!-- EVENING:SLOT:START -->
+  <div class="edition-band"><span class="kick">The Evening Edition</span><span class="big">Evening Briefing</span><span class="when">Updated Monday, October 12, 2026</span></div>
+
+  <section class="section" id="evening-politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Justice Department &middot; Congress</span>
+          <h2 class="story-headline">Federal agents search Rep. Ilhan Omar&rsquo;s D.C.-area home three weeks before the midterms; she calls it an attempt to &ldquo;target political enemies&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Early on <strong>Monday</strong>, Homeland Security Investigations agents searched the Washington-area home of the Minnesota Democrat. The Justice Department said HSI carried out a &ldquo;judicially authorized search warrant secured by the Department of Justice&rdquo; as part of an &ldquo;ongoing federal criminal investigation.&rdquo; Its statement did not name Omar or say what crime is suspected. People familiar with the case told NPR, ABC and others that it concerns immigration paperwork filed by her late father when she came to the U.S. from Somalia as a child. NPR&rsquo;s sources described a multi-year probe that includes whistleblower complaints. Fox News first reported the search. Omar has not been charged.</p>
+          <p>Omar said the search was an attempt to &ldquo;weaponize federal law enforcement&rdquo; and that she &ldquo;will not be silenced.&rdquo; House Democratic leaders called it &ldquo;deeply disturbing.&rdquo; Asked about it, Trump said the search had &ldquo;nothing to do with me&rdquo; and was up to the Justice Department. The timing, 22 days before the Nov.&nbsp;3 election, raises the question of DOJ&rsquo;s election-year practice. Justice Manual &sect;9-85.500 bars timing investigative steps to influence an election. Long-standing practice also discourages overt steps involving candidates close to a vote, though there is no binding 60-day rule. A person familiar with the matter told CNBC that DOJ does not believe the policy was violated because the search was not meant to become public. It is not yet known whether the Public Integrity Section was consulted, as DOJ rules require for a search involving a member of Congress. Vice President Vance said in March that Omar &ldquo;definitely committed immigration fraud.&rdquo;</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Mother&nbsp;Jones&rsquo; same-day report presents the search as the end point of a long administration campaign against Omar. It points to Vance&rsquo;s and Homeland Security Secretary Markwayne Mullin&rsquo;s public statements that she is under investigation, and argues that DOJ has given no evidence or reason for acting this close to the election. Democratic voices quoted in coverage call it &ldquo;another hard norm out the window.&rdquo; <em>(No Vox, Slate or Guardian opinion piece found yet.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window National&nbsp;Review, Dispatch, WSJ editorial or Reason piece turned up; the search happened this morning. The administration&rsquo;s position, from DOJ&rsquo;s statement and earlier remarks by Vance and Mullin, is that a judge found probable cause and an existing fraud inquiry is simply running its course. <strong>From the anti-Trump right</strong>, The Bulwark&rsquo;s Monday &ldquo;MAGA Mondays&rdquo; episode (Sam Stein, Will Sommer) took up the search; it is a podcast, not a written argument. <em>(Partial.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/10/12/nx-s1-5998856/federal-agents-search-congressperson-home-dc-doj">NPR, Oct 12</a>, <a href="https://www.washingtonpost.com/nation/2026/10/12/federal-agents-search-rep-ilhan-omars-dc-home/">Washington Post, Oct 12</a>, <a href="https://www.cnn.com/2026/10/12/politics/ilhan-omar-search">CNN, Oct 12</a>, <a href="https://www.cnbc.com/2026/10/12/ilhan-omar-home-raided-dhs-immigration-investigation.html">CNBC, Oct 12</a>, <a href="https://www.axios.com/2026/10/12/ilhan-omar-search-immigration">Axios, Oct 12</a>, <a href="https://jeffries.house.gov/2026/10/12/joint-democratic-leadership-statement-on-the-raid-on-ilhan-omars-home/">House Democratic leadership statement, Oct 12</a>, <a href="https://www.motherjones.com/politics/2026/10/dhs-ilhan-omar-homeland-security-raid-allegations-investigation-doj-minnesota/">Mother Jones</a>, <a href="https://www.thebulwark.com/p/maga-mondays-the-spectacularly-stupid">The Bulwark</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">State Department &middot; Ethics</span>
+          <h2 class="story-headline">Trump goes on record about Guilfoyle: &ldquo;We&rsquo;re looking at it&hellip; We&rsquo;re not happy&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On <strong>Monday</strong>, reporters asked Trump on his way to a rally in Youngstown, Ohio, whether he is considering firing Kimberly Guilfoyle as ambassador to Greece. &ldquo;Well, we&rsquo;re looking at it,&rdquo; he said. &ldquo;We&rsquo;re not happy.&rdquo; This morning&rsquo;s report rested on an anonymous AP source; now the president has confirmed on the record that her job is under review. No decision had been announced as of this evening. The AP source had said one was likely this week, after the holiday. CBS reports that some Trump aides are unhappy with her conduct.</p>
+          <p>The State Department inspector general is reported to be investigating. Reporting says the probe covers her treatment of embassy staff, private travel, gifts and dealings with business interests. Trump donor Eric Deters says that before her confirmation hearing Guilfoyle asked him to pay a <strong>$100,000</strong> American Express bill. Her lawyers deny the allegations, say Deters owed her money for speeches and consulting, and call reports about her travel misleading.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No new in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece turned up after Trump&rsquo;s remarks. The left&rsquo;s case, set out last week, is that the allegations amount to selling access and show that corruption reaches well beyond the president. <em>(No new pieces in window.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window National&nbsp;Review, Dispatch, WSJ editorial or Reason piece found. National Review&rsquo;s Morning Jolt argued earlier that Guilfoyle was never qualified for the post, and Reason argued last week that she should resign or be removed. <em>(Both predate the window.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/politics/2026/10/12/trump-says-he-might-fire-his-ambassador-greece-kimberly-guilfoyle/">Washington Post, Oct 12</a>, <a href="https://www.cnbc.com/2026/10/12/trump-kimberly-guilfoyle-ambassador.html">CNBC, Oct 12</a>, <a href="https://www.bloomberg.com/news/articles/2026-10-12/trump-says-he-s-looking-into-guilfoyle-allegations-not-happy">Bloomberg, Oct 12 (partial &mdash; paywalled)</a>, <a href="https://www.cbsnews.com/news/trump-says-hes-looking-at-firing-kimberly-guilfoyle/">CBS News</a>, <a href="https://www.washingtontimes.com/news/2026/oct/12/trump-considering-firing-ambassador-kimberly-guilfoyle-says-hes-not/">Washington Times, Oct 12</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Courts &middot; Washington</span>
+          <h2 class="story-headline">Judge halts tree-cutting at D.C.&rsquo;s historic East Potomac Golf Course for 24 hours, saying the government misled her over the holiday weekend</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On <strong>Monday</strong>, U.S. District Judge Ana Reyes ordered the administration to stop work for 24 hours at the East Potomac Golf Course, part of Trump&rsquo;s plans to remake the capital. She said the order could be extended to 14 days. Trump had recently ordered the National Park Service to cut down more than <strong>500 trees</strong> there. The ruling followed a tense three-hour hearing in which Reyes accused the government of deceiving her with what it did over the holiday weekend. &ldquo;I am thoroughly unamused right now,&rdquo; she said, according to the AP. She had earlier turned down the plaintiffs&rsquo; repeated motions to stop the work.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece found. Critics quoted in coverage see a pattern: the administration moves ahead on projects before courts can rule. <em>(No listed-outlet pieces.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window National&nbsp;Review, Dispatch, WSJ editorial or Reason piece found. Available coverage does not include a government response to the order. <em>(No listed-outlet pieces.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.baltimoresun.com/2026/10/12/trump-golf-course-work-halt/">AP (via Baltimore Sun), Oct 12</a>, <a href="https://www.clickorlando.com/news/politics/2026/10/12/federal-judge-orders-trump-administration-to-halt-work-for-a-day-on-historic-dc-golf-course/">AP (via ClickOrlando), Oct 12</a></div>
+      </div>
+    </details>
+  </section>
+
+  <section class="section" id="evening-foreign">
+    <div class="section-header"><span class="section-label">Global Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Russia &middot; Ukraine</span>
+          <h2 class="story-headline">Kremlin rejects Zelensky&rsquo;s offer of a 60-day truce to hold elections, offering a one-day pause instead, as Russia hits six energy sites</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On <strong>Monday</strong>, Kremlin spokesman Dmitry Peskov rejected Zelensky&rsquo;s offer, made on ABC&rsquo;s <em>This Week</em>, to hold an election if Russia agreed to a full <strong>60-day ceasefire</strong>. Peskov said Moscow does not want a ceasefire but a broader settlement. He argued Kyiv wanted the pause to regroup and &ldquo;heal their wounds&rdquo; rather than to vote. Peskov said Putin would be willing not to strike on election day itself. He declined to comment on the &ldquo;energy ceasefire&rdquo; Trump announced Sunday. Ukrainian law bars elections while martial law is in force.</p>
+          <p>Zelensky said Russia hit <strong>six energy facilities</strong> in a single day, wounding <strong>33</strong> people. He said it is &ldquo;increasingly evident that Russia is unwilling to accept an energy ceasefire.&rdquo; Ukrenergo reported new power cuts in the Kharkiv, Donetsk and Zaporizhzhia regions. Foreign Minister Sergei Lavrov was quoted as saying Ukraine did not deserve the &ldquo;respite&rdquo; a truce would bring.</p>
+          <p><em>Analysis:</em> Russia is rejecting a truce outright while leaving Trump&rsquo;s energy-only deal publicly unanswered. That leaves Washington pressing Kyiv to stop refinery strikes without any confirmed Russian commitment in return. The one-day election-day offer looks designed to keep Trump&rsquo;s push for new Ukrainian elections alive without giving up anything militarily.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/10/12/nx-s1-5998614/trump-russia-ukraine-energy-ceasefire">NPR, Oct 12</a>, <a href="https://www.irishtimes.com/world/europe/2026/10/12/kremlin-rejects-ukraines-offer-of-a-60-day-truce-and-presidential-elections/">Irish Times (Reuters), Oct 12</a>, <a href="https://www.cbsnews.com/news/ukraine-zelenskyy-russia-unwilling-energy-ceasefire/">CBS News</a>, <a href="https://www.aljazeera.com/news/2026/10/12/ukraines-zelenskyy-accuses-russia-of-violating-trumps-energy-ceasefire">Al Jazeera, Oct 12</a>, <a href="https://www.ukrinform.net/rubric-ato/4173652-russia-attacks-six-ukrainian-energy-facilities-today-zelensky-says.html">Ukrinform</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Iran &middot; United Kingdom</span>
+          <h2 class="story-headline">UK Prime Minister Burnham says the RAF Fairford plot was &ldquo;almost certainly directed&rdquo; by Iran&rsquo;s Revolutionary Guard and sanctions two Iranians</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On <strong>Monday</strong>, Prime Minister Andy Burnham told Parliament the suspected plot against RAF Fairford was &ldquo;highly likely&rdquo; to have been coordinated in Iran and &ldquo;almost certainly directed&rdquo; by the IRGC. U.S. forces use the base. London sanctioned two people. One is Ruhollah Bazghandi, described by the Foreign Office as the IRGC&rsquo;s head of counterespionage operations, who faces an asset freeze and travel ban. The other is Shahram Ali Reza Tamarzadeh Jakki, who is linked to the already-sanctioned Zindashti criminal network. Iran&rsquo;s ambassador was summoned; Tehran denies involvement and asks for evidence. Seven men have been arrested in the case. All have been released on bail and none charged, and police found gasoline but no explosives in the suspects&rsquo; vehicles. Some outlets report that a joint statement from 29 countries also blamed Iran.</p>
+          <p>Also on Monday, Iran&rsquo;s foreign ministry spokesman Esmaeil Baghaei said Tehran is still reviewing Washington&rsquo;s reply to its Strait of Hormuz proposal and will respond through mediators. The day before, security official Mohsen Rezaei had called the U.S. response &ldquo;inadequate.&rdquo; Baghaei said security will not return to the strait while the U.S. blockade continues.</p>
+          <p><em>Analysis:</em> Britain directly blaming the IRGC for a plot on its own soil, and sanctioning a named Guard official, adds a European front to pressure on Tehran. Iran&rsquo;s mixed signals on Hormuz suggest the indirect talks have stalled, not collapsed.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.nbcnews.com/world/europe/us-uk-airbase-iran-security-incident-fairford-burnham-irgc-rcna603043">NBC News (AP), Oct 12</a>, <a href="https://www.cbsnews.com/news/uk-fairford-air-base-iran-played-part-incident-pm-burnham-says/">CBS News</a>, <a href="https://www.thenationalnews.com/news/uk/2026/10/12/iran-smells-weakness-burnham-challenged-over-irgc-after-airbase-plot/">The National, Oct 12</a>, <a href="https://www.haaretz.com/middle-east-news/iran/2026-10-12/ty-article/iran-says-u-s-response-to-its-proposal-to-reopen-hormuz-was-insufficient/000001a1-2f0b-d7a5-a7b1-bf5be81f0000">Haaretz (Reuters), Oct 12</a></div>
+      </div>
+    </details>
+  </section>
+
+  <div class="edition-return">Earlier today &mdash; the Morning Brief &darr;</div>
+<!-- EVENING:SLOT:END -->
+
+  <!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Courts &middot; Midterms</span>
+          <h2 class="story-headline">A federal judge orders the administration to cancel its taxpayer-funded promotional TV ads and stop spending the rest of the $20 million budget</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On <strong>Sunday evening</strong>, U.S. District Judge Jennifer Rochon in Manhattan issued a <strong>14-day temporary restraining order</strong> against the Department of Homeland Security&rsquo;s ad campaign, as reported by the AP and others. The order cancels remaining broadcasts and bars any further spending from the campaign&rsquo;s <strong>$20 million</strong> budget. It also bars the government from entering, renewing or expanding contracts to produce or distribute the ads. Government filings show about <strong>$19 million</strong> had already been spent. The plaintiffs are Common Cause, SEIU 32BJ and its PAC, and an Alabama state House candidate, represented by Democracy Forward. Rochon found they were &ldquo;likely to succeed on the merits.&rdquo;</p>
+          <p>The administration had said the ads would end Sunday night anyway. In a Friday filing, Justice Department lawyers argued that emergency relief was unnecessary and that the plaintiffs lacked standing. The judge rejected both arguments, so the administration cannot extend or restart the campaign while the case proceeds. The finding is preliminary, and the merits are still to be argued. A separate Democratic National Committee suit is pending in Washington. Reports say the White House will not reimburse the money already spent.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece on the ruling turned up; it came late Sunday. The plaintiffs&rsquo; argument, quoted in coverage, is the one the left will press: an agency is spending public money on what amounts to campaign advertising weeks before the midterms. <em>(No listed opinion-outlet pieces found.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window National&nbsp;Review, Dispatch, WSJ editorial or Reason piece turned up. The government&rsquo;s position, from its filings, is that the campaign was ending anyway and the plaintiffs had no standing to sue. <em>(Government&rsquo;s argument only; no listed-outlet pieces found.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.ksat.com/news/politics/2026/10/12/judge-orders-the-trump-administration-to-cancel-taxpayer-funded-promotional-tv-ads/">AP (via KSAT), Oct 12</a>, <a href="https://www.cnbc.com/2026/10/11/trump-ads-dhs-judge-order.html">CNBC, Oct 11</a>, <a href="https://cnn.com/2026/10/11/politics/trump-taxpayer-funded-ads-stop">CNN, Oct 11</a>, <a href="https://www.axios.com/2026/10/12/trump-taxpayer-funded-ads-judge-order">Axios, Oct 12</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">State Department &middot; Ethics</span>
+          <h2 class="story-headline">Trump and Rubio are weighing firing Kimberly Guilfoyle as ambassador to Greece, with a decision likely after the holiday, an AP source says</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>A senior U.S. official told the AP on <strong>Sunday</strong> that President Trump and Secretary of State Marco Rubio are considering removing Guilfoyle after a string of reports of improper and possibly illegal conduct, both before and during her posting in Athens. The official said both men are &ldquo;extremely pissed off&rdquo; and that a decision is likely after Monday&rsquo;s Columbus Day holiday. Rubio was reportedly especially angry because Guilfoyle attended most of his events in Athens last week while the reports were circulating. A second official said the State Department inspector general is looking at the allegations, but could not say whether a formal probe has opened.</p>
+          <p>The allegations come mostly from <em>The Wall Street Journal</em>. Before her confirmation hearing, Guilfoyle allegedly asked Trump donor Eric Deters to pay a <strong>$100,000</strong> American Express bill in return for help with his tax and legal problems; Deters says he never sent the money. Other reports allege improper gifts, a threat against a host-country official, and promotion of a Greek construction and energy company. Her lawyer says she did nothing wrong and disputes that the messages are authentic. Rep. Gregory Meeks and Sen. Jeanne Shaheen have opened inquiries. On Friday, asked by CNN, Trump offered no defense of her.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Mother&nbsp;Jones (&ldquo;Kimberly Guilfoyle&rsquo;s grifting scandal keeps getting worse&rdquo;) reads Trump&rsquo;s lukewarm &ldquo;she was always very nice&rdquo; as a sign her job is in danger. Slate argues the episode shows corruption in the administration runs well beyond the president himself. <em>(Both pieces are from this month, but neither could be dated to the window; they predate Sunday&rsquo;s report.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>The libertarian Reason argued last week that Guilfoyle&rsquo;s &ldquo;grift is at least as offensive as Hunter Biden&rsquo;s&rdquo; and that she should resign or be impeached and removed <em>(Oct 8, before the window)</em>. <strong>From the anti-Trump right</strong>, The Bulwark&rsquo;s Andrew Egger (&ldquo;Our Big Fat Greek Bribery Scandal&rdquo;) calls it open access-selling: &ldquo;shocking, damning, and&mdash;by now&mdash;chump change&rdquo; <em>(undated; partial)</em>. No in-window National&nbsp;Review, Dispatch or WSJ editorial piece found.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/politics/2026/10/11/trump-rubio-guilfoyle/8dbe386c-c597-11f1-aefb-abe4112d087e_story.html">AP (via Washington Post), Oct 11</a>, <a href="https://www.cnn.com/2026/10/11/politics/trump-considering-whether-to-fire-guilfoyle-source-says">CNN, Oct 11</a>, <a href="https://time.com/article/2026/10/12/kimberly-guilfoyle-controversy-explainer-trump-rubio/">TIME, Oct 12</a>, <a href="https://reason.com/2026/10/08/kimberly-guilfoyles-grift-is-at-least-as-offensive-as-hunter-bidens/">Reason, Oct 8</a>, <a href="https://www.motherjones.com/politics/2026/10/kimberly-guilfoyles-grifting-scandal-keeps-getting-worse/">Mother Jones</a>, <a href="https://www.thebulwark.com/p/our-big-fat-greek-bribery-scandal-kimberly-guilfoyle">The Bulwark</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Ukraine Policy &middot; White House</span>
+          <h2 class="story-headline">Zelensky says Russian strikes continued after Trump&rsquo;s &ldquo;energy ceasefire&rdquo; post, as reports say Washington threatened to cut intelligence over Kyiv&rsquo;s refinery hits</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On <strong>Monday</strong>, Zelensky said Russia had kept hitting Ukrainian energy sites after Trump&rsquo;s Sunday announcement on Truth Social: &ldquo;Effective immediately, there is an ENERGY CEASEFIRE&hellip; Both parties have agreed.&rdquo; Zelensky said Kyiv would honor a truce if Moscow did, according to the AP. Trump gave no terms. A White House official said it referred to a possible deal under which both sides stop attacking oil refineries, with power plants and grids possibly to follow. Kremlin spokesman Dmitry Peskov said only that &ldquo;contacts are ongoing.&rdquo; Trump made a similar claim in mid-September that neither side confirmed.</p>
+          <p>Behind the announcement is a pressure campaign on Kyiv. CNN, citing two European officials, reported Sunday that the U.S. warned it could suspend intelligence sharing, and European purchases of U.S. weapons for Ukraine, if Ukraine keeps striking Russian refineries. On Saturday Trump said Zelensky &ldquo;better damn well stop&rdquo; and that &ldquo;it&rsquo;s time for Ukraine to get a new president.&rdquo; The dispute follows the Oct.&nbsp;9 Treasury waiver allowing Russian diesel sales through April 2027. On NBC&rsquo;s <em>Meet the Press</em>, Sen. Thom Tillis said there is a legitimate argument that the diesel plan doesn&rsquo;t follow the law.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece on the ceasefire claim or the intelligence threat turned up. Earlier left commentary this month argued that Trump is blaming Ukraine, rather than his Iran war, for rising fuel prices. <em>(Not in window.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window National&nbsp;Review, Dispatch, WSJ editorial or Reason piece found. Several GOP senators have already broken with the White House on the diesel waiver. <strong>From the anti-Trump right</strong>, The Bulwark argues that waiving sanctions on Russian fuel weeks after Trump signed a Russia sanctions bill helps pay for Putin&rsquo;s war and risks a rupture with Kyiv. <em>(Bulwark piece undated; roughly a day old by index.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/10/12/nx-s1-5998614/trump-russia-ukraine-energy-ceasefire">NPR, Oct 12</a>, <a href="https://www.washingtonpost.com/world/2026/10/12/russia-ukraine-energy-strikes-trump-ceasefire/09f66e78-c614-11f1-aefb-abe4112d087e_story.html">AP (via Washington Post), Oct 12</a>, <a href="https://www.washingtonpost.com/business/2026/10/11/russia-ukraine-war-yandex-trump-zelenskyy/7c73755c-c54e-11f1-aefb-abe4112d087e_story.html">AP (via Washington Post), Oct 11</a>, <a href="https://cnn.com/2026/10/11/politics/ukraine-us-weapons-intelligence">CNN, Oct 11</a>, <a href="https://www.thebulwark.com/p/trumps-putin-deal-is-a-disgraceful">The Bulwark</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Yemen &middot; Saudi Arabia</span>
+          <h2 class="story-headline">Houthis hit Riyadh&rsquo;s airport again a day after a strike that killed 12, including an American; Riyadh vows a &ldquo;decisive&rdquo; response and Trump weighs joining</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On <strong>Sunday</strong>, a projectile struck Terminal&nbsp;4 of King Khalid International Airport. Saudi aviation authorities said it killed a Pakistani resident and wounded 11. The day before, a missile strike on the terminal 3&ndash;4 complex killed <strong>12</strong> and wounded <strong>309</strong>, Saudi authorities said, and Secretary of State Rubio confirmed a U.S. citizen among the dead. Reports say an Indian national died of injuries on Sunday, which would take that toll to 13. A Thursday strike had already killed three. The Houthis claimed the attacks as retaliation for Saudi strikes on Sanaa and Hodeidah airports, and warned airlines that Saudi airports are &ldquo;potential targets.&rdquo; Hundreds of flights have been cancelled, and Riyadh schools moved online for a week.</p>
+          <p>The Saudi-led coalition called Saturday&rsquo;s strike a &ldquo;full-fledged war crime&rdquo; and vowed to respond &ldquo;decisively.&rdquo; Asked whether the U.S. would join strikes in Yemen, Trump said, &ldquo;We may. We&rsquo;re going to look at it.&rdquo; The U.S. currently provides intelligence, targeting help and about 100 advisers, but no airstrikes. UN envoy Hans Grundberg called the attack &ldquo;a grave escalation.&rdquo; As of Monday, the Houthis said airstrikes had hit Sanaa and blamed Saudi Arabia, which has not confirmed.</p>
+          <p><em>Analysis:</em> Repeated mass-casualty strikes on a capital&rsquo;s main airport make a direct U.S. role in the Yemen war more likely. Combined with the closed Strait of Hormuz, the Gulf now has two live fronts. The Saudi&ndash;Pakistan&ndash;Turkey defense pact activated on Oct.&nbsp;5 adds another way the war could widen.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/world/2026/10/11/saudi-arabia-vows-retaliation-against-houthis-after-riyadh-airport-strike/">Washington Post, Oct 11</a>, <a href="https://www.npr.org/2026/10/10/nx-s1-5997512/saudi-arabia-riyadh-airport-bombing-attack">NPR, Oct 10</a>, <a href="https://www.aljazeera.com/news/2026/10/11/yemen-fighting-expands-as-houthis-attack-saudi-airport-what-to-know">Al Jazeera, Oct 11</a>, <a href="https://www.aljazeera.com/news/liveblog/2026/10/12/iran-war-live-riyadh-airport-hit-again-tehran-says-us-reply-inadequate">Al Jazeera live, Oct 12</a>, <a href="https://www.csmonitor.com/World/Middle-East/2026/1011/houthis-saudi-arabia-yemen-airport-attack-iran">CS Monitor, Oct 11</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Pakistan</span>
+          <h2 class="story-headline">Pakistan declares emergency rule in Khyber Pakhtunkhwa and suspends the Imran Khan party&rsquo;s provincial government ahead of a march on Islamabad</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On <strong>Sunday</strong>, President Asif Ali Zardari declared a state of emergency in Khyber Pakhtunkhwa and suspended its government, led by Khan&rsquo;s PTI party. He acted on the advice of Prime Minister Shehbaz Sharif&rsquo;s cabinet under Articles 232 and 234 of the constitution. The PM&rsquo;s office cited the &ldquo;provincial government&rsquo;s deliberate disengagement from the fight against terrorism.&rdquo; Governor Faisal Karim Kundi takes executive power for an initial six months with an advisory council. Parliament must take up the emergency in a joint sitting within 30 days.</p>
+          <p>The move came as PTI began a march on Islamabad demanding the jailed former prime minister&rsquo;s release. Hundreds of activists and three of Khan&rsquo;s sisters were detained beforehand. A PTI lawmaker said Chief Minister Sohail Afridi was arrested; that is unconfirmed. PTI&rsquo;s spokesperson called the emergency &ldquo;more of a coup disguised as emergency.&rdquo; Protests were reported, and mobile data was slowed or cut in parts of the province.</p>
+          <p><em>Analysis:</em> Removing the main opposition party&rsquo;s elected government in a militancy-hit border province is the state&rsquo;s sharpest move yet against Khan&rsquo;s movement. It comes as Pakistan is also committing forces to Saudi Arabia&rsquo;s defense.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/world/2026/10/11/pakistan-khan-march-khyber-pakhtunkhwa/10de2650-c555-11f1-aefb-abe4112d087e_story.html">Washington Post, Oct 11</a>, <a href="https://www.aljazeera.com/news/2026/10/11/pakistan-imposes-emergency-rule-in-khyber-pakhtunkhwa">Al Jazeera, Oct 11</a>, <a href="https://www.aljazeera.com/news/2026/10/12/what-do-emergency-and-governor-rule-in-pakistans-khyber-pakhtunkhwa-mean">Al Jazeera explainer, Oct 12</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Korean Peninsula</span>
+          <h2 class="story-headline">North Korea fires multiple ballistic missiles, one flying more than 900&nbsp;km, in its fourth launch in about a month</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On <strong>Monday morning</strong> local time, North Korea fired several ballistic missiles from the Pyongyang area toward the sea east of the peninsula, South Korea&rsquo;s Joint Chiefs of Staff said. Japan&rsquo;s Defense Ministry counted at least two. One reached about 70&nbsp;km in altitude and flew more than <strong>910&nbsp;km</strong>. Both landed outside Japan&rsquo;s exclusive economic zone, and no damage was reported. A Japanese deputy defense minister suggested one may have been a hypersonic weapon. Seoul&rsquo;s presidential office called the launch a violation of UN Security Council resolutions.</p>
+          <p>It follows an Oct.&nbsp;3 launch from Wonsan described as a hypersonic intermediate-range missile, and the South&rsquo;s own first hypersonic missile test last week, overseen by President Lee Jae Myung. Tensions are also high over a Sept.&nbsp;21 landmine blast in the DMZ that wounded three South Korean soldiers. A joint Seoul&ndash;UN probe blamed the North; Pyongyang denies it.</p>
+          <p><em>Analysis:</em> The two Koreas are now matching each other&rsquo;s hypersonic tests while U.S. attention and assets are pulled toward the Gulf. <em>(No Tier-1 copy found yet; reporting relies on AFP, Jiji, the Japan Times and Al Jazeera.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.japantimes.co.jp/news/2026/10/12/japan/north-korea-multiple-ballistic-missiles-launch/">Japan Times, Oct 12</a>, <a href="https://www.france24.com/en/asia-pacific/20261012-north-korea-ballistic-missiles-sea-japan-seoul">France 24/AFP, Oct 12</a>, <a href="https://www.aljazeera.com/news/2026/10/12/north-korea-fires-multiple-ballistic-missiles-towards-the-sea">Al Jazeera, Oct 12</a>, <a href="https://www.nippon.com/en/news/yjj2026101200185/">Jiji, Oct 12</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE, TECH, ENERGY & CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">AI &middot; Deals</span>
+          <h2 class="story-headline">Amazon is in talks to buy AI video startup Decart for about $7 billion, the Wall Street Journal reports</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The <em>Wall Street Journal</em> reported on <strong>Sunday</strong> that Amazon is negotiating to acquire Decart for roughly <strong>$7 billion</strong>. Decart was founded in Israel, is based in San Francisco, and builds real-time AI video-editing and interactive &ldquo;world simulation&rdquo; models. No deal has been signed. One could come soon if talks hold and no rival bidder appears. Reuters, relaying the report, said Amazon and Decart did not respond to requests for comment and that it could not independently verify the report.</p>
+          <p>Decart has drawn interest from several big buyers. Anthropic did due diligence on a deal of about $6 billion before walking away in September. Nvidia, an investor, earlier held exclusive talks that collapsed. Nvidia joined Decart&rsquo;s $300 million round in May, which valued the company near $4 billion. Amazon has given Decart early access to its in-house Trainium AI chips.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.ksl.com/article/51635095/amazon-in-talks-to-buy-ai-startup-decart-for-around-7-billion-wsj-reports">Reuters (via KSL), Oct 11</a>, <a href="https://www.aol.com/articles/amazon-talks-buy-ai-startup-211649000.html">Reuters (via AOL), Oct 11</a>, <a href="https://www.calcalistech.com/ctechnews/article/ec25jzet0">Calcalist</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">EVs &middot; China</span>
+          <h2 class="story-headline">China&rsquo;s September EV sales hit a 2026 high on a surge in exports, even as domestic car sales slump</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Data released <strong>Monday</strong> by the China Association of Automobile Manufacturers (CAAM) show new-energy-vehicle sales of <strong>1.823 million</strong> in September. That is up 13.6% year on year and the best month of 2026. NEV exports reached <strong>571,000</strong>, up about 160%. According to the AP, total passenger-car exports rose 64% to about 919,000, driven by plug-in hybrids and battery EVs, while domestic passenger-car sales fell about 27%. Sales of conventional gasoline passenger cars dropped 47%.</p>
+          <p>Retail figures from the China Passenger Car Association show the same split. Domestic NEV retail sales fell 16.7% to 1.084 million, a ninth straight monthly decline, even as NEVs hit a record <strong>67%</strong> share of the shrinking market. Analysts quoted by the AP expect Chinese automakers to keep shifting production overseas to get around tariffs.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://abcnews.com/International/wireStory/chinese-carmakers-increasingly-rely-overseas-markets-september-exports-137187155">AP (via ABC News), Oct 12</a>, <a href="https://cnevpost.com/2026/10/12/china-sept-2026-nev-sales-caam/">CnEVPost (CAAM), Oct 12</a>, <a href="https://cnevpost.com/2026/10/12/china-sept-2026-nev-retail-cpca/">CnEVPost (CPCA), Oct 12</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Chips &middot; Earnings Preview</span>
+          <h2 class="story-headline">TSMC is expected to post a sixth straight record quarterly profit on AI chip demand when it reports Thursday</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>TSMC, which makes most of the world&rsquo;s advanced AI chips, reports third-quarter results on <strong>Thursday</strong>. An LSEG SmartEstimate drawn from 16 analysts sees net profit up <strong>65%</strong> to T$746.3 billion (about US$23.4 billion), according to Reuters. That would be a company record and its 11th straight quarter of profit growth. The company has already reported record revenue for the quarter, up 50% year on year. Analysts point to demand for leading-edge capacity and CoWoS advanced packaging.</p>
+          <p>Morgan Stanley expects TSMC to raise its full-year revenue growth forecast to the low-to-mid-40% range. Investors also expect questions on a possible Texas expansion, after Elon Musk said TSMC could sublease part of his planned &ldquo;Terafab&rdquo; complex. <em>(This is a preview; the results come later this week.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.933thedrive.com/2026/10/11/tsmc-expected-to-report-sixth-straight-quarter-of-record-profit-thanks-to-ai-boom/">Reuters (syndicated), Oct 11</a>, <a href="https://www.investing.com/news/stock-market-news/tsmc-expected-to-report-sixth-straight-quarter-of-record-profit-thanks-to-ai-boom-4943004">Reuters (via Investing.com)</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Energy Policy &middot; Permitting</span>
+          <h2 class="story-headline">The Senate&rsquo;s bipartisan permitting bill splits environmental groups from the clean-energy industry ahead of a November floor push</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The Bipartisan American Affordability and Jobs Act of 2026 (S.&nbsp;5653) is a 417-page bill from Sens. Capito, Lee, Heinrich and Whitehouse. It would speed permitting for solar farms, power lines and oil and gas pipelines, make it harder for a future administration to revoke permits, and narrow environmental (NEPA) reviews and litigation. Sen. Heinrich says it would also make large data centers pay for the grid upgrades they need. Floor consideration is expected in early November through a manager&rsquo;s amendment, with the House to follow.</p>
+          <p>Fossil-fuel and renewable industries are aligned in support, Fortune reported <strong>Sunday</strong>. Clean-energy backers argue its technology-neutral transmission and interconnection provisions could unlock tens of gigawatts of stalled clean power. Some green groups call it a giveaway to fossil fuels that weakens state and tribal authority. <em>(The bill text dates from Sept.&nbsp;30; what is new is how the coalitions are lining up.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://fortune.com/2026/10/11/energy-permitting-ai-fossil-fuels-clean-power-environmentalists/">Fortune, Oct 11</a>, <a href="https://www.rigzone.com/news/rep_dem_senators_release_bipartisan_permitting_bill-01-oct-2026-184751-article/">Rigzone, Oct 1</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">MLB Postseason &middot; NLCS</span>
+          <h2 class="story-headline">Turang homers off Skubal and Milwaukee&rsquo;s bullpen holds on as the Brewers beat the Dodgers 2&ndash;1 in NLCS Game 1</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Milwaukee took Game&nbsp;1 on <strong>Sunday night</strong>. Brice Turang tied it with a fourth-inning homer off Dodgers starter Tarik Skubal, the game&rsquo;s only home run. Luis Lara put the Brewers ahead with an RBI single up the middle in the fifth. Starter Jacob Misiorowski got 13 outs, allowing one run, with key double plays early. The bullpen then shut the Dodgers out. Los Angeles hit into three double plays and did little with runners in scoring position. The win snapped Milwaukee&rsquo;s seven-game postseason losing streak against the Dodgers, which included last year&rsquo;s NLCS sweep. Game&nbsp;2 is Monday afternoon, with Yoshinobu Yamamoto starting for L.A. The ALCS, Cleveland at Tampa Bay, opens Monday night.</p>
+          <p>In the NFL, Sunday Night Football went to overtime. Baltimore beat Atlanta <strong>30&ndash;23</strong>, with backup Tyler Huntley, starting for the injured Lamar Jackson, leading touchdown drives on the Ravens&rsquo; last two possessions of regulation to tie it. Derrick Henry ran for 102 yards and a score. Falcons quarterback Michael Penix Jr. left with a rib injury. The win puts the Ravens alone atop the AFC North.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.wsls.com/sports/2026/10/12/turang-homers-and-milwaukees-bullpen-delivers-as-the-brewers-beat-the-dodgers-2-1-in-nlcs-opener/">AP (via WSLS), Oct 12</a>, <a href="https://www.espn.com/mlb/story/_/id/50163790/brice-turang-bullpen-lift-brewers-dodgers-game-1">ESPN</a>, <a href="https://www.mlb.com/news/brewers-win-nlcs-game-1-2026">MLB.com</a>, <a href="https://www.espn.com/nfl/recap?gameId=401872993">ESPN (Ravens&ndash;Falcons), Oct 11</a>, <a href="https://www.nbcsports.com/nfl/profootballtalk/rumor-mill/news/sunday-night-football-ravens-come-back-to-beat-falcons-in-ot-30-23">ProFootballTalk</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">English Football &middot; Premier League</span>
+          <h2 class="story-headline">Man City win 3&ndash;0 at ten-man Liverpool to stay perfect under Maresca and go three points clear</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Sunday&rsquo;s game at Anfield turned on <strong>62 minutes</strong>, when Ryan Gravenberch was sent off for a second yellow card that NBC called harsh. Within 16 minutes City scored three: Erling Haaland (65&prime;), Jeremy Doku (68&prime;) and Rayan Cherki (78&prime;). City have now won all six league games under Enzo Maresca. It was their first match since being found guilty on the Premier League&rsquo;s long-running financial charges, a story that will not go away. Liverpool, under Andoni Iraola, suffered his first defeat and sit on 9 points from six games.</p>
+          <p>The result moves City three points clear of Arsenal at the top after the weekend&rsquo;s return from the international break. <em>(BBC Sport could not be reached for this edition; recap details are from ESPN, NBC Sports and Liverpool FC.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.nbcsports.com/soccer/live/liverpool-vs-manchester-city-live-updates-score-goals-highlights-stats-2026-october-11">NBC Sports, Oct 11</a>, <a href="https://www.espn.com/soccer/match/_/gameId/401879264/manchester-city-liverpool">ESPN, Oct 11</a>, <a href="https://www.liverpoolfc.com/news/match-report-liverpool-man-city-premier-league-anfield">Liverpool FC</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal</span>
+          <h2 class="story-headline">Hincapi&eacute; injury scare clouds the Leeds comeback as Arsenal, now three points behind City, turn to Lille in the Champions League</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Arseblog News reports that <strong>Piero Hincapi&eacute;</strong> appeared to pick up an injury after coming on for Riccardo Calafiori in Saturday&rsquo;s 2&ndash;1 win over Leeds. He is now a doubt for the midweek Champions League game against Lille, and Arteta is expected to give an update at his Monday press conference. Arsenal are already without Christos Tzolis for a few weeks with a muscle problem picked up on international duty. Ben White is back from his groin injury and set up Calafiori&rsquo;s equalizer.</p>
+          <p>On the Arsecast Extra, the fan mood centered on relief after the heavy loss at Brighton before the break, and on Bruno Guimar&atilde;es, whose home-debut winner came while Arteta says he is still short of full fitness after missing preseason. &ldquo;We really need to enjoy the victory because we are realising how this Premier League is going to pan out,&rdquo; Arteta said. City&rsquo;s win at Anfield on Sunday leaves Arsenal three points back on 15.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.news/2026/10/hincapie-suffers-post-game-injury-scare/">Arseblog News</a>, <a href="https://arseblog.com/2026/10/arsecast-extra-episode-716-11-10-2026/">Arsecast Extra 716, Oct 11</a>, <a href="https://arseblog.news/2026/10/post-leeds-quotes-round-up-arteta-farke-timber-justin-bruno-g-parlour-more/">Arseblog News quotes</a>, <a href="https://www.aljazeera.com/sports/2026/10/10/arsenal-beat-leeds-2-1-in-comeback-win-to-move-level-with-man-city-at-top">Al Jazeera, Oct 10</a>, <a href="https://www.cbs17.com/sports/ap-arsenal-roars-back-to-beat-leeds-as-substitute-guimaraes-scores-on-home-debut/">AP (via CBS17)</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
