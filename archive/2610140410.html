@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Wednesday, October 14, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+<!-- EVENING:SLOT:START -->
+<!-- EVENING:SLOT:END -->
+
+  <!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Russia &middot; Sanctions &middot; Congress</span>
+          <h2 class="story-headline">Twelve senators, six of them Republicans, tell Trump to rescind his Russian diesel deal and enforce the sanctions law he signed weeks ago</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Tuesday a bipartisan group of 12 senators sent President Trump a letter urging him to withdraw from the diesel arrangement he announced with Vladimir Putin on Oct.&nbsp;9. Sen. Richard Blumenthal (D-Conn.) led it. The Republican signers were Mitch McConnell, Thom Tillis, Susan Collins, Lisa Murkowski, John Cornyn and Alan Armstrong. &ldquo;This deal is a gift to our adversary and a betrayal of our Allies; it should be rescinded,&rdquo; they wrote. They asked Trump to revoke Treasury&rsquo;s <strong>General License No.&nbsp;135</strong>, which waives sanctions on Russian diesel through April 2027, and to use the authorities in the Russia-and-Iran sanctions act he signed last month. They argue the deal conflicts with that law.</p>
+          <p>The senators say the deal offers Americans &ldquo;limited to no relief&rdquo; on fuel costs while giving the Kremlin revenue to finance its war. Analysts quoted by CNBC say the promised volumes equal less than two weeks of U.S. diesel demand. Reuters reported that the letter comes days before the administration must decide whether to formally impose new sanctions on Moscow. Asked about the letter, the White House pointed to Trump&rsquo;s earlier defense of the deal: he has said he &ldquo;made the right choice for the American People.&rdquo;</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Mother Jones argues that Trump is blaming Ukraine&rsquo;s refinery strikes for high fuel prices rather than his own Iran war. On this view, Trump is easing pressure on Moscow to buy a few cents at the pump before the midterms, and Kyiv pays for it. In this telling the deal does little for consumers, but it signals to Putin and to Europe that Washington will trade away Ukraine&rsquo;s leverage for short-term domestic politics.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>National Review has been unusually blunt, running at least three critical pieces. One calls the deal &ldquo;a gross abuse of power&rdquo; that is &ldquo;an absolute coup for Putin&rdquo; with no economic benefit for the U.S. Another reads it as a sign of domestic political weakness that Moscow and Beijing can exploit. The mainstream-right objection is about law and deterrence: Congress just passed sanctions, and the president is waiving them for a deal that won&rsquo;t move prices. <em>(Summarized from visible portions; NR columns partly gated.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/10/13/g-s1-147871/trump-russia-diesel-deal-congressional-response">NPR, Oct 13</a>, <a href="https://www.usnews.com/news/politics/articles/2026-10-13/gift-to-our-adversary-more-republicans-balk-at-trumps-russia-diesel-deal">Reuters (via U.S. News), Oct 13</a>, <a href="https://www.cnbc.com/2026/10/13/trump-russia-diesel-republicans.html">CNBC, Oct 13</a>, <a href="https://www.cnbc.com/2026/10/13/trump-putin-zelenskyy-russia-ukraine-diesel-oil-price.html">CNBC (volumes), Oct 13</a>, <a href="https://www.motherjones.com/politics/2026/10/trump-blames-ukraine-for-our-skyrocketing-fuel-prices/">Mother Jones</a>, <a href="https://www.nationalreview.com/2026/10/trumps-diesel-deal-with-putin-is-a-gross-abuse-of-power/">National Review</a>, <a href="https://www.nationalreview.com/2026/10/trumps-desperate-diesel-deal/">National Review</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Midterms &middot; Clemency</span>
+          <h2 class="story-headline">At a Wasilla rally for Dan Sullivan, Trump signs pardons onstage for two Anchorage diesel mechanics convicted of Clean Air Act tampering</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Trump took his midterm tour to Wasilla, Alaska, on Tuesday to back Sen. Dan Sullivan, who is in a close race with former Rep. Mary Peltola that could help decide Senate control. Midway through, a White House aide brought pardon documents to the stage, and Trump signed them at the podium. They went to <strong>Zachary Czubak and Patrick Fleming</strong>, co-owners of an Anchorage diesel shop who pleaded guilty in 2022 to conspiring to violate the Clean Air Act. Prosecutors said the shop removed or disabled federally required emissions equipment on at least 37 vehicles. A third co-owner was pardoned last month. &ldquo;They want to put them in jail for 10 years because they fixed an engine,&rdquo; Trump said.</p>
+          <p>Trump also said a long-planned Alaska natural gas pipeline had secured its federal permits, endorsed Rep. Nick Begich and gubernatorial candidate Bernadette Wilson, and urged a vote to repeal the state&rsquo;s ranked-choice voting. Alaska Public Media reported that he promised every adult citizen <strong>$5,000</strong> if Republicans hold both chambers. The same day, Alaska&rsquo;s other Republican senator, Lisa Murkowski, signed the letter asking him to drop the Russian diesel deal (above).</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece on the rally or the pardons turned up. The obvious line of criticism, which Democrats are making in campaign statements, is that a pardon signed as a rally prop turns clemency into a campaign giveaway, and that this one rewards pollution-control tampering. <em>(No listed opinion-outlet pieces found.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window National&nbsp;Review, Dispatch, WSJ editorial or Reason piece found. The case Trump made onstage, and that conservative outlets such as Just the News echoed, is that Biden-era prosecutors criminalized small-business mechanics for keeping trucks running in Alaska&rsquo;s cold. <em>(No listed-outlet columns found.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/10/14/nx-s1-6000359/trump-takes-campaign-tour-to-alaska-as-rallies-for-gop-candidates-continue">NPR, Oct 14</a>, <a href="https://alaskapublic.org/news/politics/elections/2026-10-13/trump-rally-brings-pardons-promises-and-endorsements-to-wasilla">Alaska Public Media, Oct 13</a>, <a href="https://www.cbsnews.com/news/trump-pardons-auto-workers-alaska-rally-clean-air-act/">CBS News</a>, <a href="https://thehill.com/homenews/campaign/6147032-trump-pardons-alaska-diesel-mechanics/">The Hill</a>, <a href="https://alaskabeacon.com/2026/10/13/trump-rally-puts-wasilla-in-national-campaign-spotlight/">Alaska Beacon, Oct 13</a>, <a href="https://www.alaskasnewssource.com/2026/10/14/murkowski-bipartisan-senators-urge-trump-reverse-russian-diesel-deal-president-rallies-wasilla/">Alaska&rsquo;s News Source, Oct 14</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Saudi Arabia &middot; Yemen</span>
+          <h2 class="story-headline">A Houthi missile strikes Aramco&rsquo;s Dhahran headquarters complex hours after Saudi-led jets hit fuel sites in Sanaa and Hodeidah</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Late Tuesday, Saudi Arabia&rsquo;s Energy Ministry said an administrative building at Aramco&rsquo;s complex in Dhahran, in the Eastern Province, caught a &ldquo;limited fire&rdquo; after an attack, with no injuries or deaths. A company source told Reuters that a ballistic missile hit an office tower and damaged its <strong>top three floors</strong>. Bloomberg reported that the extent of the damage was unclear and that the fire might have been caused by debris from an intercepted missile. Neither Aramco nor the government has said which building was struck. Earlier, Houthi spokesman Yahya Saree had promised a &ldquo;harsh and painful&rdquo; response to Saudi-led coalition strikes on a Sanaa fuel station and on loading piers at Hodeidah. He had named Aramco&rsquo;s headquarters and a Riyadh refinery as targets civilians should leave. Saudi Civil Defense said falling missile fragments injured four people in Riyadh.</p>
+          <p>Analysis: the Houthis have moved from Riyadh&rsquo;s airport to the symbolic core of Saudi oil, and they are naming targets in advance. The U.S. dimension is growing too. Trump is reported to be weighing joining the Saudi strikes, and a Houthi official warned of a &ldquo;swift and painful&rdquo; response if he does. Each such hit raises the risk premium in an oil market the IEA already describes as fragile (see Science, Tech, Energy &amp; Climate).</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/world/articles/2026-10-13/saudi-led-coalition-orders-evacuation-of-yemen-oil-facility-in-sanaa-ahead-of-operation">Reuters (via U.S. News), Oct 13</a>, <a href="https://www.bloomberg.com/news/articles/2026-10-13/aramco-headquarters-hit-during-houthi-attacks-on-saudi-arabia">Bloomberg, Oct 13</a>, <a href="https://www.thenationalnews.com/news/gulf/2026/10/14/aramco-building-on-fire-after-saudi-led-coalition-hits-houthi-site/">The National, Oct 14</a>, <a href="https://www.haaretz.com/middle-east-news/2026-10-14/ty-article/attack-on-saudi-aramco-building-causes-fire-as-saudi-houthi-fighting-grows/000001a1-38b5-d599-a9a3-7afd9ab60000">Haaretz, Oct 14</a>, <a href="https://www.cbsnews.com/live-updates/iran-war-us-trump-saudi-arabia-houthi/">CBS News live</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Ukraine &middot; Britain &middot; Europe</span>
+          <h2 class="story-headline">Zelenskyy goes to Downing Street for missiles and sanctions from Burnham as Europe pushes back on the U.S.&ndash;Russia diesel deal</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Volodymyr Zelenskyy was due in London on Wednesday for talks with Prime Minister Andy Burnham, whose office described the visit as underscoring Britain&rsquo;s &ldquo;rock-solid&rdquo; support. AP and UPI reported that the two sides are expected to agree on supplying <strong>Lightweight Multirole Missiles</strong> for Ukraine&rsquo;s air defense, a package of about &pound;45&nbsp;million, with &pound;10&nbsp;million fast-tracked to arrive before winter. Burnham is also expected to say he has asked his cabinet to prepare further Russia sanctions and military and financial packages in the coming weeks. His first foreign trip after taking office in July was to Kyiv.</p>
+          <p>Analysis: this is Kyiv looking to Europe while Washington wavers. A senior EU official called the U.S. diesel waiver &ldquo;regrettable&rdquo; and against four years of policy to cut Russia off from energy markets. Ukraine&rsquo;s war funding will be &ldquo;front and centre&rdquo; at this week&rsquo;s European Council, where Zelenskyy is expected to address leaders on Friday. Diplomats say no new money is expected there, and Spain is pressing to reopen the use of frozen Russian assets.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.news4jax.com/news/world/2026/10/14/zelenskyy-to-meet-burnham-in-london-as-kyiv-seeks-more-help-against-russia/">AP (via News4JAX), Oct 14</a>, <a href="https://www.bloomberg.com/news/articles/2026-10-13/burnham-hosts-zelenskyy-as-uk-grapples-with-trump-russia-policy">Bloomberg, Oct 13</a>, <a href="https://www.euronews.com/2026/10/14/zelenskyy-turns-to-european-allies-as-washington-wavers">Euronews, Oct 14</a>, <a href="https://www.aljazeera.com/news/2026/10/13/trumps-diesel-deal-opens-a-new-rift-with-europe-over-ukraine">Al Jazeera, Oct 13</a>, <a href="https://en.interfax.com.ua/news/general/1219439.html">Interfax-Ukraine</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Mexico &middot; Storms</span>
+          <h2 class="story-headline">Death toll from Hurricane Simon and Rachel&rsquo;s remnants rises to six along Mexico&rsquo;s Pacific coast; orphans airlifted in Baja California</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Heavy rain from Hurricane Simon and the remnants of Tropical Storm Rachel set off floods and landslides along Mexico&rsquo;s Pacific coast. AP reported Tuesday that the death toll had risen to <strong>six</strong>, children among them. Most deaths were linked to Rachel in Baja California, where four bodies were recovered around Ensenada and others were still missing. Military helicopters lifted 32 people, 13 of them minors, out of a camp for orphans. In Guerrero, a 71-year-old died when a wall collapsed in Chilpancingo, and Simon brought down trees and power lines and flooded homes around Acapulco.</p>
+          <p>Analysis: Simon never made landfall. It weakened to Category&nbsp;2 and moved away from the coast, but officials still warned of waves up to 5 meters. Counts have risen daily and local outlets report more missing than federal tallies do, so the toll may climb.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/world/2026/10/13/mexico-hurricanes-simon-rachel-pacific-deaths/e4447206-c73a-11f1-aefb-abe4112d087e_story.html">AP (via Washington Post), Oct 13</a>, <a href="https://www.wsmv.com/2026/10/13/children-among-6-killed-flooding-hurricane-simon-tropical-storm-rachel-remnants/">AP (via WSMV), Oct 13</a>, <a href="https://www.cbsnews.com/news/hurricane-simon-still-hitting-western-mexico-tropical-systems/">CBS News</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE, TECH, ENERGY & CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Energy &middot; Oil</span>
+          <h2 class="story-headline">IEA now sees world oil demand falling 2.6 million barrels a day this year and warns the diesel squeeze will last well into 2027</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The International Energy Agency&rsquo;s October Oil Market Report, released Wednesday, forecasts that global oil demand will fall by <strong>2.6&nbsp;mb/d</strong> in 2026 to 102.4&nbsp;mb/d, a deeper cut than the 2.5&nbsp;mb/d it projected last month. Diesel accounts for about a quarter of the decline. The agency attributes the drop to the Iran war, which has restricted fuel supply and pushed up prices. It expects a partial recovery of about 2&nbsp;mb/d in 2027, which would still leave consumption below 2025 levels. Gulf producers led a rise in supply in September, but the IEA calls that recovery fragile because of renewed attacks in the region.</p>
+          <p>Diesel is the pressure point. According to CNBC&rsquo;s reading of the report, exports fell by 700,000&nbsp;b/d year on year in September and wholesale prices hit records in several major markets. Global stocks sit about 509 million barrels below pre-war levels, and rebuilding inventories may not begin until the second half of 2027. The IEA also notes that diesel demand has proved relatively price-inelastic. That backdrop makes the small volumes in the U.S.&ndash;Russia diesel deal look even smaller.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.iea.org/reports/oil-market-report-october-2026">IEA Oil Market Report, October 2026</a>, <a href="https://www.cnbc.com/2026/10/14/diesel-deal-oil-price-iea-report.html">CNBC, Oct 14</a>, <a href="https://www.investing.com/news/commodities-news/iea-cuts-2026-oil-demand-outlook-as-diesel-crisis-mideast-war-disrupt-markets-4948318">Investing.com</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; Consumer AI</span>
+          <h2 class="story-headline">Apple launches HomeView, a $299 smart-home hub with a screen, built as a showcase for its new Siri AI</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Apple on Tuesday announced <strong>HomeView</strong>, its first dedicated smart-home hub. It comes as a tabletop unit with a 7-inch touchscreen or as a wall-mounted version, both priced at $299, with wall mounts sold separately. Pre-orders opened Tuesday and the hub ships Nov.&nbsp;13. It is not offered in the EU. HomeView recognizes up to six household members by face, supports the Matter and Thread smart-home standards, and runs Apple&rsquo;s revamped Siri. Apple also introduced a second-generation HomePod mini and an updated Apple TV 4K.</p>
+          <p>The launch is Apple&rsquo;s clearest bet yet that conversational AI can revive a smart-home business where Amazon and Google set the pace. Earlier reports had pegged the price near $350, so Apple came in lower than expected.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/2026/10/13/apple-homeview-smart-home-siri-ai.html">CNBC, Oct 13</a>, <a href="https://www.macrumors.com/2026/10/13/apple-announces-homeview-smart-home-hub/">MacRumors, Oct 13</a>, <a href="https://gizmodo.com/homeview-apple-smart-home-hub-2000824152">Gizmodo</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; Chips &middot; Data centers</span>
+          <h2 class="story-headline">At the Open Compute summit, AMD unveils &ldquo;Helion,&rdquo; a CPU-heavy rack design for AI agents, as Nvidia opens up its Vera Rubin rack specs</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>At this week&rsquo;s Open Compute Project Global Summit in San Jose, AMD introduced <strong>Helion</strong>, an open rack-scale reference design aimed at &ldquo;agentic&rdquo; AI workloads. Helion can hold up to 32,768 Zen&nbsp;6 EPYC CPU cores in a single rack, or mix CPUs with up to 32 Instinct MI350P GPUs. AMD says it will contribute the design to OCP, with partner systems expected from November. Nvidia, with partners including Meta, Google and Cisco, contributed Vera Rubin rack and compute-tray designs to its open MGX architecture.</p>
+          <p>The bet behind Helion is that AI agents, which spend much of their time orchestrating tools, routing requests and running ordinary code, will need far more general-purpose CPU capacity alongside GPUs. That would be a different shape of data center from Nvidia&rsquo;s tightly integrated GPU racks. Several capacity and density figures are vendor claims that have not been independently checked. Coverage so far comes mostly from trade press, so this item carries less weight than the others.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.techtimes.com/articles/329005/20261014/amd-helion-ocp-blueprint-adds-model-router-operators-scale-cpus-without-buying-more-gpus.htm">Tech Times, Oct 14</a>, <a href="https://www.datacenterdynamics.com/en/news/amd-unveils-cpu-only-helion-rack-to-support-agentic-ai-workloads/">DatacenterDynamics</a>, <a href="https://www.datacenterfrontier.com/hyperscale/article/55411534/ocp-2026-agentic-ai-pushes-the-data-center-from-chip-to-grid">Data Center Frontier</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">MLB &middot; ALCS</span>
+          <h2 class="story-headline">Freddy Peralta shuts out Cleveland for six innings and a Jos&eacute; Ram&iacute;rez error gifts Tampa Bay a 3&ndash;1 win, tying the ALCS 1&ndash;1</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The Rays beat the Guardians <strong>3&ndash;1</strong> at Tropicana Field on Tuesday to even the American League Championship Series. Freddy Peralta threw six scoreless innings, allowing four hits and two walks, and threw 68 of his 99 pitches for strikes. All three Tampa Bay runs came in the fourth inning and all were unearned, after a fielding error by Jos&eacute; Ram&iacute;rez. Liam Hicks drove in two with a single. The series moves to Cleveland for Game&nbsp;3 on Thursday.</p>
+          <p>In the National League, Milwaukee leads the Dodgers 2&ndash;0 heading into Game&nbsp;3 in Los Angeles on Wednesday night.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/sports/mlb/2026/10/13/guardians-rays-score/8656c7f2-c77b-11f1-aefb-abe4112d087e_story.html">AP (via Washington Post), Oct 13</a>, <a href="https://www.espn.com/mlb/story/_/id/50179060/peralta-tosses-gem-rays-cash-ramirez-gaffe-game-2">ESPN</a>, <a href="https://www.mlb.com/news/brewers-win-nlcs-game-2-2026">MLB.com</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">English Football</span>
+          <h2 class="story-headline">Ten-man Manchester United lose 2&ndash;0 at Atl&eacute;tico after Leny Yoro&rsquo;s red card, and Carrick&rsquo;s side are now five without a win</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Pablo Barrios put Atl&eacute;tico Madrid ahead inside the first minute at the Metropolitano on Tuesday. Leny Yoro was sent off in the 74th minute with a straight red card after an on-field VAR review, which Sky Sports called controversial. Ademola Lookman scored the second in the 79th. The Champions League defeat extends United&rsquo;s winless run to <strong>five</strong> games and adds to the pressure on Michael Carrick. He said afterwards that the game &ldquo;could look very different&rdquo; if United had taken their chances, and insisted &ldquo;confidence is there&rdquo; in the squad.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.skysports.com/football/news/13598750/atletico-madrid-2-0-man-utd-leny-yoro-sent-off-as-michael-carricks-side-extend-winless-run-to-five-games">Sky Sports</a>, <a href="https://www.espn.com/soccer/story/_/id/50175048/atletico-madrid-vs-manchester-united-live-champions-league-latest-updates-commentary-score-result">ESPN</a>, <a href="https://www.vavel.com/en/football/2026/10/14/manchester-united/1275195-carrick-said-atletico-defeat-could-look-very-different-if-chances-were-taken.html">VAVEL, Oct 14</a> <em>(BBC Sport not reachable this run)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal</span>
+          <h2 class="story-headline">Timber, Eze and Saka score in seven second-half minutes as Arsenal beat Lille 3&ndash;0 and keep a perfect Champions League start</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Arsenal were without the injured Piero Hincapi&eacute; and Mart&iacute;n Zubimendi and went in 0&ndash;0 at half-time at the Emirates on Tuesday. Then Jurri&euml;n Timber scored on 64 minutes, Eberechi Eze added a second three minutes later, and substitute Bukayo Saka made it three in the 71st. Arseblog&rsquo;s ratings called Timber the key figure: he scored the first, helped create the second and dominated his flank. Fans hailed Eze&rsquo;s display as his best of the year. The win gives Arsenal six points from two league-phase games, and ESPN counts it as their 14th straight win in the competition&rsquo;s group or league stage. Next up are the Premier League trip to Nottingham Forest and then a Champions League visit to Bayern Munich.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.news/2026/10/report-arsenal-3-0-lille-inc-goals/">Arseblog News (report)</a>, <a href="https://arseblog.news/2026/10/arsenal-3-0-lille-player-ratings/">Arseblog News (ratings)</a>, <a href="https://arseblog.news/2026/10/post-lille-quotes-round-up-arteta-ancelotti-eze-timber-gerrard-more/">Arseblog News (quotes)</a>, <a href="https://www.espn.com/soccer/report/_/gameId/401915417">ESPN</a>, <a href="https://www.foxsports.com/soccer/champions-league-arsenal-vs-lille-oct-13-2026-game-boxscore-1003341">Fox Sports, Oct 13</a> <em>(The Athletic not reachable this run)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
