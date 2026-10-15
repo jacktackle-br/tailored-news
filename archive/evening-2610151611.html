@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Thursday, October 15, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+<!-- EVENING:SLOT:START -->
+  <div class="edition-band"><span class="kick">The Evening Edition</span><span class="big">Evening Briefing</span><span class="when">Updated Thursday, October 15, 2026</span></div>
+
+  <section class="section" id="evening-politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">White House &middot; Pentagon</span>
+          <h2 class="story-headline">Trump scraps Hegseth&rsquo;s plan to livestream the Fort Hood shooter&rsquo;s execution after bipartisan backlash</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>President Trump said Thursday on Truth Social that Nidal Hasan, who killed 13 people at Fort Hood in 2009, &ldquo;will die, as scheduled, by firing squad, but this event will not be streamed.&rdquo; That reverses a plan Defense Secretary Pete Hegseth announced Oct.&nbsp;8. The Army execution is still set for Dec.&nbsp;3 at Fort Hood. Trump said a broadcast might have deterred terrorists, but that many well-meaning people would rather not watch. Victims&rsquo; immediate families may attend in person.</p>
+          <p>Objections came from both parties. Vice President JD Vance said he would not watch, Speaker Mike Johnson warned that footage could become a terrorist recruiting tool, and Sen. Thom Tillis (R-N.C.) called the plan &ldquo;beyond disgusting.&rdquo; A Washington Post-ABC News-Ipsos poll found 80% of Americans opposed streaming it. Pentagon spokesman Sean Parnell said Hegseth supports the decision and the two are &ldquo;completely aligned.&rdquo; The Washington Post called the reversal a rebuke of Hegseth. ABC reported that Trump and his advisers had been weighing the reversal for days.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece on the reversal turned up. Critics of the plan, including Democratic lawmakers, called it barbaric and argued that treating an execution as content degrades the justice system and the victims. To them, the reversal shows how far outside the norm the original announcement was. <em>(No listed opinion-outlet pieces found.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window National&nbsp;Review, Dispatch, WSJ editorial or Reason piece found. The mainstream-right objection came from elected Republicans: Tillis, Johnson and Vance all back the death sentence but opposed the broadcast as a spectacle that could aid jihadist propaganda. For them, the reversal keeps the punishment and drops the stunt. <em>(No listed-outlet columns found.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/2026/10/15/trump-nidal-hasan-execution-livestream.html">CNBC, Oct 15</a>, <a href="https://www.axios.com/2026/10/15/trump-hegseth-fort-hood-execution-livestream">Axios, Oct 15</a>, <a href="https://abcnews.com/Politics/trump-announces-nidal-hasan-execution-streamed/story?id=137288098">ABC News</a>, <a href="https://thehill.com/homenews/6151960-pentagon-hegseth-supports-execution-livestream-cancellation/">The Hill (Pentagon response)</a>, <a href="https://www.npr.org/2026/10/09/nx-s1-5996529/firing-squad-livestream-execution-fort-hood-shooter">NPR (original plan), Oct 9</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Campaign Trail &middot; National Security</span>
+          <h2 class="story-headline">&ldquo;Leakers should be shot&rdquo;: Trump tells an Arizona rally that people who leak military plans deserve execution, and calls reporters &ldquo;almost as bad&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>At a Wednesday night campaign rally in Bullhead City, Arizona, Trump said: &ldquo;In my opinion, leakers should be shot. They should be shot. In the old days, we used to shoot leakers.&rdquo; He called them &ldquo;the scum of the earth.&rdquo; He described a raid that he said had to be called off after someone &ldquo;leaked the time we were leaving, the time we were arriving.&rdquo; Coverage linked that account to last year&rsquo;s strikes on Iranian nuclear sites. The Washington Post and NBC note that Trump offered no evidence about who leaked and that his account could not be independently verified.</p>
+          <p>He then pointed at the press pen and said journalists were &ldquo;almost as bad&rdquo; because &ldquo;they leak false information.&rdquo; Much of the crowd cheered. Bloomberg reported that the remarks pulled him away from the economic message the campaign wants three weeks before the Nov.&nbsp;3 midterms, a day after a court ruled his ban on three news outlets was likely unconstitutional.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece found. Press-freedom advocates and Democrats have long argued that this kind of rhetoric, especially when it lumps reporters in with leakers, chills sources and invites harassment of journalists. <em>(No listed opinion-outlet pieces found.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window National&nbsp;Review, Dispatch, WSJ editorial, Reason or Bulwark piece found. Supporters argue that leaks of operational timing put service members at risk, and that the president is voicing a widely shared anger in hyperbolic terms. Trump has said similar things before, including about Edward Snowden in 2013. <em>(No listed-outlet columns found.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/politics/2026/10/15/trump-says-people-who-leak-military-plans-should-be-shot/">Washington Post, Oct 15</a>, <a href="https://www.bloomberg.com/news/articles/2026-10-14/trump-says-leakers-should-be-shot-straying-from-economic-pitch">Bloomberg, Oct 14</a>, <a href="https://www.nbcnews.com/politics/donald-trump/president-says-government-officials-who-leak-to-media-should-be-shot-rcna603613">NBC News</a>, <a href="https://thehill.com/homenews/6149366-trump-rally-leakers-shot/">The Hill</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Courts &middot; Justice Department</span>
+          <h2 class="story-headline">Judge tosses ex-CIA chief Brennan&rsquo;s bid to force the Justice Department to preserve records from its &ldquo;grand conspiracy&rdquo; probe</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Thursday, U.S. District Judge Jia Cobb in Washington dismissed former CIA Director John Brennan&rsquo;s lawsuit. He had sought a court order requiring the Justice Department to preserve investigative records he says he would need to argue that any future prosecution of him is vindictive or selective. Cobb agreed with the administration that the claim is not yet ripe. She found it &ldquo;speculative whether Defendants are deleting records relevant to a future vindictive- or selective-prosecution defense.&rdquo;</p>
+          <p>She also called his allegations of partisan targeting &ldquo;deeply concerning.&rdquo; She wrote that if he could eventually prove them, that would &ldquo;certainly suggest&rdquo; a prosecution was vindictive. Brennan has been subpoenaed to testify before a grand jury in the broader investigation, though his appearance has been postponed. His lawyers say prosecutors have told them he remains a target of a separate false-statements inquiry. He denies wrongdoing and has not been charged. His lawyers said he will fight any attempt to use the justice system for &ldquo;personal and political retribution.&rdquo;</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece found. Brennan&rsquo;s defenders point to the judge&rsquo;s own language. In their view, the ruling turned on timing, not on whether the probe is retaliatory, and leaves him exposed until charges actually arrive. <em>(No listed opinion-outlet pieces found.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window National&nbsp;Review, Dispatch, WSJ editorial or Reason piece found. The administration&rsquo;s argument, which the court accepted, is that a person under investigation cannot sue in advance to manage how prosecutors handle their files. Any vindictive-prosecution claim belongs in a criminal case if one is ever brought. <em>(No listed-outlet columns found.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/politics/2026/10/15/judge-dismisses-ex-cia-director-john-brennans-lawsuit-against-doj/">Washington Post, Oct 15</a>, <a href="https://www.usnews.com/news/politics/articles/2026-10-15/justice-department-doesnt-have-to-save-records-from-inquiries-into-ex-cia-boss-brennan-judge-says">AP (via U.S. News), Oct 15</a>, <a href="https://bloomberg.com/news/articles/2026-10-15/ex-cia-director-brennan-rebuffed-over-conspiracy-probe-evidence">Bloomberg, Oct 15</a>, <a href="https://thehill.com/regulation/court-battles/6151954-judge-tosses-brennan-lawsuit/">The Hill</a> <em>(no Lawfare piece found this run)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <section class="section" id="evening-foreign">
+    <div class="section-header"><span class="section-label">Global Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Iran War &middot; Strait of Hormuz</span>
+          <h2 class="story-headline">Two cargo ships sink near Hormuz within a day as Iranian officials say Tehran changed its tactics to keep oil high before the U.S. vote</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Reuters and the Washington Post report that a container ship and a bulk carrier sank near the Strait of Hormuz within about 24 hours, each after being hit by projectiles. The Singapore-flagged <strong>GFS Pride</strong>, managed by a UAE firm, caught fire after being struck on Tuesday and sank. Singapore&rsquo;s maritime authority said all 21 crew were evacuated without injury. The <strong>Cape Dao</strong>, a bulk carrier hit on Sept.&nbsp;23 in an attack that killed one Indian crew member, also went down. Iran&rsquo;s Revolutionary Guard says the Pride hit a mine after taking an &ldquo;unauthorized&rdquo; route. The maritime security firm Marisks says there is no independent evidence of a mine. CBS counts at least 10 vessels attacked since Sunday, the highest rate of the war.</p>
+          <p>Separately, two senior Iranian officials told Reuters that Tehran began changing the type and pace of its attacks about 10 days ago. They said the aim is to frustrate U.S. efforts to bring down oil prices and to influence the Nov.&nbsp;3 midterms, and one warned of &ldquo;complete closure soon.&rdquo; Reuters frames the surge as Iran&rsquo;s answer to the U.S. blockade of its ports and new sanctions. Brent traded around $106 a barrel. <strong>Analysis:</strong> With Trump pledging no new strikes before the election and Netanyahu saying Wednesday that a pre-election strike is &ldquo;not in our interest,&rdquo; Iran appears to be using shipping and gasoline prices as its main leverage. These claims about intent come from Iranian officials and have not been independently verified.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/world/2026/10/14/iranian-attack-sinks-container-ship-strait-hormuz/">Washington Post, Oct 14</a>, <a href="https://www.usnews.com/news/world/articles/2026-10-14/container-ship-sinks-near-hormuz-after-being-hit-by-projectile-sources-say">Reuters (via U.S. News), Oct 14</a>, <a href="https://www.internazionale.it/ultime-notizie-reuters/2026/10/14/iran-shifting-tactics-to-step-up-attacks-on-shipping-before-us-vote-officials-say">Reuters (Iran tactics), Oct 14</a>, <a href="https://www.internazionale.it/ultime-notizie-reuters/2026/10/14/netanyahu-says-he-is-not-seeking-to-attack-iran-again-before-israel-election">Reuters (Netanyahu), Oct 14</a>, <a href="https://www.cnn.com/2026/10/15/middleeast/strait-of-hormuz-ships-sunk-iran-intl-hnk">CNN, Oct 15</a>, <a href="https://www.thenationalnews.com/news/gulf/2026/10/15/fire-sinking-and-reported-scramble-for-cargo-what-we-know-about-ship-lost-in-strait-of-hormuz/">The National, Oct 15</a>, <a href="https://www.cbsnews.com/live-updates/iran-war-us-houthi-saudi-arabia-trump/">CBS News live updates</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Ukraine &middot; Russia &middot; Tech</span>
+          <h2 class="story-headline">Ukrainian drones hit Sberbank&rsquo;s Balakovo data center, Russia&rsquo;s biggest, after a week of strikes on Yandex sites; Putin holds a security meeting</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Reuters reports that Ukrainian drones struck Sberbank&rsquo;s data center in Balakovo, which Reuters describes as Russia&rsquo;s largest. It follows three attacks in the past week on data centers owned by Yandex. Russian state media acknowledged that several modules at Yandex&rsquo;s Kaluga campus were knocked out of service. Sberbank&rsquo;s deputy CEO confirmed the attack but said all systems were working normally. Users nonetheless reported outages at Sberbank and its GigaChat AI service, and no link to the strikes has been established. Neither company has said whether the supercomputers it uses to train AI models were damaged. On Wednesday, Putin held an unannounced meeting on &ldquo;information security&rdquo; attended by Sberbank CEO German Gref. The Kremlin said it was unrelated to the attacks. Russia&rsquo;s digital ministry says it is in talks with the military about protecting data centers.</p>
+          <p><strong>Analysis:</strong> These strikes extend Kyiv&rsquo;s long-range campaign from oil infrastructure to Russia&rsquo;s computing base. By Sberbank&rsquo;s own estimates, Russian AI already lags the U.S. and China by up to nine months, partly because sanctions limit access to advanced chips, and damaged hardware is hard to replace. The campaign comes as Zelenskyy publicly resumes refinery strikes and criticizes cuts to U.S. intelligence sharing. Ukraine is showing it can impose costs on its own while Western support wavers. Outlets disagree on which site is &ldquo;largest&rdquo;: Reuters says Balakovo, while tech press says Kaluga is Yandex&rsquo;s biggest.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.insurancejournal.com/news/international/2026/10/14/888917.htm">Reuters (via Insurance Journal), Oct 14</a>, <a href="https://www.themoscowtimes.com/2026/10/14/ukrainian-drones-hit-sberbank-data-center-after-yandex-attacks-a93967">Moscow Times, Oct 14</a>, <a href="https://www.tomshardware.com/tech-industry/data-centers/second-russian-data-center-targeted-by-ukrainian-drones-in-just-two-days-as-yandex-reels-from-another-service-outage-russian-state-media-admits-that-multiple-modules-completely-taken-out">Tom&rsquo;s Hardware</a>, <a href="https://www.fdd.org/overnight-brief/october-15-2026/">FDD Overnight Brief, Oct 15</a></div>
+      </div>
+    </details>
+  </section>
+
+  <div class="edition-return">Earlier today &mdash; the Morning Brief &darr;</div>
+<!-- EVENING:SLOT:END -->
+
+  <!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Economy &middot; Midterms</span>
+          <h2 class="story-headline">Inflation rises to 3.7% in September as gasoline jumps 9.1% in a month, in the last price report before the midterms</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The Labor Department reported Wednesday that the consumer price index rose <strong>0.6%</strong> in September and <strong>3.7%</strong> from a year earlier, up from 3.4% in August. Economists had expected 3.6%. Gasoline prices rose 9.1% in the month and accounted for more than half of the monthly increase. Gas is up 34.2% from a year ago, and the energy index is up 20.4%. Core prices, which exclude food and energy, rose 0.3% on the month and 2.6% on the year, up from 2.4%. The Washington Post and AP note that this is the last inflation reading before the Nov.&nbsp;3 elections. ABC News points out that inflation was 2.4% in February, before the Iran war began.</p>
+          <p>National Economic Council director Kevin Hassett called the top-line number &ldquo;disappointing&rdquo; but said the report had &ldquo;a whole bunch of good news.&rdquo; He described the energy surge as &ldquo;temporary,&rdquo; blamed attacks on Middle East energy infrastructure, and noted that food prices held steady and prescription-drug prices fell 1.2%. Democrats called the numbers a failure of the administration&rsquo;s economic policy. Coverage notes that the report adds pressure on the Federal Reserve, which raised rates in September and next meets on Oct.&nbsp;28.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Slate argues that prices are up and real wages are down &ldquo;thanks to Trump&rsquo;s policies.&rdquo; It notes that inflation was about 3% when he took office and that price growth has outpaced hourly wage gains for six straight months. Slate concedes he doesn&rsquo;t control every factor, but says he &ldquo;certainly hasn&rsquo;t helped.&rdquo; Mother Jones makes the same point about paychecks shrinking in real terms. It treats Hassett&rsquo;s focus on the Iran war as an admission that the energy shock comes from a war the administration chose.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>The Wall Street Journal editorial board called the report disappointing and said it helps explain why voters remain sour on the economy. It attributes most of the rise to supply disruptions from the Iran war and says relief depends on oil and fuel markets normalizing, which could take a while. It also says the Powell-era Fed eased too early in late 2024 and last year. The mainstream-right worry is less about the president&rsquo;s talking points than about whether the Fed will have to tighten into an energy shock. <em>(partial &mdash; paywalled; editorial seen via excerpts.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/business/2026/10/14/cpi-inflation-consumer-prices-affordability/c94e6e96-c78c-11f1-aefb-abe4112d087e_story.html">Washington Post (AP), Oct 14</a>, <a href="https://www.pbs.org/newshour/economy/inflation-worsened-last-month-to-3-7-as-midterm-elections-near">AP (via PBS)</a>, <a href="https://www.cnbc.com/2026/10/14/cpi-inflation-report-september-2026.html">CNBC, Oct 14</a>, <a href="https://www.cnn.com/2026/10/14/economy/us-cpi-inflation-september">CNN, Oct 14</a>, <a href="https://www.usnews.com/news/national-news/articles/2026-10-14/energy-spikes-inflation-in-september-as-annual-cpi-hits-3-7">U.S. News, Oct 14</a>, <a href="https://thehill.com/homenews/administration/6148546-hassett-september-cpi-energy-prices/">The Hill (Hassett)</a>, <a href="https://slate.com/news-and-politics/2026/10/economy-inflation-real-wages-trump-midterms.html">Slate</a>, <a href="https://www.motherjones.com/politics/2026/10/trump-claims-the-economy-is-alright-but-the-numbers-tell-a-different-story/">Mother Jones</a>, <a href="https://www.alternet.org/amp/wsj-trump-editorial-board-2678087884">WSJ editorial (excerpted via Alternet)</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Courts &middot; Press Freedom</span>
+          <h2 class="story-headline">Justice Department appeals after a Trump-appointed judge finds the White House ban on CNN, MS&nbsp;NOW and Politico is likely viewpoint discrimination</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Tuesday, U.S. District Judge Timothy Kelly converted his temporary order into a <strong>preliminary injunction</strong>. It bars the White House from enforcing the ban on reporters from CNN, MS&nbsp;NOW and Politico that Trump announced on Sept.&nbsp;18, and it stays in place while the lawsuit proceeds. Kelly&rsquo;s earlier order rested on due process. This time he also found the outlets likely to win two First Amendment claims, retaliation and viewpoint discrimination. &ldquo;President Trump likely banned Plaintiffs from the White House because he believes that their reporting is generally inaccurate and biased against him,&rdquo; he wrote. &ldquo;That is unlawful viewpoint discrimination.&rdquo; He relied partly on Trump&rsquo;s own public remarks about the outlets. He called the government&rsquo;s national-security rationale an after-the-fact justification and declined to pause his order pending appeal. The Justice Department filed a notice of appeal on Wednesday.</p>
+          <p>The order has limits. Kelly wrote that it should not be read to mean the president&rsquo;s concerns about accuracy are unfounded, or that the government is powerless to protect classified information. It does not require access to the Oval Office or Air Force One, and it does not address the rotating broadcast pool. A separate case cuts the other way: a split D.C. Circuit panel has let the White House keep the AP out of some events while that litigation continues. The Reporters Committee for Freedom of the Press, the White House Correspondents&rsquo; Association and 49 news organizations filed a brief backing the three outlets.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece on the ruling turned up. The press-freedom groups that backed the suit argue that punishing outlets for coverage the president dislikes is exactly what the First Amendment forbids. In their view, the notable part is that a Trump appointee reached that conclusion using the president&rsquo;s own words. <em>(No listed opinion-outlet pieces found.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window National&nbsp;Review, Dispatch, WSJ editorial or Reason piece found. The administration&rsquo;s position, which it will press on appeal, is that the president controls access to his own workspace and that leaks of sensitive operational details justified the move. It points to the D.C. Circuit&rsquo;s AP ruling, which held that the White House may choose which journalists enter some spaces. <em>(No listed-outlet columns found.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/10/14/nx-s1-6001398/white-house-media-ban">NPR, Oct 14</a>, <a href="https://www.cnn.com/2026/10/13/politics/judge-gives-cnn-white-house-access-media-ban">CNN, Oct 13</a>, <a href="https://www.cnbc.com/2026/10/14/trump-appeals-white-house-ban-judge.html">CNBC (appeal), Oct 14</a>, <a href="https://www.cnbc.com/2026/10/14/trump-white-house-msnow-cnn-politico-media-ban.html">CNBC, Oct 14</a>, <a href="https://www.washingtontimes.com/news/2026/oct/14/judge-firms-ban-donald-trump-kicking-cnn-politico-ms-white-house/">Washington Times, Oct 14</a>, <a href="https://www.inquirer.com/news/nation-world/judge-extend-block-trump-media-ban-white-house-cnn-msnow-politico-first-fifth-amendment-20261014.html">AP (via Inquirer), Oct 14</a>, <a href="https://www.nbcnews.com/politics/trump-administration/judge-ruling-white-house-restore-access-media-ban-cnn-politico-ms-now-rcna599391">NBC News</a> <em>(no Lawfare piece found this run)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Ukraine &middot; Russia &middot; United States</span>
+          <h2 class="story-headline">&ldquo;We&rsquo;re done&rdquo;: Zelenskyy ends Ukraine&rsquo;s pause on striking Russian refineries and calls U.S. intelligence and Starlink cutoffs &ldquo;dangerous&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>In a Financial Times interview published Thursday, President Volodymyr Zelenskyy said Ukraine would resume long-range strikes on Russian oil refineries. &ldquo;The block [on attacking refineries] is out. We&rsquo;re done,&rdquo; he said. Kyiv had held off for three days at Washington&rsquo;s request after Trump announced an &ldquo;energy ceasefire&rdquo; on Oct.&nbsp;11. During that time, Russia kept hitting Ukraine&rsquo;s grid, including a large attack this week that Al&nbsp;Jazeera reported killed at least nine people and left hundreds of thousands without power. The Kremlin has still not confirmed the truce&rsquo;s terms.</p>
+          <p>Zelenskyy also said that U.S. counterparts had warned Ukraine&rsquo;s military that intelligence would be restricted if Kyiv kept striking Russian oil and gas. He described the recent loss of intelligence and disruption of Starlink as &ldquo;dangerous&rdquo; and said, &ldquo;It was not a technical problem; it was the will.&rdquo; Trump denies that the U.S. stopped sharing intelligence. Elon Musk replied on X that &ldquo;it&rsquo;s time for him to go.&rdquo; Analysis: Trump&rsquo;s truce was meant to lower fuel prices before the midterms, and it now looks finished. Its collapse comes the same day as a 3.7% inflation print driven by gasoline (see Politics) and in the middle of the dispute over the Russian diesel deal. The clash also exposes how much Ukraine&rsquo;s deep-strike campaign depends on U.S.-controlled tools.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.irishtimes.com/world/europe/2026/10/15/ukraine-to-resume-strikes-on-russian-refineries-zelenskiy-says/">Irish Times (FT copy), Oct 15</a>, <a href="https://www.cnbc.com/2026/10/15/ukraine-russia-energy-ceasefire-zelenskyy.html">CNBC, Oct 15</a>, <a href="https://www.cnn.com/2026/10/14/europe/zelensky-trump-russia-fuel-deal-latam-intl">CNN, Oct 14</a>, <a href="https://www.nbcnews.com/world/ukraine/ukraine-resumes-strikes-russian-oil-refineries-trump-starlink-intel-rcna603648">NBC News</a>, <a href="https://www.aljazeera.com/news/2026/10/14/massive-russian-attack-on-ukraine-kills-at-least-six-cuts-power-in-kyiv">Al Jazeera, Oct 14</a>, <a href="https://www.ilfoglio.it/en/world/2026/10/15/news/zelensky-tells-the-financial-times-attacks-on-refineries-have-stopped-musk-attacks-him-on-x-its-time-for-him-to-go--410649">Il Foglio (Musk), Oct 15</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Israel &middot; Lebanon</span>
+          <h2 class="story-headline">From inside Israel&rsquo;s buffer zone, Katz warns Hezbollah it will lose Nabatieh and the Litani if it joins an Iranian attack</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Israeli Defense Minister Israel Katz visited Israel&rsquo;s security zone in southern Lebanon on Wednesday. He said that if Hezbollah &ldquo;joins Iran in an attack on Israel, it will be dealt a heavy blow and lose additional territory in southern Lebanon, in the areas of Nabatieh and the Litani,&rdquo; and that the IDF is ready for a ground maneuver. Reports differ on the rest of his remarks. Several outlets say he also threatened a new evacuation of Beirut&rsquo;s Dahiyeh district and the killing of Hezbollah leader Naim Qassem, but Ynet&rsquo;s fuller account does not include those lines. Lebanon&rsquo;s state news agency reported Israeli artillery fire on several southern villages the same day, with no casualties.</p>
+          <p>Analysis: Hezbollah entered the Iran war in March, and Israel already holds a strip of the south. Katz is now openly describing that zone as something that could grow and become permanent, and he is tying its size to Tehran&rsquo;s next move. Separately, in a sign of domestic strain, former Shin Bet chief Ronen Bar sued Prime Minister Benjamin Netanyahu for defamation on Wednesday over claims that he bears responsibility for the Oct.&nbsp;7, 2023, attack.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.timesofisrael.com/liveblog_entry/katz-says-idf-will-capture-more-of-south-lebanon-if-hezbollah-joins-iran-in-an-attack-on-israel/">Times of Israel</a>, <a href="https://www.arabnews.com/middle-east/israel-threatens-to-seize-more-territory-in-southern-lebanon-if-hezbollah-joins-iran-war-3006288">Arab News</a>, <a href="https://www.jns.org/news/israel-news/katz-threatens-hezbollah-with-territorial-losses-if-it-joins-iranian-attack">JNS</a>, <a href="https://www.aljazeera.com/news/2026/10/14/israels-former-security-chief-sues-netanyahu-for-october-7-defamation">Al Jazeera (Bar lawsuit), Oct 14</a> <em>(no Tier-1 write-up found; facts from regional outlets)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Greenland &middot; Denmark</span>
+          <h2 class="story-headline">Denmark and Greenland rebut Trump&rsquo;s claim that &ldquo;massive&rdquo; oil, gas and mineral exploration is about to begin</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Trump posted that &ldquo;massive&rdquo; resource exploration in Greenland would soon begin and that experts think its easily accessible oil is greater than in almost any other area of the world. On Wednesday, Copenhagen and Nuuk pushed back. Denmark&rsquo;s foreign ministry said any U.S. exploration must follow Greenland&rsquo;s laws. It said the Sept.&nbsp;22 U.S.&ndash;Denmark&ndash;Greenland agreement changed nothing on that point and gives U.S. investors no preferential access over those from other NATO or EU countries. Greenland&rsquo;s deputy mining minister, J&oslash;rgen Hammeken-Holm, acknowledged some U.S. company activity but said the island is &ldquo;very far away from &lsquo;massive&rsquo; exploration.&rdquo;</p>
+          <p>The 10-page September deal opened the way for two new U.S. military bases and for Trump&rsquo;s &ldquo;Golden Dome&rdquo; missile-defense system. It reaffirmed Danish sovereignty and mentioned &ldquo;minerals cooperation&rdquo; without granting any drilling or mining rights. Greenland banned new oil exploration and uranium mining in 2021. It is now reviewing whether a Texas firm can use permits issued before the ban. Analysis: the dispute shows how differently the two sides read the deal. Washington presents it as a resource opening, while Denmark and Greenland treat it as a security arrangement.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnn.com/2026/10/14/politics/trump-greenland-oil-gas-minerals-intl-hnk">CNN, Oct 14</a>, <a href="https://www.upi.com/Top_News/US/2026/10/14/greenland-denmark-deny-trump-claims/8991792024065">UPI, Oct 14</a>, <a href="https://cyprus-mail.com/2026/10/15/denmark-rebuffs-trumps-greenland-oil-and-mining-claims">Reuters (via Cyprus Mail), Oct 15</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE, TECH, ENERGY & CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Chips &middot; AI</span>
+          <h2 class="story-headline">TSMC posts a sixth straight record quarter, up 69%, a day after ASML says customers want to book tools for 2029 and 2030</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Thursday, Taiwan Semiconductor Manufacturing Co. reported third-quarter net profit of <strong>NT$763.1&nbsp;billion</strong>. That is up about 69% from a year earlier, above the roughly NT$746&nbsp;billion analysts expected, and its sixth straight record quarter. Revenue was about $46.7&nbsp;billion, up about 41% in dollar terms and above the top of TSMC&rsquo;s own guidance. Operating margin was 58.7%. High-performance computing, which is mostly AI accelerators for customers such as Nvidia, made up 68% of sales. 3-nanometer chips were the largest single node at 33%. Investors are watching the earnings call for capital-spending plans.</p>
+          <p>The day before, ASML reported third-quarter profit of &euro;4.96&nbsp;billion on record sales of &euro;11.7&nbsp;billion and raised its full-year sales forecast to &euro;44&ndash;45&nbsp;billion. CEO Christophe Fouquet said &ldquo;some customers are expressing an interest in placing orders with us for 2029 and even 2030.&rdquo; The company warned that planned supply for 2027 and 2028 will not fully meet demand and said it is studying ways to expand 2028 capacity beyond the 30% increase it had already announced. Taken together, the two reports undercut recent worries that the AI build-out is losing momentum, at least for the companies that make the chips and the machines that make them.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/2026/10/15/tsmc-third-quarter-profit-global-ai-.html">CNBC (TSMC), Oct 15</a>, <a href="https://en.sedaily.com/international/2026/10/15/tsmc-third-quarter-profit-jumps-69-percent-as-margins-narrow">Seoul Economic Daily, Oct 15</a>, <a href="https://www.cnbc.com/2026/10/14/asml-3q-earnings-ai-demand-orders-capacity.html">CNBC (ASML), Oct 14</a>, <a href="https://nltimes.nl/2026/10/14/record-quarter-asml-thanks-ai-boom-nearly-eu5-billion-profit-q3">NL Times, Oct 14</a>, <a href="https://www.koreatimes.co.kr/world/20261014/asmls-strong-orders-ease-fears-ai-spending-boom-is-running-out-of-steam">Reuters (via Korea Times), Oct 14</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Electrification &middot; Energy Security</span>
+          <h2 class="story-headline">Ember: electric cars kept about 200 million barrels of oil out of importing countries during the Hormuz crisis, worth roughly $20 billion</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Energy think tank Ember released an analysis this week alongside a new EV sales tracker. It estimates that electric car fleets in oil-importing countries displaced about <strong>200 million barrels</strong> of crude between March and August, the first six months of what it calls the Hormuz energy crisis. At international prices, that oil was worth about $20&nbsp;billion. Battery-electric cars account for about $16.5&nbsp;billion of the total and plug-in hybrids for the rest. China accounts for about $14&nbsp;billion and EU member states for about $3.1&nbsp;billion. The study covers 56 countries that make up more than 90% of global EV sales.</p>
+          <p>Ember also reports that the U.S. was overtaken this year by 15 countries on its EV indicator, including India, Brazil, Italy and Malaysia. Electrek&rsquo;s framing: with gasoline up 34% in a year, Americans are getting less of this buffer than drivers elsewhere. Note that the $20&nbsp;billion values the displaced oil at market prices and is not a measured consumer saving.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://ember-energy.org/latest-updates/electric-cars-have-saved-oil-importing-countries-20bn-since-the-start-of-the-hormuz-energy-crisis/">Ember</a>, <a href="https://electrek.co/2026/10/13/electric-cars-saved-20b-in-oil-and-the-us-is-falling-behind/">Electrek, Oct 13</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Grid &middot; Batteries</span>
+          <h2 class="story-headline">85,000 home batteries push a record 745 MW into California&rsquo;s grid, beating last month&rsquo;s mark</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Sunrun announced that its virtual power plant fleet delivered a combined <strong>745 megawatts</strong> to California&rsquo;s grid during an Oct.&nbsp;6 event. That beats a 580&nbsp;MW record set less than a month earlier. More than 85,000 Tesla Powerwall owners supplied over 600&nbsp;MW of it. For scale, that is roughly the output of a mid-sized gas peaker plant, delivered by coordinating home batteries during peak demand.</p>
+          <p>The numbers fit a broader trend Canary Media has tracked: U.S. grid-battery installations hit a quarterly record this year, and some automakers are shifting battery capacity from EVs toward stationary storage for utilities and data centers. Distributed batteries are now operating at a scale grid operators can plan around, which matters more with fuel prices up and AI data-center demand growing.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://electrek.co/2026/10/14/tesla-powerwall-sunrun-record-745-mw-california-grid-dispatch">Electrek, Oct 14</a>, <a href="https://www.canarymedia.com/newsletters/automakers-pivot-from-evs-to-grid-scale-batteries">Canary Media</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">MLB &middot; NLCS</span>
+          <h2 class="story-headline">Back-to-back homers from Bauers and Mitchell lift the Brewers past the Dodgers 6&ndash;2 for a 3&ndash;0 NLCS lead</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Jackson Chourio homered on the first pitch he saw from Blake Snell Wednesday night at Dodger Stadium. Robert Gasser then held Los Angeles scoreless through five innings. The Dodgers went ahead 2&ndash;1 in the sixth on a Will Smith double. In the seventh, Jake Bauers and Garrett Mitchell hit back-to-back home runs to put Milwaukee back in front. A Justin Wrobleski wild pitch made it 5&ndash;2 in the eighth, and Joey Ortiz added a two-strike RBI single in the ninth. Snell allowed four runs on four hits.</p>
+          <p>Milwaukee is one win from its first World Series since 1982. Game&nbsp;4 is Thursday in Los Angeles, and Milwaukee could sweep the team that eliminated it in last year&rsquo;s postseason. In the ALCS, tied 1&ndash;1, Cleveland and Tampa Bay play Game&nbsp;3 on Thursday, with Gavin Williams starting for the Guardians.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.espn.com/mlb/story/_/id/50186797/brewers-put-dodgers-ropes-seize-3-0-nlcs-lead-game-3">ESPN</a>, <a href="https://www.espn.com/mlb/story/_/id/50178254/mlb-playoffs-2026-nlcs-game-3-dodgers-brewers-lineups-updates-analysis-takeaways">ESPN (takeaways)</a>, <a href="https://abc7.com/post/dodgers-brink-elimination-loss-brewers-nlcs-game-3/19939491/">ABC7 Los Angeles</a>, <a href="https://www.cbssports.com/mlb/news/2026-mlb-playoff-bracket-schedule-scores-results-how-to-watch/">CBS Sports</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">English Football</span>
+          <h2 class="story-headline">PSG beat Manchester City 4&ndash;2 at the Etihad as Barcola&rsquo;s hat-trick carries Liverpool past LASK 6&ndash;3 and Villa thrash Fenerbah&ccedil;e 6&ndash;0</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>English clubs had mixed results on Wednesday&rsquo;s Champions League night. At the Etihad, Paris Saint-Germain led 3&ndash;0 by the 32nd minute through D&eacute;sir&eacute; Dou&eacute;, Ousmane Demb&eacute;l&eacute; and Vitinha. Pep Guardiola, City&rsquo;s former manager, watched from the stands. Erling Haaland scored twice after Enzo Maresca made a triple substitution at half-time, and that took him to 38 Champions League goals, a club record. It was still City&rsquo;s first defeat since the Community Shield and ended an eight-match winning run under Maresca. In Linz, Liverpool won a 6&ndash;3 game against LASK. Bradley Barcola scored a hat-trick, his first goals since his summer move from PSG, and Ronald Ara&uacute;jo, Jeremie Frimpong and Lewis Koumas also scored. It was a response to the weekend&rsquo;s 3&ndash;0 loss to City.</p>
+          <p>Aston Villa had their biggest European win ever, 6&ndash;0 over Fenerbah&ccedil;e at Villa Park. Nicolas Jackson and Ross Barkley each scored twice, and Johan Manzambi and Tammy Abraham added one each. It was also Villa&rsquo;s first home win of the season, which matters because they are 16th in the Premier League with one win from six. Unai Emery said he wants Villa to be Champions League &ldquo;protagonists,&rdquo; but added that he was &ldquo;not so happy&rdquo; with the first half.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.beinsports.com/en-us/soccer/uefa-champions-league/articles/manchester-city-2-4-paris-saint-germain-guardiolas-etihad-return-soured-by-european-champions-2026-10-14">beIN Sports (City&ndash;PSG), Oct 14</a>, <a href="https://www.skysports.com/football/manchester-city-vs-paris-saint-germain/report/577628">Sky Sports</a>, <a href="https://www.beinsports.com/en-mena/football/uefa-champions-league/articles-video/barcola-scores-hat-trick-as-liverpool-hit-lask-for-six-2026-10-14">beIN Sports (LASK&ndash;Liverpool), Oct 14</a>, <a href="https://www.espn.com/soccer/story/_/id/50182060/lask-liverpool-live-champions-league-latest-updates-commentary-score-result">ESPN</a>, <a href="https://www.skysports.com/football/news/13598853/aston-villa-6-0-fenerbahce-nicolas-jackson-and-ross-barkley-both-score-twice-in-big-champions-league-win">Sky Sports (Villa)</a>, <a href="https://www.vavel.com/en/football/2026/10/14/aston-villa/1275315-emery-today-is-a-good-night-for-the-supporters.html">VAVEL, Oct 14</a> <em>(BBC Sport not reachable this run)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal</span>
+          <h2 class="story-headline">&ldquo;That&rsquo;s for him&rdquo;: Arteta dedicates the Lille win to the late Ken Friar as Zubimendi nears a return before Sunday&rsquo;s trip to Forest</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Arsenal mourned life president Ken Friar, who died this week at 92. Arteta opened his post-Lille press conference with a tribute, and Arseblog&rsquo;s round-up led on it. &ldquo;That&rsquo;s for him,&rdquo; Arteta said of the 3&ndash;0 win, adding that Friar would have enjoyed the way the team played and that his legacy &ldquo;is going to live forever&rdquo; at the club. Friar worked at Arsenal for nearly 80 years, starting in the Highbury box office and rising to club secretary and managing director. He was central to the move to the Emirates. The players wore black armbands on Tuesday. Arseblog also noted Arteta&rsquo;s joke that he had &ldquo;killed&rdquo; Bukayo Saka by setting him a target of two or three goals a game, after Saka came off the bench to score.</p>
+          <p>On injuries, Arteta said Mart&iacute;n Zubimendi is &ldquo;much, much better.&rdquo; Piero Hincapi&eacute;&rsquo;s ankle looks more serious and is likely to keep him out for weeks. Saka is past his illness and is expected to start at Nottingham Forest on Sunday. Kai Havertz and Martin &Oslash;degaard are pushing to return to the XI, while Christos Tzolis remains out. <em>(The Athletic&rsquo;s Arsenal desk not reachable this run.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.news/2026/10/mikel-arteta-leads-tributes-to-ken-friar-obe/">Arseblog News (Friar)</a>, <a href="https://arseblog.news/2026/10/arteta-reveals-saka-joke-after-emphatic-lille-cameo/">Arseblog News (Saka)</a>, <a href="https://www.arsenal.com/news/arteta-dedicates-lille-victory-to-ken-friar-aaEeZ4n49hHt">Arsenal.com</a>, <a href="https://www.gazette-news.co.uk/sport/national/26634173.mikel-arteta-dedicates-arsenal-win-extraordinary-life-president-ken-friar/">PA (via Gazette)</a>, <a href="https://www.goal.com/en-sa/lists/mikel-arteta-martin-zubimendi-arsenal-nottingham-forest/blt774079b6fb4d229f">Goal (injuries)</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
