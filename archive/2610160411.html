@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Friday, October 16, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+<!-- EVENING:SLOT:START -->
+<!-- EVENING:SLOT:END -->
+
+  <!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">White House &middot; Money</span>
+          <h2 class="story-headline">Leaked records name the donors behind $330 million for Trump&rsquo;s ballroom: Nvidia, Apple, the Adelsons and Charles Ergen at $25 million each, and nothing from Trump</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The Washington Post reported Thursday that it had obtained an internal fundraising spreadsheet for the White House ballroom. As of late September it listed 67 gifts above $10,000, totaling about $333 million. The money runs through the Trust for the National Mall, a D.C. nonprofit, under an agreement that keeps donors anonymous unless White House staff approve disclosure. At least $77 million came from donors who asked for anonymity. The largest gifts were $25 million each, from Nvidia, Apple, the Adelson family and Dish founder Charles Ergen. Google gave $22 million through its settlement of a Trump lawsuit. Lockheed Martin, Microsoft and Palantir gave $10 million each, and Meta, Amazon and Cisco $5 million each. Nvidia had asked to stay anonymous. Its gift came about three months after it reached a deal with the administration to sell advanced chips to China. Trump does not appear on the list, although he has said the project is paid for &ldquo;a hundred percent by me and some friends of mine.&rdquo;</p>
+          <p>The Post found that about half the money came from companies or executives with federal contracts or other close ties to the administration. It also says its reporting does not show that any gift led to favorable government action. Nvidia and Cisco confirmed their gifts to CNBC, and Nvidia said its support is &ldquo;independent of any business interests.&rdquo; White House spokesman Davis Ingle called the donors &ldquo;a wide array of great American companies and generous individuals.&rdquo; He vowed to &ldquo;relentlessly pursue those responsible for this cowardly leak.&rdquo; Sen. Elizabeth Warren called the Trust &ldquo;a vehicle for politicized fundraising, influence peddling, and donor access.&rdquo;</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece from Mother&nbsp;Jones, Vox, Slate or Guardian opinion turned up. The early left reaction, from Warren and from The New Republic (not a listed outlet), treats the list as a menu of donors with business before the government: chipmakers, defense contractors and companies settling with Trump. It also highlights that the president gave nothing to a project he said he was paying for. <em>(No listed opinion-outlet pieces found.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece from National&nbsp;Review, The Dispatch, the WSJ editorial page or Reason turned up. The White House line is that the donors are patriotic companies and individuals paying for a project taxpayers won&rsquo;t fund. In that view, the real scandal is the leak of documents the donors were promised would stay private. Reason&rsquo;s earlier ballroom coverage objected to how the project skirted Congress, not to private money as such. <em>(No listed opinion-outlet pieces found.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/investigations/2026/10/15/secret-documents-reveal-donors-behind-330-million-trumps-ballroom/">Washington Post, Oct 15</a>, <a href="https://www.cnbc.com/2026/10/15/trump-ballroom-nvidia-cisco-donations.html">CNBC, Oct 15</a>, <a href="https://www.forbes.com/sites/saradorn/2026/10/15/these-billionaire-backers-are-reportedly-behind-trumps-ballroom-project/">Forbes, Oct 15</a>, <a href="https://www.spokesman.com/stories/2026/oct/15/secret-documents-reveal-donors-behind-330-million-/">Washington Post (via Spokesman-Review)</a>, <a href="https://thehill.com/homenews/administration/6152301-white-house-ballroom-private-donations/">The Hill</a>, <a href="https://newrepublic.com/post/216672/list-white-house-ballroom-donors-trump-corruption">The New Republic</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Elections &middot; Justice Department</span>
+          <h2 class="story-headline">Justice Department sues California to hold back mail ballots sent to 20,000 people it calls &ldquo;likely noncitizens,&rdquo; less than three weeks before the vote</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Thursday the Justice Department sued California Secretary of State Shirley Weber and Los Angeles County Registrar Dean Logan in federal court in Los Angeles. The suit asks a judge to order the state to set aside, and not count, mail ballots sent to more than 20,000 people whom DHS-compiled data flag as &ldquo;likely noncitizens,&rdquo; until each voter&rsquo;s citizenship is verified. The department says it is not seeking to purge anyone or cancel votes, and it bases its case on the Supremacy Clause. The suit follows letters Acting Deputy Attorney General Trent McCotter sent Tuesday with a password-protected thumb drive of names and a 48-hour deadline. L.A. County declined to open the drive, citing data-privacy and security protocols. Federal officials had earlier claimed that 190,000 noncitizens were registered in California.</p>
+          <p>Attorney General Todd Blanche called the issue potential &ldquo;state-facilitated fraud.&rdquo; U.S. Attorney Bill Essayli said the administration &ldquo;will not allow California to dilute the votes of American citizens.&rdquo; Weber said the department provided no evidence or method behind its list and is &ldquo;demanding unprecedented measures that threaten thousands of Californians&rsquo; right to vote.&rdquo; Gov. Gavin Newsom called the suit &ldquo;a sad, desperate attempt.&rdquo; Election-law experts described the case as a long shot. NPR notes that the complaint cites no statute that would impose an added citizenship check on voters. The Justice Department has sued 30 states and D.C. for voter-roll data and has lost 26 of those cases without a win.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece from Mother&nbsp;Jones, Vox, Slate or Guardian opinion turned up. The voting-rights side, voiced by Weber, Newsom and the election-law group Democracy Docket, sees a major escalation. In their account, an unverified federal list delivered on a thumb drive with a 48-hour deadline is being used to put lawfully cast ballots in limbo in the state most likely to decide the House. <em>(No listed opinion-outlet pieces found.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece from National&nbsp;Review, The Dispatch, the WSJ editorial page or Reason turned up. The administration&rsquo;s case, echoed in conservative outlets such as The Daily Signal, is that federal immigration data is the best check on citizenship and that it is asking only to verify ballots, not discard them. On this view, a state that refuses even to open the list is the one putting election integrity at risk. <em>(No listed opinion-outlet pieces found.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://npr.org/2026/10/16/nx-s1-6003976/doj-sues-california-to-block-the-counting-of-mail-in-ballots-from-alleged-noncitizens">NPR, Oct 16</a>, <a href="https://www.usnews.com/news/politics/articles/2026-10-15/trump-administration-sues-california-over-alleged-noncitizens-on-the-states-voter-rolls">AP (via U.S. News), Oct 15</a>, <a href="https://cnn.com/2026/10/15/politics/trump-doj-sues-california-non-citizens-voting">CNN, Oct 15</a>, <a href="https://www.cnbc.com/2026/10/15/california-mail-ballots-voting-lawsuit.html">CNBC, Oct 15</a>, <a href="https://www.spokesman.com/stories/2026/oct/15/doj-sues-california-over-mail-ballots-alleging-the/">Spokesman-Review, Oct 15</a>, <a href="https://www.justice.gov/usao-cdca/pr/united-states-sues-california-after-determining-more-20000-likely-noncitizens-are">DOJ release</a>, <a href="https://www.dailysignal.com/2026/10/15/justice-department-sues-california-over-likely-noncitizens-on-voter-lists/">Daily Signal</a> <em>(no in-window Lawfare piece found)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Polling &middot; Midterms</span>
+          <h2 class="story-headline">AP-NORC poll: 8 in 10 voters want major change in Washington, and Trump&rsquo;s approval sits at 36%</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>An AP-NORC poll of registered voters, taken Oct.&nbsp;8&ndash;12 and released Thursday, found that 80% want either &ldquo;substantial change&rdquo; or &ldquo;complete and total upheaval&rdquo; in how the country is run. That includes 97% of Democrats, 90% of independents and 58% of Republicans. About 3 in 10 voters overall chose upheaval. Trump&rsquo;s job approval is 36%, with 64% disapproving. About 8 in 10 disapprove of his handling of the cost of living, and about three-quarters disapprove of his handling of the economy. The margin of error is &plusmn;3.9 points.</p>
+          <p>The results do not amount to an endorsement of Democrats. Voters prefer Democratic control of the House by 9 points and of the Senate by 8, but only about 4 in 10 view the Democratic Party favorably. The enthusiasm gap favors Democrats: about three-quarters of Democratic voters call this election extremely important, compared with about 6 in 10 Republicans. AP frames the findings as a hard picture for a Republican majority defending Congress under an unpopular Iran war and rising prices. Separately, Trump said Thursday on Truth Social that Sen. John Cornyn and Karl Rove would be to blame &ldquo;if Ken Paxton loses&rdquo; the Texas Senate race.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece from a listed left outlet specifically on this poll. Slate&rsquo;s recent polling coverage argues that the numbers point to a strong Democratic year. The caution on the left is the one the poll itself contains: voters want change more than they want Democrats. <em>(No poll-specific listed pieces found.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece from a listed right outlet specifically on this poll. On the right, the reading of the results focuses on the Democrats&rsquo; poor favorability. Republicans argue that a race decided on the economy and on the opposition&rsquo;s unpopularity is still competitive. Trump&rsquo;s pre-emptive blaming of Cornyn and Rove points to anxiety within the party, even in Texas. <em>(No poll-specific listed pieces found.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.ksat.com/news/politics/2026/10/15/frustrated-with-trump-voters-overwhelmingly-want-change-in-washington-an-ap-norc-poll-finds/">AP (via KSAT), Oct 15</a>, <a href="https://www.usnews.com/news/business/articles/2026-10-15/frustrated-with-trump-voters-overwhelmingly-want-change-in-washington-an-ap-norc-poll-finds">AP (via U.S. News), Oct 15</a>, <a href="https://thehill.com/homenews/campaign/6151451-ap-norc-midterm-poll/">The Hill</a>, <a href="https://www.texastribune.org/2026/10/15/texas-trump-cornyn-rove-truth-social-paxton/">Texas Tribune (Cornyn/Rove), Oct 15</a>, <a href="https://slate.com/news-and-politics/2026/10/polls-democrats-blue-wave-accuracy-november-midterms.html">Slate</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Iran War</span>
+          <h2 class="story-headline">U.S. draws up strike plans that could use the &ldquo;Mother of All Bombs&rdquo; as Iran&rsquo;s army chief vows Hormuz stays shut and Treasury adds new sanctions</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>CNN reported Thursday, citing sources, that the U.S. military has drafted new strike options against Iranian energy infrastructure and nuclear sites that could include the GBU-43/B, the largest non-nuclear bomb in the U.S. arsenal. The plans would apply if Trump orders combat to resume, which he has said he will not do before the Nov.&nbsp;3 midterms. Officials privately questioned whether the options fit any strategy for ending the war. One source called some of them a &ldquo;fireworks show&rdquo; meant to offer an off-ramp. The White House said Trump &ldquo;keeps all options on the table.&rdquo; At a Montana rally Wednesday night he complained, &ldquo;I don&rsquo;t know who we&rsquo;re negotiating with.&rdquo; AP, citing U.S. officials, reported that Secretary of State Marco Rubio had Foreign Minister Abbas Araghchi&rsquo;s delegation leave New York early after indirect talks stalled. Iran denies it was expelled.</p>
+          <p>Iran&rsquo;s army chief, Maj. Gen. Amir Hatami, said Thursday that the Strait of Hormuz will stay &ldquo;closed&rdquo; until &ldquo;the rights of the Iranian people&rdquo; are respected. He warned that any strike on Iranian infrastructure would bring a response &ldquo;several times greater.&rdquo; U.S. Central Command maintains that U.S. and partner forces control the waterway. The same day, Treasury sanctioned 16 people and 10 entities, among them Iraq&rsquo;s International Development Bank, Iranian offshore banks and foreign-exchange fronts. CBS counts at least 10 vessels attacked in or near the strait since Sunday, the most since the war began. <em>Analysis:</em> Washington is pairing escalation threats with financial pressure while holding off on strikes until after the election. Tehran says the strait reopens only on its terms, so a deadlock through Nov.&nbsp;3 is the likeliest outcome.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://edition.cnn.com/2026/10/15/politics/us-considering-mother-of-all-bombs-iran">CNN, Oct 15</a>, <a href="https://www.cnbc.com/2026/10/15/us-iran-war-trump-hormuz.html">CNBC, Oct 15</a>, <a href="https://www.dawn.com/news/2037392/us-issues-fresh-iran-related-sanctions-treasury-website-shows">Reuters (via Dawn) &mdash; sanctions</a>, <a href="https://thehill.com/homenews/administration/6149753-trump-montana-rally-iran-war/">The Hill (rally)</a>, <a href="https://www.cbsnews.com/live-updates/iran-war-us-houthi-saudi-arabia-trump/">CBS News live updates</a>, <a href="https://www.presstv.co.uk/Detail/2026/10/16/778417/Army-chief--Strait-of-Hormuz-stays-closed-until-enemy-respects-Iranian-nation%E2%80%99s-rights">Press TV (Iranian state media; Hatami quote), Oct 16</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Russia &middot; Ukraine</span>
+          <h2 class="story-headline">Russia launches its biggest attack of the war on Kirovohrad, nearly 360 drones over ten hours, as the energy truce collapses and Trump calls Kyiv&rsquo;s refinery strikes &ldquo;a disgrace&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Ukraine&rsquo;s air force said Russia launched 580 drones and two missiles overnight into Thursday and that 536 drones were shot down, with impacts recorded at 31 locations. Zelenskyy put the total at more than 850 drones between midnight and Thursday morning. Kirovohrad governor Andrii Raikovych said almost 360 drones targeted his region over more than ten hours, the heaviest attack it has faced in the war. Three people were killed and six injured, mostly in Kropyvnytskyi, and a Nova Poshta cargo hub was hit. A Naftogaz gas-production site in Poltava was damaged and shut down. Early Thursday, Ukrainian drones set fire to Rosneft&rsquo;s Ryazan refinery. The Kremlin said Kyiv&rsquo;s strikes undercut U.S. peace efforts, and Putin said Russia is &ldquo;starting to respond.&rdquo;</p>
+          <p>In a Newsmax interview, Trump called Ukraine&rsquo;s refinery strikes &ldquo;a disgrace. There&rsquo;s plenty of other targets,&rdquo; and said Zelenskyy &ldquo;is not a good guy for us to deal with.&rdquo; <em>Analysis:</em> Both sides have now dropped the U.S.-brokered energy ceasefire, and Russia is attacking on a record scale. Meanwhile the rift between Washington and Kyiv is widening as the administration eases sanctions on Russian diesel, which leaves Ukraine with less leverage heading into winter.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/10/15/g-s1-148194/russia-ukraine-war">NPR/AP, Oct 15</a>, <a href="https://www.wbaa.org/npr-news/2026-10-16/russias-view-amid-ukraines-strikes-and-zelenskyys-growing-rift-with-the-u-s">NPR, Oct 16</a>, <a href="https://www.aljazeera.com/news/2026/10/15/russia-says-ukraine-resumes-attacks-on-oil-refineries">Al Jazeera, Oct 15</a>, <a href="https://euromaidanpress.com/2026/10/15/russias-largest-drone-attack-on-kirovohrad-oblast-since-the-full-scale-invasion-kills-three-in-kropyvnytskyi/">Euromaidan Press, Oct 15</a>, <a href="https://www.koreatimes.co.kr/world/20261016/ukraine-abandons-truce-attacks-russian-refinery-as-zelenskyy-says-he-feels-betrayed-by-trump">Korea Times, Oct 16</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Gulf &middot; Economy</span>
+          <h2 class="story-headline">IMF says Gulf economies won&rsquo;t return to their pre-war growth paths soon, and forecasts a 4.8% contraction for the GCC this year</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The IMF&rsquo;s Middle East and Central Asia director, Jihad Azour, said Thursday that Gulf economies will rebound but will not regain their pre-war growth trajectories in the medium term. He cited lasting damage to several sectors, destroyed infrastructure and the cost of building resilience. The fund now expects the six GCC economies to shrink 4.8% in 2026 before rebounding as much as 9.1% in 2027. Saudi Arabia is projected to contract 3.3%, Kuwait 16.7% and Iraq 16%. &ldquo;These buffers bought time, but they are finite,&rdquo; Azour said of the inventories and spare capacity that have softened the oil shock. &ldquo;Renewed disruption could generate much larger price adjustments.&rdquo; Brent is about 47% above its pre-war level.</p>
+          <p><em>Analysis:</em> The outlook arrives as Houthi strikes on Saudi Arabia escalate. An attack on Riyadh&rsquo;s airport on Oct.&nbsp;10 killed at least 12 people, and Aramco&rsquo;s headquarters was hit this week. The IMF&rsquo;s point is that the damage outlasts the shooting: the region&rsquo;s fiscal cushions are running down while the strait stays contested.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.thenationalnews.com/business/economy/2026/10/15/imf-official-says-buffers-against-iran-war-price-shock-are-narrowing/">The National, Oct 15</a>, <a href="https://www.dawn.com/news/2037305/imf-warns-gulf-economies-will-not-return-to-pre-war-growth-soon">Reuters (via Dawn)</a>, <a href="https://www.brecorder.com/news/40444483/imf-warns-gulf-economies-will-not-return-to-pre-war-growth-soon">Reuters (via Business Recorder)</a>, <a href="https://malaymail.com/news/money/2026/10/15/imf-warns-saudi-arabia-and-gulf-economies-may-take-years-to-recover-from-war-saudi-economy-projected-to-shrink-33pc/239202">Malay Mail, Oct 15</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE, TECH, ENERGY & CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Quantum Computing</span>
+          <h2 class="story-headline">Google shows &ldquo;magic state cultivation&rdquo; on its Willow chip, cutting errors about 40-fold on a key ingredient for fault-tolerant quantum computers</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>In a paper published in <em>Science</em> on Thursday, Google Quantum AI reported the first hardware demonstration of magic state cultivation on its 105-qubit Willow processor. Magic states are special quantum states needed for the non-Clifford gates that universal, error-corrected quantum computing requires, and producing them has been one of the field&rsquo;s most expensive bottlenecks. Google cites estimates that they could take up to 95% of a quantum computer&rsquo;s resources. The team, which includes Craig Gidney, Noah Shutty and Cody Jones, reached a fidelity of at least 0.9999, with errors about 40 times lower than for uncultivated states. It then moved the states from a distance-3 color code into a distance-5 surface code.</p>
+          <p>The cost is the discard rate: only about 8% of attempts were kept. Sundar Pichai called the result &ldquo;magical progress,&rdquo; which is the company&rsquo;s framing. Google itself says the technique has to be shown at larger scales before it matters for practical machines.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://research.google/pubs/magic-state-cultivation-on-a-superconducting-quantum-processor/">Google Research (paper page)</a>, <a href="https://www.neowin.net/news/googles-willow-processor-cuts-quantum-errors-40x-with-magic-states/">Neowin</a>, <a href="https://decrypt.co/381102/google-cracked-quantum-computing-biggest-bottlenecks">Decrypt</a>, <a href="https://www.streetinsider.com/Corporate+News/Google+demonstrates+magic+state+cultivation+on+Willow+quantum+processor/27192772.html">StreetInsider</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">AI &middot; Chips</span>
+          <h2 class="story-headline">Nvidia releases Nemotron 3.5 open models, a 120B multimodal model for enterprise agents and a 24GB model that runs on a desktop RTX card, with training data included</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Nvidia expanded its Nemotron family of open models on Thursday. The headline release, Nemotron 3.5 Super VL, is a 120-billion-parameter mixture-of-experts model that uses 12 billion parameters per token and handles text, images, documents and video for AI agents. Nvidia says it matches a much larger reasoning model on multimodal agent tasks at about a fifth of the size. It is available now on Hugging Face, OpenRouter and as an Nvidia NIM microservice. It was built with partners in a &ldquo;Nemotron Coalition&rdquo; that includes Mistral AI, Thinking Machines Lab, Perplexity and Black Forest Labs.</p>
+          <p>Two edge models came with it. Bolt 74B-A9B fits in 24GB of memory for RTX and DGX Spark machines and is available now. Bolt E4B, a 4GB model for voice and chat agents, ships Oct.&nbsp;23. Nvidia is publishing the datasets and training recipes along with the weights, under its OpenMDW license. That goes further than most &ldquo;open-weight&rdquo; releases from U.S. labs. The launch landed in a rough week for chip stocks, which CNBC says shed more than $1 trillion in AI-linked market value after the hot inflation report.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://blogs.nvidia.com/blog/nemotron-3-5-super-vl/">Nvidia blog</a>, <a href="https://www.technology.org/2026/10/16/nvidia-nemotron-3-5-super-vl-bolt-open-models/">Technology.org, Oct 16</a>, <a href="https://the-decoder.com/nvidias-nemotron-3-5-super-vl-is-an-open-model-built-to-run-enterprise-ai-agents-nonstop/">The Decoder</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Electrification</span>
+          <h2 class="story-headline">Europe sets a monthly EV sales record of nearly 600,000 as North America falls 44% a year after the U.S. tax credit expired</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Benchmark Mineral Intelligence data reported by Electrek shows Europe sold almost 600,000 electric vehicles in September, up 39% from a year earlier and about 10% above the previous record set in June. Battery-electric sales rose about 50% and plug-in hybrids 16%. North American sales fell 44% year on year. Most of that drop is a comparison effect: September 2025 was the last month before the federal EV tax credit expired, so many buyers bought early. Benchmark expects the decline to narrow from the fourth quarter.</p>
+          <p>Global sales dipped 2% to 2.15 million, the first year-on-year decline in seven months, as China fell 18%. Global sales are still up about 3% for the year so far. With oil prices high because of the Iran war, Europe&rsquo;s surge suggests the fuel-price shock is pushing buyers toward electric cars where policy support remains in place.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://electrek.co/2026/10/15/europes-ev-sales-soar-as-north-america-drops-44-heres-the-catch/">Electrek, Oct 15</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">EVs &middot; Tesla</span>
+          <h2 class="story-headline">Nine years late, Tesla unveils the new Roadster at a SpaceX test site, claims 0&ndash;60 in under a second, gives no price, and says production starts in 2028</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Tesla held its long-delayed Roadster event Thursday night at SpaceX&rsquo;s McGregor, Texas, test site, two weeks after weather postponed it. It showed three versions: a two-seat Performance model, a &ldquo;Thrust&rdquo; version with rear cold-gas thrusters, and a single-seat &ldquo;Rocket&rdquo; that Tesla marks as not approved for public roads. Claimed specs include 0&ndash;60 mph in under 1.6 seconds for the Performance model, under a second for the top version, a top speed above 230 mph and more than 300 miles of range. A run on stage clocked about 0.81 seconds. Accounts differ on which version made that run.</p>
+          <p>The specs fall short of what Tesla promised in 2017: 620 miles of range, more than 250 mph and 2+2 seating. Tesla gave no price. Reservations require $5,000 now and $45,000 within ten days, and the only official price is still the 2017 base figure of $200,000. Executives said production begins in 2028. Coverage noted that the event was heavy on stunts and light on detail.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://electrek.co/2026/10/15/tesla-unveils-cyberfied-new-roadster-kickflip/">Electrek, Oct 15</a>, <a href="https://www.foxbusiness.com/technology/teslas-new-roadster-makes-flying-debut-hitting-60-mph-under-second">Fox Business</a>, <a href="https://electrek.co/2026/10/13/tesla-roadster-event-thursday-nine-years-delays/">Electrek (preview), Oct 13</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">MLB &middot; NLCS</span>
+          <h2 class="story-headline">Brewers rally from 4&ndash;0 down to sweep the two-time champion Dodgers and reach their first World Series since 1982</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Milwaukee beat Los Angeles 6&ndash;4 at Dodger Stadium on Thursday to finish a 4&ndash;0 NLCS sweep and end the Dodgers&rsquo; bid for a third straight title. The Dodgers led 4&ndash;0 in the second, helped by a Shohei Ohtani home run, their only homer of the series. Jake Bauers hit a two-run double in the fourth, and the Brewers tied the game in the fifth after the Dodgers&rsquo; bullpen walked four batters. Garrett Mitchell led off the sixth with a 409-foot go-ahead homer off Tanner Scott, and David Hamilton added a solo shot in the ninth. The Dodgers stranded a runner on third in the sixth, seventh and eighth innings. &ldquo;We weren&rsquo;t coming in to play patty-cake,&rdquo; manager Pat Murphy said. &ldquo;We were hungry.&rdquo; Milwaukee hosts Game&nbsp;1 of the World Series on Oct.&nbsp;23.</p>
+          <p>In the ALCS, rookie Petey Halpin&rsquo;s two-run homer in the fifth lifted Cleveland past Tampa Bay 3&ndash;2 for a 2&ndash;1 series lead. Gavin Williams struck out nine, and Cade Smith escaped the eighth with a 10-pitch strikeout of Yandy D&iacute;az before a perfect ninth. Game&nbsp;4 is Friday, with rain in the forecast. In Thursday Night Football, Denver beat Seattle 17&ndash;14 in overtime. Ja&rsquo;Quan McMillian intercepted Sam Darnold and Wil Lutz kicked a 53-yard field goal to win it, after Seattle had scored 11 straight points to force the extra period.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.espn.com/mlb/story/_/id/50193819/brewers-sweep-dodgers-nlcs-advance-world-series">ESPN</a>, <a href="https://www.nbcsports.com/fantasy/baseball/player-news/2026-10-15/garrett-mitchell-homers-again-as-brewers-sweep">NBC Sports, Oct 15</a>, <a href="https://www.mlb.com/news/brewers-win-nlcs-2026">MLB.com</a>, <a href="https://www.espn.com/mlb/story/_/id/50191465/petey-halpin-hr-puts-guardians-rays-alcs-game-3">ESPN (ALCS)</a>, <a href="https://www.mlb.com/news/guardians-win-alcs-game-3-2026">MLB.com (ALCS)</a>, <a href="https://www.clickorlando.com/sports/2026/10/16/broncos-beat-the-seahawks-17-14-in-ot-on-jaquan-mcmillians-pick-wil-lutzs-53-yarder/">AP (via ClickOrlando), Oct 16</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">English Football</span>
+          <h2 class="story-headline">Lisandro Mart&iacute;nez apologizes after criticizing Manchester United&rsquo;s recruitment, as Carrick faces Leeds still searching for a first league win in five</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>After United&rsquo;s 2&ndash;0 Champions League loss at Atl&eacute;tico Madrid, Lisandro Mart&iacute;nez publicly criticized the club&rsquo;s recruitment. He named technical director Jason Wilcox and said head coach Michael Carrick had been left with an under-equipped squad. After talks with Carrick and club leadership he apologized, saying frustration led him to speak out &ldquo;at a time and place that were perhaps not the right ones.&rdquo; He has reportedly been fined, though the club has not confirmed it. Carrick speaks to the media Friday ahead of Sunday&rsquo;s trip to Leeds. Bookmakers make him favorite to be the first Premier League manager sacked this season after five league games without a win.</p>
+          <p>Elsewhere this weekend, Everton host Chelsea in Saturday&rsquo;s early game. Liverpool go to Brentford, Manchester City host Ipswich and Newcastle meet Aston Villa. Phil Foden is available again for City after a three-match domestic ban, and Chelsea&rsquo;s Jamie Gittens is out for weeks with an ankle injury. <em>(BBC Sport not reachable this run; fixture and team news drawn from previews.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://caughtoffside.com/2026/10/16/man-united-fine-lisandro-martinez-carrick-to-speak-today">CaughtOffside, Oct 16</a>, <a href="https://sports.yahoo.com/articles/martinez-apologises-outburst-fined-man-182725681.html">Yahoo Sports</a>, <a href="https://www.manutd.com/en/news/when-is-carricks-pre-leeds-press-conference">ManUtd.com</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal</span>
+          <h2 class="story-headline">Merino says a players-only meeting after last season&rsquo;s Wolves draw won Arsenal the title, as Arseblog welcomes &ldquo;good stuff from the other Mikel&rdquo; before Forest</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Arseblog spent Friday on Mikel Merino&rsquo;s Players&rsquo; Tribune essay, &ldquo;To the People Who Carried Me.&rdquo; In it Merino says the title was won in a players-only dressing-room meeting held, without the manager, the day after last season&rsquo;s draw at Wolves, and that the squad used social-media mockery as fuel. He also describes rushing back from the injury he suffered against Manchester United in January to be fit for the Champions League final and a place in Spain&rsquo;s World Cup squad: &ldquo;I had to show Luis [de la Fuente] that I was ready.&rdquo; Arseblog read it as a welcome look inside a group that rarely shows itself. Merino told ESPN that Arsenal are &ldquo;ready&rdquo; to chase a Premier League and Champions League double, with Forest and then Bayern Munich next.</p>
+          <p>Off the pitch, Arseblog News reports that up to 60 non-football jobs are at risk after a Boston Consulting Group review. CEO Richard Garlick told staff on a Wednesday call; the football department, the Arsenal Foundation and security are exempt. The Forest game is Sunday at 4:30pm BST at the City Ground. Forest are without Igor Jesus. For Arsenal, Christos Tzolis is out for a few weeks, and Jurri&euml;n Timber&rsquo;s minutes are being managed, so Ben White may start at right-back. <em>(The Athletic&rsquo;s Arsenal desk not reachable this run; job cuts corroborated via Arseblog News and secondary reports citing The Telegraph and The Athletic.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.com/2026/10/good-stuff-from-the-other-mikel/">Arseblog</a>, <a href="https://www.theplayerstribune.com/mikel-merino-epl-soccer-arsenal-spain">The Players&rsquo; Tribune</a>, <a href="https://arsenalnews.co.uk/2026/10/15/mikel-merino-reveals-arsenal-dressing-room-meeting-that-changed-title-race-and-world-cup-injury-ordeal/">Arsenal News, Oct 15</a>, <a href="https://www.espn.com/soccer/story/_/id/50181607/mikel-merino-says-arsenal-ready-premier-league-champions-league-double">ESPN</a>, <a href="https://arseblog.news/2026/10/arsenals-latest-cost-cutting-plans-put-up-to-60-jobs-at-risk/">Arseblog News (job cuts)</a>, <a href="https://www.nottinghamforest.co.uk/news/2026/october/14/how-to-follow---forest-v-arsenal/">Nottingham Forest</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
