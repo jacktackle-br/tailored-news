@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>History &amp; Ideas — Tailored News</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — History & Ideas (weekly)
+     Shares the daily-brief design system verbatim.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;
+    --take-left:    #5a6b7a;
+    --take-right:   #8a7350;
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:        #17140f;
+      --paper-raised: #201c15;
+      --ink:          #ece5d6;
+      --ink-soft:     #b3aa96;
+      --ink-faint:    #7c7361;
+      --rule:         #3a3427;
+      --rule-soft:    #2c281f;
+      --accent:       #d68a5f;
+      --take-left:    #7f92a3;
+      --take-right:   #b39a6f;
+      --take-left-bg:  #1c1f22;
+      --take-right-bg: #221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:        #17140f;
+    --paper-raised: #201c15;
+    --ink:          #ece5d6;
+    --ink-soft:     #b3aa96;
+    --ink-faint:    #7c7361;
+    --rule:         #3a3427;
+    --rule-soft:    #2c281f;
+    --accent:       #d68a5f;
+    --take-left:    #7f92a3;
+    --take-right:   #b39a6f;
+    --take-left-bg:  #1c1f22;
+    --take-right-bg: #221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 1.125rem;
+    line-height: 1.62;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  .page {
+    max-width: calc(var(--measure) + var(--pad) * 2);
+    margin: 0 auto;
+    padding: 0 var(--pad) 5rem;
+  }
+
+  /* ---------- Masthead ---------- */
+  .masthead {
+    text-align: center;
+    padding: 2.75rem 0 1.5rem;
+  }
+  .masthead-title {
+    font-size: clamp(2.5rem, 11vw, 4rem);
+    line-height: 0.95;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    margin: 0;
+  }
+  .masthead-subtitle {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-top: 0.7rem;
+  }
+  .masthead-rule {
+    border: 0;
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    height: 4px;
+    margin: 1.25rem auto 0;
+  }
+  .masthead-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    white-space: nowrap;
+    transition: border-color 0.15s;
+  }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Standfirst ---------- */
+  .standfirst {
+    max-width: 30rem;
+    margin: 2.5rem auto 0;
+    text-align: center;
+    font-style: italic;
+    font-size: 1.2rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    text-wrap: pretty;
+  }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3rem; }
+
+  /* ---------- Essay (story) ---------- */
+  .story {
+    border-top: 1px solid var(--rule-soft);
+    padding: 0.35rem 0;
+  }
+  .story:first-of-type {
+    border-top: 4px double var(--rule);
+    margin-top: 2.5rem;
+  }
+
+  .story > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 1.4rem 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: 1rem;
+  }
+  .story > summary::-webkit-details-marker { display: none; }
+
+  .story-domain {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.55rem;
+  }
+  .story-headline {
+    font-size: clamp(1.5rem, 5.5vw, 1.95rem);
+    line-height: 1.16;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .story-toggle {
+    font-family: var(--mono);
+    font-size: 1.4rem;
+    line-height: 1;
+    color: var(--ink-faint);
+    margin-top: 0.15rem;
+    transition: transform 0.2s ease;
+    user-select: none;
+  }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+
+  .story-body { padding-bottom: 1.75rem; }
+  .story-body p { margin: 0 0 1.1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  /* essayistic drop-cap on the opening paragraph */
+  .story-body > p:first-child::first-letter {
+    font-size: 3.1rem;
+    line-height: 0.8;
+    float: left;
+    padding: 0.05em 0.12em 0 0;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .sources {
+    font-family: var(--mono);
+    font-size: 0.64rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-top: 1.4rem;
+    padding-top: 0.6rem;
+    border-top: 1px dashed var(--rule);
+  }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Footer ---------- */
+  .colophon {
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 4px double var(--rule);
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    text-align: center;
+    line-height: 1.8;
+  }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) {
+    body { font-size: 1.1875rem; }
+  }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle {
+    position: fixed;
+    top: 0.9rem;
+    right: 0.9rem;
+    z-index: 20;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.8rem;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%);
+  }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">History &amp; Ideas</h1>
+    <div class="masthead-subtitle">A weekly reading from Tailored News</div>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Week of October 12, 2026</span>
+      <!-- edition: Sunday, October 18, 2026 -->
+      <a class="masthead-link" href="index.html">&larr; Back to the daily brief</a>
+    </div>
+  </header>
+
+  <p class="standfirst">Three longer reads for the week &mdash; the kind of thing worth turning over slowly with a second cup of coffee.</p>
+
+  <section class="section">
+
+    <!-- ESSAY 1 -->
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-domain">Philosophy &middot; Intellectual History</span>
+          <h2 class="story-headline">Foucault at 100: a centenary argument over whether the century&rsquo;s most-cited thinker made an idol of nothingness</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <p>Michel Foucault was born on October 15, 1926, and the centenary brought a week of reassessments. The sharpest came from Carl R. Trueman in <strong>First Things</strong>, in an essay called &ldquo;Foucault&rsquo;s Idol of Nothingness.&rdquo; Trueman builds it around a 1980 interview with the Italian paper <em>Il Contributo</em>. Asked whether democracy was better than totalitarianism, Foucault kept evading the question, to his interviewer&rsquo;s frustration. Trueman argues that the evasion was the method at work. A genealogy that brackets the question of truth, he says, ends up with nothing to say when the stakes are highest. He points to Foucault&rsquo;s widely mocked enthusiasm for the Iranian Revolution as the same failure. He closes with Psalm 115, on idols that cannot see or speak and the people who make them and come to resemble them.</p>
+        <p>Other centenary writers were less severe. Michael C. Behrent, writing in <em>Compact</em>, asks whether Foucault&rsquo;s reputation as an avant-garde subversive has been overstated. The historian Steven Mintz argues that the task now is to recover what Foucault&rsquo;s framework made harder to see: agency, interiority, memory and the lived body. A French piece in The Conversation simply notes that he remains the most-cited author in the humanities and social sciences. Taken together, the pieces show how far apart his readers still are, a century after his birth: some see him as the thinker who exposed power everywhere, and others as the one who left no ground to stand on when judging it.</p>
+        <div class="sources">Sources: <a href="https://firstthings.com/foucaults-idol-of-nothingness/">First Things (Trueman), Oct 15</a>, <a href="https://www.compactmag.com/article/the-foucault-century/">Compact (Behrent)</a>, <a href="https://michel-foucault.com/2026/10/17/michael-c-behrent-the-foucault-century-2026/">michel-foucault.com listing, Oct 17</a>, <a href="https://stevenmintz.substack.com/p/foucault-at-100">Steven Mintz</a>, <a href="https://theconversation.com/michel-foucault-penseur-de-lactualite-294133">The Conversation (FR)</a></div>
+      </div>
+    </details>
+
+    <!-- ESSAY 2 -->
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-domain">Religion &middot; Social Science</span>
+          <h2 class="story-headline">What do Americans who want a &ldquo;Christian nation&rdquo; actually mean? A sociologist asked them, using a chatbot interviewer</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <p>In <strong>Christianity Today</strong>, Ohio State sociologist Jesse Smith argues that much of the debate over &ldquo;Christian nationalism&rdquo; rests on survey questions too ambiguous to carry the conclusions drawn from them. Smith is at the university&rsquo;s Chase Center for Civics, Culture, and Society and has made this methodological argument in academic journals since 2022. He also says the label has drifted, so that nearly any politically conservative Christianity now risks being lumped in with its most extreme forms. To test it, he recruited Christians through CloudResearch and asked them to rate a statement that the federal government should declare the U.S. a Christian nation. A chatbot then asked them, in neutral language, what they meant. Smith concludes that most, including many who say they want a &ldquo;Christian nation,&rdquo; do not share the goals of racist theocrats.</p>
+        <p>The essay has drawn pushback. The Catholic writer Mike Fox says it &ldquo;whitewashes&rdquo; the problem and rests on a single study. By his count, a small number of respondents still voiced coercive or exclusionary views toward non-Christians or raised race. Other researchers, in work led by Paul Djupe, have found that the standard survey items do measure one coherent concept. That matters because the question is not academic. Pew&rsquo;s 2022 finding that 45 percent of Americans think the U.S. should be a Christian nation has shaped much of the journalism on religion and politics. Smith&rsquo;s argument is about what that number really measures. <em>(Summary drawn from excerpts; full article partly gated.)</em></p>
+        <div class="sources">Sources: <a href="https://www.christianitytoday.com/2026/10/3-myths-about-christian-nationalism-survey-sociology-research/">Christianity Today (Smith), Oct 12</a>, <a href="https://mikefoxcatechist.substack.com/p/christianity-today-whitewashes-christian">Mike Fox (critique)</a></div>
+      </div>
+    </details>
+
+    <!-- ESSAY 3 -->
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-domain">History &middot; Roman Britain &amp; Welsh Legend</span>
+          <h2 class="story-headline">A Roman fort found in the Preseli Hills, and two late coins that tie it, tentatively, to the medieval Welsh tale of Macsen Wledig</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <p>Writing in <strong>The Conversation</strong>, Oxford Roman specialist Mark Merrony describes how he first spotted the outline of an enclosure in satellite imagery of Pembrokeshire&rsquo;s Preseli Hills in 2024. On a visit he found a Roman roof tile, which backed up his reading. The site measures about 180 by 150 metres, has the rounded &ldquo;playing-card&rdquo; corners of an auxiliary fort, and could have held around 500 soldiers. Digs have turned up pottery, tiles, an iron writing stylus, compacted clay floors and wagon ruts. A geophysical survey shows two large buildings, which Merrony thinks may be a headquarters and a commander&rsquo;s house. The exact location is being kept secret to deter treasure hunters.</p>
+        <p>The find also bears on a legend. In the Mabinogion, the tale &ldquo;The Dream of Macsen Wledig&rdquo; puts the camp of Magnus Maximus, the fourth-century general who seized the western empire from Britain, on Frenni Fawr, the highest peak in the Preseli Hills. Until now that link existed only in the story. Two late-fourth-century coins found about two miles southwest of Frenni Fawr date from Maximus&rsquo;s time, and Merrony calls a connection &ldquo;fascinating to consider.&rdquo; Coverage stresses that the evidence is suggestive, not conclusive. Coins cannot show a garrison, and Merrony himself suggests the timber fort may date to around AD 74&ndash;78, three centuries before Maximus. The full findings are due in an archaeology journal.</p>
+        <div class="sources">Sources: <a href="https://theconversation.com/i-discovered-a-roman-fort-in-wales-it-may-hold-the-key-to-the-ancient-welsh-legend-of-macsen-wledig-294506">The Conversation (Merrony)</a>, <a href="https://phys.org/news/2026-10-roman-fort-wales-key-ancient.html">Phys.org, Oct 2026</a>, <a href="https://greekreporter.com/2026/10/13/roman-coins-wales-revive-legend-emperor-woman/">Greek Reporter, Oct 13</a>, <a href="https://pembrokeshire-herald.com/150916/roman-coins-ancient-legend-emperors-pembrokeshire-camp/">Pembrokeshire Herald</a></div>
+      </div>
+    </details>
+
+  </section>
+
+  <footer class="colophon">
+    <div>Tailored News &middot; History &amp; Ideas &middot; Weekly</div>
+    <div><a href="index.html">&larr; Return to the daily brief</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+
+</body>
+</html>
