@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Wednesday, October 21, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+<!-- EVENING:SLOT:START -->
+  <div class="edition-band"><span class="kick">The Evening Edition</span><span class="big">Evening Briefing</span><span class="when">Updated Wednesday, October 21, 2026</span></div>
+
+  <section class="section" id="evening-politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Supreme Court &middot; Prisons</span>
+          <h2 class="story-headline">Supreme Court refuses to let the Trump administration cut off medical care for transgender federal inmates while the case goes on</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Wednesday the Supreme Court denied the Justice Department&rsquo;s emergency request to enforce a 2026 Bureau of Prisons policy right away, AP and NPR report. The policy would end surgical and hormone treatments, as well as social accommodations, for inmates who have been or will be diagnosed with gender dysphoria. The order was one line long, unsigned and unexplained. Justices Samuel Alito and Clarence Thomas said they would have granted the request. The decision leaves in place an order from U.S. District Judge Royce Lamberth, who found the policy was &ldquo;reverse-engineered&rdquo; to carry out President Trump&rsquo;s executive order. A divided D.C. Circuit panel, voting 2&ndash;1, had declined to lift his order.</p>
+          <p>The department argued that the bureau&rsquo;s judgment deserves &ldquo;double deference.&rdquo; In its view, Lamberth&rsquo;s &ldquo;demand for additional evidence&rdquo; went against that standard, and the bureau had reasonably concluded from its own experience that the treatments were not medically necessary. The ACLU represents the inmates. Its lawyers called the ruling critical for transgender people in federal custody. The order is a break from earlier emergency rulings that let the administration enforce other policies on transgender people, including the military service restrictions and the passport sex-marker rules. The case now returns to the lower courts.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Civil-liberties lawyers and LGBTQ advocates say the ruling shows that even this Court will not approve a policy that a trial judge found was built backward from a political directive rather than from medical evidence. They argue that suddenly stopping hormone therapy for people in custody raises basic Eighth Amendment concerns. <em>(No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece found; summary drawn from the ACLU and advocates as reported.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>The administration&rsquo;s position, which Justices Alito and Thomas would have accepted, is that prison medical decisions belong to the Bureau of Prisons, not to district judges asking for more evidence. On this view, the order is one more instance of lower courts second-guessing executive policy. <em>(No in-window National Review, Dispatch, WSJ editorial or Reason piece found; summary reflects the Justice Department&rsquo;s filings and the noted dissents.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.kpbs.org/news/politics/2026/10/21/supreme-court-upholds-pause-on-trumps-anti-trans-prison-policy">NPR via KPBS, Oct 21</a>, <a href="https://www.scotusblog.com/2026/10/justices-leave-in-place-lower-court-order-preventing-trump-administration-from-implementing-new-/">SCOTUSblog, Oct 2026</a>, <a href="https://www.nbcnews.com/politics/supreme-court/supreme-court-rejects-trump-transgender-prison-policy-rcna601889">NBC News</a>, <a href="https://minnlawyer.com/2026/10/21/supreme-court-blocks-transgender-inmate-care-ban-enforcement/">Minnesota Lawyer, Oct 21</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Midterms &middot; Polling</span>
+          <h2 class="story-headline">Three new national polls put Trump&rsquo;s approval at record lows, between 31% and 34%, and Democrats hold double-digit leads for Congress 13 days before the election</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>A CNN/SSRS poll released Wednesday puts Trump&rsquo;s approval at 32%, a record low for that survey and one point below its late-September reading. It found 74% approval among Republicans, down from 88% in February 2025. Democrats lead the generic congressional ballot 49% to 39% among registered voters, their biggest edge in CNN&rsquo;s polling since just before the 2020 election. The poll surveyed 1,701 adults Oct. 15&ndash;18, with a margin of error of &plusmn;4.1 points.</p>
+          <p>NPR reported a Strength In Numbers/Verasight survey of 2,028 people, taken Oct. 13&ndash;19 with a &plusmn;2.2-point margin. It has Trump at 34% approval and 62% disapproval, with new lows on seven of the 10 issues it has tracked since May 2025. Voters&rsquo; trust in Republicans on immigration and prices hit a record low, and a majority want the next Congress to act as a check on the president. A Reuters/Ipsos poll published Tuesday had his approval at 31%, the lowest of either term. The New York Times/Siena poll put it at 36% among likely voters. CNN&rsquo;s analysis notes that a 10-point national lead would be roughly a 13-point swing from the 2024 House popular vote. It also cautions that many of the competitive races are in districts Trump won by double digits. Election Day is Nov. 3.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Democrats point to the polls as evidence that the cost of living, tariffs and the administration&rsquo;s focus on immigration enforcement have turned voters against Republicans. In their reading, the falling support among Republicans themselves shows the president&rsquo;s base is no longer a floor. <em>(No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece on these polls found; summary drawn from reported Democratic messaging.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Republicans counter that national toplines overstate the danger. They say the House will be decided seat by seat in Trump-won districts, where their candidates and the money of outside groups that are outspending Democrats on TV ads matter more. <em>(No in-window National Review, Dispatch, WSJ editorial or Reason piece on these polls found; summary reflects GOP arguments as reported.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnn.com/2026/10/21/politics/cnn-poll-trump-democrats-republicans-midterms">CNN, Oct 21</a>, <a href="https://www.npr.org/2026/10/21/nx-s1-6011179/poll-democrats-republicans-trump-approval">NPR, Oct 21</a>, <a href="https://forbes.com/sites/saradorn/2026/10/20/trumps-approval-rating-hits-record-low-31-in-latest-poll">Forbes (Reuters/Ipsos), Oct 20</a>, <a href="https://www.forbes.com/sites/saradorn/2026/10/21/trumps-approval-rating-hits-record-low-in-third-new-poll-this-week-boosting-democrats-midterm-chances/">Forbes, Oct 21</a></div>
+      </div>
+    </details>
+  </section>
+
+  <section class="section" id="evening-foreign">
+    <div class="section-header"><span class="section-label">Global Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Russia &middot; Ukraine &middot; Diplomacy</span>
+          <h2 class="story-headline">After Witkoff&rsquo;s meeting, Putin agrees to resume three-way peace talks with Ukraine and the U.S. on or after Nov. 10, possibly in Abu Dhabi</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Steve Witkoff met Vladimir Putin in St. Petersburg for several hours. Afterward the Kremlin said Putin had agreed &ldquo;in principle&rdquo; to restart technical-level talks among Russia, Ukraine and the United States, according to AP, CNN and Axios. The talks would focus on security guarantees for both sides after the war and could begin on or after Nov. 10. Kremlin aide Yuri Ushakov named Abu Dhabi as a possible venue, the same place the January and February rounds were held. Spokesman Dmitry Peskov said Moscow would study the proposals Witkoff brought but warned that the process would take a long time. The release of American Stephen Hubbard, reported this morning, was confirmed during the visit. Trump said no prisoner swap was required. Reports say Putin also told Witkoff a deal with Iran was &ldquo;possible and necessary&rdquo; and expressed interest in restoring economic ties with the U.S.</p>
+          <p>Zelenskyy, who met Witkoff in Oslo on Tuesday, said Kyiv is ready in principle to return to the table and wants talks to start &ldquo;no later than the beginning of November.&rdquo; That is earlier than the Kremlin&rsquo;s timeline. He also made his skepticism plain: &ldquo;Russia said many times it is ready for a meeting and then things changed and got cancelled.&rdquo; <strong>Analysis:</strong> So far Moscow has conceded only a return to negotiations. Putin&rsquo;s core demands are unchanged, according to every outlet reviewed: all of Donetsk, no NATO membership for Ukraine, and a full settlement instead of a ceasefire. Pushing the start past Nov. 10 also puts the talks after the U.S. midterms. The open question is whether Washington&rsquo;s decision to hold back new sanctions, which Trump linked to Hubbard&rsquo;s release, will produce anything at the table.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.ksat.com/news/world/2026/10/21/trump-envoy-witkoff-to-meet-putin-in-st-petersburg-for-ukraine-war-talks/">AP via KSAT, Oct 21</a>, <a href="https://www.cnn.com/2026/10/21/europe/us-envoy-witkoff-putin-talks-russia-ukraine-intl">CNN, Oct 21</a>, <a href="https://www.axios.com/2026/10/21/russia-ukraine-putin-witkoff-peace">Axios, Oct 21</a>, <a href="https://www.aljazeera.com/news/2026/10/21/witkoff-in-russia-for-putin-meeting-after-positive-talks-with-zelenskyy">Al Jazeera, Oct 21</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Israel &middot; West Bank</span>
+          <h2 class="story-headline">Israeli forces hold New York congressional candidate Brad Lander and dozens of Americans and Israelis at a West Bank olive harvest, and Israel&rsquo;s Foreign Ministry calls it a &ldquo;stunt&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Israeli soldiers and police detained Brad Lander, the former New York City comptroller and now the Democratic candidate for a New York House seat, on Wednesday, NPR reports. He was picking olives with Palestinian farmers in a field between a Palestinian village and an Israeli settlement. NPR puts the number detained at about 80 Americans and Israelis, many of them rabbis and activists offering a &ldquo;protective presence&rdquo; during the harvest. Lander says a settlement security van spotted the group before troops arrived. He was released after about three hours with a warning and says his public profile was likely why. Others were held for hours longer, and Lander later said they had been released too. The IDF said the activists posed a security concern and needed coordination to be there. Lander calls that claim false and says the landowner invited them. Israel&rsquo;s Foreign Ministry called the trip a &ldquo;calculated political provocation.&rdquo; New York Mayor Zohran Mamdani condemned the detentions. The State Department said only that it was aware of the reports.</p>
+          <p><strong>Analysis:</strong> The olive harvest has become one of the most dependable flashpoints in the West Bank. Foreign volunteers go to discourage attacks by settlers, and Israel increasingly treats their presence as political activism. Because a U.S. House candidate was detained two weeks before the midterms, the incident has also entered the Democratic Party&rsquo;s growing divide over Israel. It comes as the Gulf is consumed by the Houthi campaign against Saudi Arabia.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/10/21/nx-s1-6010460/brad-lander-detained-west-bank-israel-palestinians">NPR, Oct 21</a>, <a href="https://www.haaretz.com/west-bank/2026-10-21/ty-article/.premium/democratic-congressional-candidate-brad-lander-detained-in-west-bank-group-says/000001a1-5de3-da49-abe9-5ffb7b750000">Haaretz, Oct 21 (partial &mdash; paywalled)</a>, <a href="https://www.israelhayom.com/2026/10/21/brad-lander-detained-west-bank/">Israel Hayom, Oct 21</a>, <a href="https://www.nbcnews.com/politics/politics-news/new-york-congressional-candidate-brad-lander-detained-west-bank-rcna604741">NBC News</a>, <a href="https://www.amny.com/politics/brad-lander-israeli-detention-mamdani/">amNY</a></div>
+      </div>
+    </details>
+  </section>
+
+  <div class="edition-return">Earlier today &mdash; the Morning Brief &darr;</div>
+<!-- EVENING:SLOT:END -->
+
+  <!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Elections &middot; Justice Department</span>
+          <h2 class="story-headline">California pushes back in court as an L.A. County check of the Justice Department&rsquo;s list of 20,000 &ldquo;likely noncitizen&rdquo; voters finds nearly 40% of sampled names show U.S. birth</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>California and Los Angeles County filed responses Tuesday to the Justice Department&rsquo;s emergency request, NPR reports. The department wants a federal judge in Los Angeles to bar officials from counting mail ballots from about 20,000 registered voters it calls likely noncitizens until their citizenship is checked. Los Angeles County reviewed 200 of the names in a preliminary analysis. Nearly 40% of those records &ldquo;indicate that they were born in the United States, which is strong evidence of citizenship,&rdquo; and 71.2% show no voting history. The state says doing what the department asks this close to the election would be unworkable and would likely break federal and state election law. Acting Deputy Attorney General Trent McCotter has acknowledged that the list may include citizens. He says the 20,000 are the names the government is most confident about. No ruling has been reported.</p>
+          <p>On Monday the department announced charges against 28 green-card holders in California under what it calls &ldquo;Operation Protect the Vote.&rdquo; Prosecutors say 21 of them cast ballots illegally. Some are also accused of lying about citizenship on registration forms or hiding their voting history when applying to naturalize. Eleven had been arrested as of the announcement, and officials said all 28 were on the list given to the state. Secretary of State Shirley Weber says Washington has not shared the data or method behind the list. Gov. Gavin Newsom called the demand &ldquo;dangerous nonsense.&rdquo; Legal analysts point out that the suit cites no statute requiring extra citizenship checks of registered voters and rests on the Supremacy Clause instead. Election Day is Nov. 3.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Democrats and voting-rights advocates call the list a pre-election intimidation tactic. They note that matching incomplete voter files against immigration databases has produced many false positives before. In Nevada, DHS first flagged nearly 16,000 people, and the state says it then failed to show a single noncitizen on the rolls. The L.A. County sample, in their view, confirms those concerns. They also see the timing of the criminal charges as meant to frighten eligible naturalized voters. <em>(No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece found; summary drawn from Democratic officials and advocates as reported.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>The administration and its allies argue that federal law already bars noncitizens from voting for federal office, so holding the flagged ballots aside until citizenship is confirmed is a modest step. They describe California&rsquo;s refusal to review the names as the real risk to election integrity, and they cite the 28 charging documents as proof that the problem is real. <em>(No in-window National Review, Dispatch, WSJ editorial or Reason piece found; summary reflects the Justice Department&rsquo;s stated position.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/10/20/nx-s1-6009873/california-doj-voter-rolls-noncitizens">NPR, Oct 20</a>, <a href="https://www.npr.org/2026/10/19/nx-s1-6007908/election-tensions-escalate-in-california-as-doj-charges-28-people-with-voting-crimes">NPR, Oct 19</a>, <a href="https://www.opb.org/article/2026/10/20/doj-charges-28-people-in-california-with-voting-crimes/">OPB/NPR, Oct 20</a>, <a href="https://abcnews.com/US/high-percentage-dojs-california-noncitizen-voters-list-born/story?id=137429359">ABC News</a>, <a href="https://thehill.com/regulation/court-battles/6159377-doj-charges-noncitizen-voters/">The Hill</a>, <a href="https://mynewsla.com/government/2026/10/19/doj-asks-la-court-to-stop-state-from-counting-suspected-ineligible-ballots/">MyNewsLA, Oct 19</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">White House &middot; Executive Power</span>
+          <h2 class="story-headline">Trump and Vance launch a $25 million cash-for-tips fraud program, and at the same Oval Office event Trump says Rep. Ilhan Omar &ldquo;could go to jail&rdquo; or be deported</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Tuesday President Trump and Vice President JD Vance announced the Fraud Whistleblower Incentive Program, or WHIP, a $25 million effort the Justice Department will run. The White House says anyone who submits a tip through fraud.gov that leads to a fraud conviction or a significant federal enforcement action can receive up to $30,000. Trump described the payouts differently, as a 1% commission on the fraud uncovered, and said &ldquo;I will be the arbitrator&rdquo; when more than one person claims the same tip. YouTube commentator Nick Shirley received a $10,000 check as the program&rsquo;s first payment. Vance has led a fraud task force since March.</p>
+          <p>A reporter asked whether questions about Omar&rsquo;s age on her immigration paperwork could lead to her deportation. Trump said she could be deported and could also go to jail, adding, &ldquo;This is just my opinion.&rdquo; He cited no charge or new evidence and called Somalia, where she was born, a &ldquo;s***house.&rdquo; He also said Minnesota Gov. Tim Walz was &ldquo;100 percent guilty&rdquo; in the state&rsquo;s fraud scandal. Neither Omar nor Walz has been charged in connection with those cases. Federal agents searched Omar&rsquo;s Washington home on Oct. 12 in an investigation into whether her birth year was misstated when she naturalized in 2000. DHS Secretary Markwayne Mullin and border czar Tom Homan have called it a &ldquo;strong case.&rdquo; Omar denies wrongdoing and calls the investigation political persecution.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Democrats, including House Minority Leader Hakeem Jeffries, say a president publicly predicting jail for a sitting member of Congress who has not been charged is an attempt to influence a pending investigation. Former President Obama on Sunday called the probe &ldquo;appalling.&rdquo; Critics also say a tip program in which the president personally decides disputed rewards invites politicized enforcement. <em>(No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece found.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Supporters present WHIP as a way to recruit citizens against the program fraud uncovered in Minnesota and elsewhere, and say paying informants is already standard at the SEC and IRS. On Omar, officials say they are only following the evidence in an immigration-fraud case. <em>(No in-window National Review, Dispatch, WSJ editorial or Bulwark piece found; summary reflects administration statements as reported.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/politics/2026/10/20/trump-fraud-whistleblower-vance/d89b9d10-cc91-11f1-ac04-9f58578a68b4_story.html">Washington Post (AP), Oct 20</a>, <a href="https://www.bostonglobe.com/2026/10/20/nation/trump-vance-whistleblower-program/">Boston Globe (AP), Oct 20</a>, <a href="https://www.mprnews.org/story/2026/10/20/anti-fraud-whistleblower-reward-program-announced-by-president-donald-trump">MPR News, Oct 20</a>, <a href="https://www.washingtontimes.com/news/2026/oct/20/trump-says-ilhan-omar-could-go-jail/">Washington Times, Oct 20</a>, <a href="https://www.thenationalnews.com/news/us/2026/10/20/trump-says-ilhan-omar-could-face-jail-as-he-attacks-her-somali-roots/">The National, Oct 20</a>, <a href="https://www.cnn.com/2026/10/18/politics/obama-ilhan-omar-investigation">CNN, Oct 18</a>, <a href="https://www.cbsnews.com/news/dhs-markwayne-mullin-ilhan-omar-strong-case/">CBS News</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Russia &middot; Ukraine</span>
+          <h2 class="story-headline">Witkoff meets Putin in St. Petersburg to test a new peace framework, and Russia frees Stephen Hubbard, the last American the U.S. had declared wrongfully detained there</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>U.S. envoy Steve Witkoff met Vladimir Putin in St. Petersburg on Wednesday, a day after talks with Volodymyr Zelenskyy in Norway. A U.S. official told CNN the visit was meant to &ldquo;test&rdquo; whether a new plan could serve as the basis for negotiations and to &ldquo;create a pathway toward direct trilateral and broader multilateral negotiations.&rdquo; Witkoff urged Putin to resume three-way technical talks between the U.S., Russia and Ukraine. According to TASS, Putin raised the idea of restoring economic cooperation with Washington. Jared Kushner, who has the flu, was to join remotely. Zelenskyy called his talks with the Americans constructive but repeated: &ldquo;Nothing about Ukraine without Ukraine.&rdquo; Russia&rsquo;s publicly stated demands are unchanged: all of the Donbas, a smaller Ukrainian army and a pledge never to join NATO.</p>
+          <p>During the meeting Witkoff announced that Russia had released Stephen Hubbard, 74, a retired Michigan teacher. Hubbard was sentenced in 2024 to nearly seven years on mercenary charges and is reported to be in poor health; he is to be flown to a military hospital in Texas. Trump said Hubbard was freed &ldquo;out of respect&rdquo; for him and that the U.S. gave nothing in return; that claim has not been independently confirmed. As many as 10 other Americans, including dual nationals, remain in Russian custody. <strong>Analysis:</strong> The release follows Trump&rsquo;s waiver of some Russia sanctions. The Washington Post reports that the Kremlin has welcomed Washington&rsquo;s recent turn against Zelenskyy as a win. Moscow is getting gestures of goodwill from Washington without having moved on territory.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnn.com/2026/10/21/europe/us-envoy-witkoff-putin-talks-russia-ukraine-intl">CNN, Oct 21</a>, <a href="https://www.cnbc.com/2026/10/21/witkoff-russia-putin-ukraine-zelenskyy.html">CNBC, Oct 21</a>, <a href="https://www.washingtonpost.com/world/2026/10/21/russia-frees-us-citizen-stephen-hubbard-state-media-reports/">Washington Post, Oct 21</a>, <a href="https://www.cbsnews.com/news/russia-stephen-hubbard-freed-american-ukraine-war-witkoff-putin/">CBS News</a>, <a href="https://www.washingtonpost.com/world/2026/10/20/russia-sensing-victory-cheers-trumps-latest-shift-against-ukraine/">Washington Post, Oct 20</a>, <a href="https://www.npr.org/2026/10/20/nx-s1-6007897/trump-makes-russia-friendly-moves-as-he-looks-for-a-way-to-end-the-war-with-ukraine">NPR, Oct 20</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Gulf &middot; Yemen</span>
+          <h2 class="story-headline">Britain sends RAF Typhoons to defend Saudi cities and oil sites from Houthi missiles and drones after strikes that hit Riyadh&rsquo;s main airport</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The U.K. said Tuesday it will send Royal Air Force Typhoon jets to Saudi Arabia to help defend it against Houthi missile and drone attacks. The attacks have hit oil facilities and Riyadh&rsquo;s main airport. The Ministry of Defence says the jets will fly defensive missions over Saudi cities and key infrastructure and will not attack Houthi forces. The package also extends British air-to-air refueling for Saudi operations and adds an A400M transport plane and military advisers at Saudi command headquarters. Defence Secretary Wes Streeting singled out the strike on the Riyadh airport in condemning the attacks. The Washington Post reports that Riyadh is pressing the Trump administration for more help as well.</p>
+          <p><strong>Analysis:</strong> The deployment draws a second European power further into the Gulf front of the Iran war. Some legal commentators note that London has acknowledged refueling Saudi aircraft that strike Houthi targets inside Yemen, and argue that this could make Britain a party to that conflict before its jets intercept anything. The move also comes as Tehran tells mediators it will not negotiate until its conditions are met, which keeps Gulf shipping and energy infrastructure exposed.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/world/2026/10/20/britain-sends-fighter-jets-defend-saudi-arabia-amid-houthi-attacks/">Washington Post, Oct 20</a>, <a href="https://www.aljazeera.com/news/2026/10/20/uk-to-deploy-raf-fighter-jets-to-defend-saudi-arabia-from-houthi-attacks">Al Jazeera, Oct 20</a>, <a href="https://militarnyi.com/en/news/uk-to-deploy-typhoon-fighter-jets-to-defend-saudi-arabia-against-houthi-attacks/">Militarnyi</a>, <a href="https://www.diplomacyandlaw.com/post/uk-saudi-arabia-houthis">Diplomacy &amp; Law (analysis)</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">India &middot; U.S. Diplomacy</span>
+          <h2 class="story-headline">Rubio arrives in Mumbai looking for energy relief and a trade deal, as 50% U.S. tariffs over Russian oil and Washington&rsquo;s outreach to Pakistan strain ties</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Secretary of State Marco Rubio arrived in Mumbai on Tuesday for his second India visit this year. He is meeting External Affairs Minister S. Jaishankar and goes on Wednesday to Reliance Industries&rsquo; Jamnagar refinery complex, hosted by Mukesh Ambani. The Washington Post frames the trip as part of Washington&rsquo;s search for relief from the global energy crunch. U.S. tariffs on India total 50%, including a 25% penalty for buying Russian oil, and one official called a trade deal &ldquo;very near.&rdquo; Pressed by Indian reporters, Rubio defended continued U.S. engagement with Pakistan. He said Washington must keep relations with strategically important countries even when it disagrees with them.</p>
+          <p><strong>Analysis:</strong> There was friction before the trip began. Indian opposition leaders objected after the U.S. ambassador said Washington expected Jaishankar to travel to meet Rubio, which critics called the foreign minister being &ldquo;summoned&rdquo; on home soil. The U.S. wants India to buy less Russian crude while global supply is tight, and India wants tariff relief. Each side needs something from the other, but neither has much room to give.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/national-security/2026/10/20/rubio-arrives-india-amid-growing-pressure-global-energy-markets/">Washington Post, Oct 20</a>, <a href="https://tribune.com.pk/story/2635873/rubio-kicks-off-india-visit-with-trade-deal-russian-oil-on-agenda">Express Tribune</a>, <a href="https://www.aljazeera.com/news/2026/10/18/why-marco-rubios-visit-to-mumbai-has-ruffled-feathers-in-india">Al Jazeera, Oct 18 (background)</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE / TECH / ENERGY / CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; Space &amp; AI</span>
+          <h2 class="story-headline">SpaceX revenue jumps 161% to $14.6 billion in its first big beat as a public company, and Musk says Tesla and SpaceX have set up special committees to study a merger</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>SpaceX, which listed on Nasdaq in June in the largest IPO on record, reported Tuesday that third-quarter revenue rose 161% to $14.6 billion. The LSEG consensus was $12.72 billion. Net income was $4.4 billion, compared with a $1.1 billion loss a year earlier, and AI revenue grew more than ninefold. The company forecast first-quarter 2027 revenue of $33 billion to $37 billion, well above the roughly $22 billion analysts expected. Shares rose about 8% after hours and more than 10% in Wednesday premarket trading, after closing Tuesday at $147.50, below the $150 IPO open.</p>
+          <p>On the earnings call Musk confirmed that the boards of both companies have formed committees of independent directors to explore combining them, &ldquo;at the request of shareholders.&rdquo; As a conflicted party he cannot take part. He cautioned that treating a deal as certain &ldquo;would be overstating it.&rdquo; He also noted that a Tesla deal would need approval from 50% of all outstanding shares, not just shares voted, which he called &ldquo;quite a high hurdle.&rdquo; Fortune puts the combined value at about $3.5 trillion, and any merger would face antitrust review. Tesla reports its own results after Wednesday&rsquo;s close.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/2026/10/21/spacex-spcx-stock-musk-merger-tesla.html">CNBC, Oct 21</a>, <a href="https://www.cnbc.com/2026/10/20/spacex-spcx-earnings-live-updates-q3-2026html.html">CNBC live, Oct 20</a>, <a href="https://www.axios.com/2026/10/20/spacex-tesla-merger-talks">Axios, Oct 20</a>, <a href="https://fortune.com/2026/10/20/elon-musk-tesla-and-spacex-weighing-merger/">Fortune, Oct 20</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; Platforms &amp; Kids</span>
+          <h2 class="story-headline">Court records show TikTok staff repeatedly warned leaders about child sexual content and suicide videos, and the company skipped age surveys over fears the FTC would see them</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>NPR reported Tuesday on depositions and internal documents filed in the federal multidistrict litigation over social media and young users, in which TikTok is a defendant alongside Meta, Google and Snap. The records show employees repeatedly raising alarms. Minors were appearing in sexual content that viewers could pay to access, so TikTok stood to profit from it, which staff flagged as a possible financial crime. Children were exposed to suicide content, and under-18 users were using loopholes to reach age-restricted material and hide their activity from parents. The documents also show TikTok avoided surveys of its users&rsquo; ages out of concern that it would have to give the results to the Federal Trade Commission. &ldquo;I have been fighting about fixing this for months with people who didn&rsquo;t think the harms are severe enough,&rdquo; one executive wrote.</p>
+          <p>TikTok says the material was &ldquo;clearly cherry-picked at the behest of trial lawyers.&rdquo; It points to more than 50 preset teen safety, privacy and security settings, including Family Pairing. The company has not admitted wrongdoing, and the claims remain allegations in the litigation.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/10/20/nx-s1-6005809/tiktok-child-safety-money-laundering">NPR, Oct 20</a>, <a href="https://techcrunch.com/2026/10/20/tiktok-staff-raised-child-safety-concerns-but-executives-reportedly-failed-to-act/">TechCrunch, Oct 20</a>, <a href="https://www.opb.org/article/2026/10/20/tiktok-staff-raised-child-safety-alarms-and-were-ignored/">OPB/NPR, Oct 20</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Energy &middot; Oil &amp; Fuel</span>
+          <h2 class="story-headline">Gulf crude exports drop to about 8.5 million barrels a day as attacks on ships intensify; Brent eases near $109 on the Russia sanctions waiver, and U.S. diesel stays above $6.30</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Kpler data cited by Reuters show that attacks on commercial ships cut Gulf crude exports last week to a seven-day average of about 8.5 million barrels a day, from more than 20 million the week before. Brent fell to about $109 a barrel early Tuesday after reaching $110.70 on Monday, its highest since May 20. Traders weighed Trump&rsquo;s executive order waiving some Russia-related sanctions against the supply losses in the Gulf. Secretary of State Marco Rubio has described a 60-day period to assess the waiver&rsquo;s economic effects.</p>
+          <p>Pump prices remain high. AAA&rsquo;s national average for regular gasoline was about $4.26 a gallon on Wednesday, slightly lower than Tuesday, and diesel averaged about $6.32. Diesel peaked at $6.53 in September. The IEA&rsquo;s October oil report expects world demand to fall about 2.6 million barrels a day this year, with diesel accounting for a quarter of the drop, and calls any recovery fragile while attacks in the Gulf continue.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/2026/10/20/oil-eases-as-markets-assess-potential-waiver-on-russian-energy-middle-east-supply-risks.html">CNBC (Reuters), Oct 20</a>, <a href="https://wsls.com/news/virginia/2026/10/21/virginia-gas-prices-cheapest-and-most-expensive-places-to-fill-up-oct-21-2026">WSLS (AAA data), Oct 21</a>, <a href="https://www.eia.gov/todayinenergy/prices.php">EIA daily prices</a>, <a href="https://www.iea.org/reports/oil-market-report-october-2026">IEA Oil Market Report, Oct 2026</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">NBA &middot; Opening Night</span>
+          <h2 class="story-headline">NBA opening night: the 76ers spoil the Knicks&rsquo; banner night 106&ndash;100 in debuts for LeBron James and Jaylen Brown, and the Pistons rally from 22 down with a 23&ndash;0 run despite 38 points from Paul George</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>At Madison Square Garden, Philadelphia spoiled New York&rsquo;s championship ring and banner ceremony. Tyrese Maxey scored 28, and his steal and coast-to-coast layup made it 104&ndash;98 with 1:52 left. In their Sixers debuts, LeBron James had 14 points, nine rebounds and seven assists, and Jaylen Brown had 19, eight and six. An 11&ndash;0 run to close the third quarter put Philadelphia ahead for good. Jalen Brunson scored 21 for the Knicks on 6-of-19 shooting, and New York shot 37.2% as a team.</p>
+          <p>In the opener, Detroit beat Boston 121&ndash;113 after trailing by 22, using a 23&ndash;0 fourth-quarter run (one outlet counts it as 18&ndash;0). Paul George scored 38 in 31 minutes, shooting 7 of 12 from three, the most points ever in a Celtics debut. Jalen Duren and Cade Cunningham each scored 22 for the Pistons. In the late game, Shai Gilgeous-Alexander scored 32 as Oklahoma City beat San Antonio 116&ndash;104.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.espn.com/nba/recap?gameId=401909088">ESPN recap (Oct 20)</a>, <a href="https://www.espn.com/nba/story/_/id/50220591/nba-opening-day-live-updates-highlights">ESPN</a>, <a href="https://www.nbcsports.com/nba/news/knicks-v-76ers-recap-results-maxey-stars-as-philadelphia-wins-opener-lebron-james-jaylen-brown">NBC Sports</a>, <a href="https://www.nba.com/news/5-takeaways-pistons-use-23-0-run-to-storm-back-for-season-opening-win-over-celtics">NBA.com</a>, <a href="https://www.nbcsportsboston.com/nba/boston-celtics/live-updates-celtics-pistons-highlights-video-jayson-tatum/808480/">NBC Sports Boston</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">English Football &middot; Champions League</span>
+          <h2 class="story-headline">English clubs win in Europe: Liverpool come from 2&ndash;0 down to beat Villarreal 4&ndash;3 behind Mac Allister&rsquo;s double, and Foden&rsquo;s hat-trick leads Manchester City past AEK 5&ndash;1</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Villarreal led 2&ndash;0 at Anfield inside half an hour. Georges Mikautadze scored after a rare misjudgment by Virgil van Dijk, and Sergi Cardona added a second. Alexis Mac Allister headed one back from a corner on 36 minutes, and Ronald Araujo equalized in first-half stoppage time. Mac Allister put Liverpool ahead on 65 minutes from Rio Ngumoha&rsquo;s pass, and substitute Florian Wirtz finished a counterattack three minutes later. Villarreal scored again on 87 minutes, but Liverpool held on. Ngumoha had two assists and seven successful dribbles. Liverpool have nine points from three games, level with PSG, who beat Barcelona 4&ndash;2 in Paris.</p>
+          <p>At the Etihad, Enzo Maresca made eight changes after Saturday&rsquo;s win over Ipswich and left Erling Haaland unused on the bench. Phil Foden scored three goals, his first Champions League hat-trick, and Elliot Anderson (his first City goal) and Rayan Cherki also scored in a 5&ndash;1 win over AEK Athens. It was City&rsquo;s 150th Champions League match. Tuesday&rsquo;s nine games produced 40 goals.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.beinsports.com/en-us/soccer/uefa-champions-league/articles/liverpool-4-3-villarreal-mac-allister-and-ngumoha-star-in-another-anfield-comeback-2026-10-20">beIN Sports, Oct 20</a>, <a href="https://www.skysports.com/football/liverpool-vs-villarreal/report/577635">Sky Sports</a>, <a href="https://www.espn.com/soccer/report/_/gameId/401915401">ESPN (Oct 20)</a>, <a href="https://www.skysports.com/football/man-city-vs-aek-athens/report/577636">Sky Sports</a>, <a href="https://www.espn.com/soccer/story/_/id/50191262/champions-league-live-updates-liverpool-manchester-city-paris-saint-germain-barcelona">ESPN round-up</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal &middot; Champions League</span>
+          <h2 class="story-headline">&ldquo;We&rsquo;re just going to confront that and go for it&rdquo;: Arteta takes Arsenal to Bayern tonight without Saliba, while Kompany is ill and Olise and Musiala are out for the hosts</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Arseblog&rsquo;s match-day preview (&ldquo;Bayern away the kind of European clash Mikel Arteta relishes&rdquo;) says Mart&iacute;n Zubimendi is with the squad and Kepa appears to be back after missing the Forest trip with an injury. It warns that Bayern remain very strong without the suspended Michael Olise: they have scored five goals twice this season, six once and seven once. At his Tuesday press conference Arteta said Arsenal would take the game to Bayern: &ldquo;We&rsquo;re just going to confront that and go for it.&rdquo; He said Zubimendi is fit but will not start, called Harry Kane a major test, and said this is &ldquo;the stage&rdquo; and &ldquo;the stadium that you want to be involved in.&rdquo;</p>
+          <p>William Saliba is out with his back problem, and reports differ on whether he returns before or after the November international break. Bayern are also without Jamal Musiala, Manuel Neuer is doubtful with a foot issue, and Vincent Kompany has a viral infection that could keep him off the touchline. Both teams are unbeaten in the competition, and Arsenal have not conceded. Kickoff at the Allianz Arena is 8 p.m. BST (noon PT). <em>(The Athletic&rsquo;s Arsenal coverage was not reachable this run.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.com/2026/10/bayern-away-the-kind-of-european-clash-mikel-arteta-relishes/">Arseblog, Oct 21</a>, <a href="https://arseblog.news/2026/10/were-just-going-to-confront-that-and-go-for-it-arteta-ready-for-bayern-challenge/">Arseblog News, Oct 20</a>, <a href="https://www.arsenal.com/news/every-word-of-mikel-artetas-pre-bayern-presser-agdMk0a7U4Ft">Arsenal.com</a>, <a href="https://www.business-standard.com/amp/sports/football-news/bayern-sweat-over-kompany-s-availability-for-arsenal-champions-league-clash-126102000913_1.html">Business Standard (Reuters), Oct 20</a>, <a href="https://www.rotowire.com/soccer/article/bayern-munich-vs-arsenal-prediction-predicted-lineups-team-new-142251">RotoWire</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
