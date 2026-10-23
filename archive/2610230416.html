@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Friday, October 23, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+
+<!-- EVENING:SLOT:START -->
+<!-- EVENING:SLOT:END -->
+
+  <!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Justice Department &middot; Virginia</span>
+          <h2 class="story-headline">Sen. L. Louise Lucas is released after her first court appearance, and Gov. Spanberger says charging her this close to an election erodes trust in the Justice Department</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Lucas, 82, is the Democratic president pro tempore of the Virginia Senate. She turned herself in Thursday after a 45-page federal indictment was unsealed in Norfolk. She made her first court appearance the same day. Fox News reported that prosecutors did not seek detention and that she was released on her own recognizance; CNBC had earlier reported her in custody with her co-defendants. The five counts are racketeering conspiracy, conspiracy to distribute marijuana, money-laundering conspiracy, honest-services fraud conspiracy and maintaining a drug-involved premises. Six others are charged, including two of her daughters and a grandson. Prosecutors allege a five-year scheme worth about $4.5 million that distributed more than 100 kilograms of marijuana, mostly before Virginia legalized retail sales, and that Lucas used her post as Finance Committee chair to protect the family business. She denies the charges and calls them political.</p>
+          <p>The reaction split along party lines. Gov. Abigail Spanberger said Lucas deserves the chance to present a defense and that bringing the case less than two weeks before the Nov. 3 election &ldquo;further erodes&rdquo; trust in the Justice Department. Senate Majority Leader Scott Surovell called the allegations serious but said Lucas has his support. House Speaker Don Scott questioned whether the public display of the case was politically motivated. Republican leaders defended the prosecution. Attorney General Todd Blanche dismissed the Justice Department&rsquo;s practice of avoiding charges against candidates close to an election: &ldquo;It&rsquo;s not even a rule, it&rsquo;s a practice.&rdquo; Lucas is not on the ballot this year. Her daughter Lisa Lucas-Burke, one of the co-defendants, is running for Portsmouth City Council.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Critics on the left see a pattern of pre-election prosecutions of Trump opponents. Lucas led Virginia&rsquo;s pro-Democratic redistricting push, and her indictment comes days after federal agents searched Rep. Ilhan Omar&rsquo;s D.C. home. They also point out that Blanche, as Trump&rsquo;s lawyer in 2024, cited the same election-season practice he now dismisses. <em>(No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece found; summary drawn from Democratic officials and left-leaning outlets such as Truthout and theGrio.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Republicans say a grand jury found the evidence sufficient. In their view, a powerful legislator accused of using her office to shield a family drug business should not be exempt because an election is close, especially one she is not on the ballot for. <em>(No in-window National Review, Dispatch, WSJ editorial or Reason opinion piece found; National Review ran a straight news report. Summary reflects Republican officials and DOJ statements as reported.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/politics/2026/10/22/l-louise-lucas-virginia-corruption-investigation/c96bbff6-ce20-11f1-ac04-9f58578a68b4_story.html">Washington Post, Oct 22</a>, <a href="https://www.cnn.com/2026/10/22/politics/va-senator-louise-lucas-indictment">CNN, Oct 22</a>, <a href="https://www.cnbc.com/2026/10/22/lucas-trump-virginia-marijuana-racketeering.html">CNBC, Oct 22</a>, <a href="https://wjla.com/news/local/virginia-democrats-question-timing-of-lucas-charges-as-gop-defends-prosecution">WJLA</a>, <a href="https://www.foxnews.com/politics/virginia-state-senator-indicted-accused-leading-marijuana-distribution-enterprise">Fox News</a>, <a href="https://www.justice.gov/usao-edva/pr/virginia-state-senator-indicted-leading-criminal-marijuana-distribution-enterprise">DOJ (E.D. Va.)</a>, <a href="https://www.nationalreview.com/news/top-virginia-democrat-louise-lucas-charged-in-public-corruption-drug-trafficking-case/">National Review</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Campaign 2026 &middot; Iowa</span>
+          <h2 class="story-headline">In Sioux City, Trump says the Iran war will be &ldquo;finished very soon&rdquo; while rallying for Senate nominee Ashley Hinson, who has called for the war&rsquo;s &ldquo;immediate end&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>President Trump held a rally Thursday in Sioux City, in Iowa&rsquo;s conservative northwest corner. Republicans there are defending an open Senate seat, the governor&rsquo;s office and three competitive House seats. He brought Rep. Ashley Hinson, the Republican Senate nominee, on stage. She is in a close race with Democratic state Rep. Josh Turek, and spending in the race has passed $200 million. Trump also appeared with Zach Lahn, the Republican candidate for governor, who trails Democrat Rob Sand in recent polls. Trump told the crowd that Iran would be &ldquo;finished very soon&rdquo; and that oil prices would fall once the war ends. He is due back in Iowa on Nov. 1.</p>
+          <p>The war is a source of tension for Hinson. She has written that it &ldquo;needs to be brought to a successful and immediate end&rdquo; and has said she would push back on the White House, including over its dealings with Putin. But she voted against a House resolution to limit Trump&rsquo;s war powers that two other vulnerable Iowa Republicans supported. Turek&rsquo;s campaign says she voted seven times to continue the war and is trying to &ldquo;rewrite her record.&rdquo; CNN interviewed Iowa Republican voters who are wary of Trump resuming the war after the midterms. That ties the race to the New York Times report, covered in Foreign Affairs below, that U.S. and Israeli planners are preparing for post-election strikes.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Democrats say Hinson&rsquo;s call for an &ldquo;immediate end&rdquo; contradicts her votes. In their view, Republicans in Trump-won states are trying to separate themselves from an unpopular war and $4-plus gasoline without breaking with the president who started it. <em>(No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece found; summary drawn from the Turek campaign and Democratic statements as reported.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Hinson and Trump argue that the way to end the war is to win it. For them, a successful end means a guarantee that Iran never gets a nuclear program, after which oil prices can fall. On that view, the right conservative message to voters is to finish the job, not cut and run. <em>(No in-window National Review, Dispatch, WSJ editorial or Reason piece found; summary reflects the candidates&rsquo; statements as reported.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/world/articles/2026-10-22/trump-heads-to-iowa-as-republicans-fight-for-seats-in-longtime-stronghold">Reuters via U.S. News, Oct 22</a>, <a href="https://www.cnn.com/2026/10/22/politics/iowa-republicans-trump-iran-war">CNN, Oct 22</a>, <a href="https://www.cbsnews.com/news/trump-rally-iowa-ashley-hinson-senate-josh-turek/">CBS News</a>, <a href="https://www.pbs.org/newshour/politics/watch-live-trump-rallies-in-iowa-with-gop-senate-candidate-ashley-hinson">PBS NewsHour</a>, <a href="https://www.newsweek.com/trump-iowa-rally-ashley-hinson-josh-turek-russia-12607264">Newsweek</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Supreme Court &middot; Elections</span>
+          <h2 class="story-headline">A Reuters review finds this term&rsquo;s Supreme Court election rulings have mostly helped Republicans heading into Nov. 3, and Justice Kagan says they make &ldquo;a too-polarized country even more so&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Reuters&rsquo; John Kruzel lists the Court&rsquo;s major election decisions over the past year. In April the justices weakened a key provision of the Voting Rights Act, making it harder for minority voters to challenge maps as racially discriminatory. In June they struck down long-standing limits on coordinated spending between parties and candidates. Reuters reports that Republican committees have since spent well beyond the old limits, and Democratic committees have too, to a lesser degree. The Court also allowed starkly partisan maps to be used this fall, including Texas&rsquo;s new congressional lines and California&rsquo;s Democratic-drawn response. Not every ruling went the GOP&rsquo;s way: the Court rejected a Trump-backed effort to restrict mail voting, with only Justices Thomas and Alito dissenting publicly.</p>
+          <p>Justice Elena Kagan criticized the majority in public remarks this week, saying its refusal to police partisan gerrymandering is making &ldquo;a too-polarized country even more so.&rdquo; George Mason law professor Ilya Somin told Reuters that several of the decisions reflect &ldquo;longstanding conservative jurisprudential priorities.&rdquo; Democrats need a net gain of four seats in each chamber to take control of Congress. Separately, on Oct. 21 the Court declined to let the Bureau of Prisons enforce its new policy on transgender inmates, with Thomas and Alito saying they would have granted the request.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Liberal critics echo Kagan. They argue that the Court has stopped overseeing gerrymanders, weakened the Voting Rights Act and opened the way for unlimited party coordination, and that the result is a playing field tilted before any votes are cast. <em>(No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece found; summary drawn from Justice Kagan&rsquo;s remarks and critics as reported.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Conservative legal scholars say the rulings apply principles they have held for decades: race-conscious districting is suspect, political speech including party spending is protected, and partisan line-drawing belongs to legislatures rather than courts. They add that the mail-voting decision shows the Court is not simply siding with Trump. <em>(No in-window National Review, Dispatch, WSJ editorial or Reason piece found; summary reflects conservative scholars as reported by Reuters.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/politics/articles/2026-10-22/us-supreme-court-rulings-reshape-midterm-election-battlefield">Reuters via U.S. News, Oct 22</a>, <a href="https://wmbdradio.com/2026/10/22/us-supreme-court-rulings-reshape-midterm-election-battlefield/">Reuters via WMBD, Oct 22</a>, <a href="https://www.scotusblog.com/2026/10/justices-leave-in-place-lower-court-order-preventing-trump-administration-from-implementing-new-/">SCOTUSblog</a>, <a href="https://www.nbcnews.com/politics/supreme-court/supreme-court-rejects-trump-transgender-prison-policy-rcna601889">NBC News</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Iran &middot; War Planning</span>
+          <h2 class="story-headline">U.S. and Israeli militaries have drawn up plans for a short, intense round of strikes on Iran after the Nov. 3 midterms, the Times reports; Trump has not approved them</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>According to the New York Times, as confirmed in part by NPR, the plans call for a campaign of perhaps three days. Targets would include Iran&rsquo;s nuclear sites, its energy infrastructure, and its missile and drone stockpiles. Some officials told the Times that Trump would keep strikes away from oil facilities to avoid pushing gasoline prices higher; the national average is already about $4.27 a gallon. Some officials believe the damage could push Tehran to make concessions. NPR&rsquo;s source said the buildup may also be meant as pressure for a deal while indirect talks continue through Pakistan and Qatar. The Jerusalem Post reported that the two countries came close to striking earlier this month before Trump called it off at the last minute.</p>
+          <p>The report comes as the war is spreading across the Gulf. The State Department has ordered non-emergency staff out of Saudi Arabia after Houthi attacks on Saudi airports and oil sites, and CNBC reports that Trump is weighing direct U.S. strikes on the Houthis. Tehran has warned that it would retaliate against Saudi refineries, data centers and undersea cables. Foreign Minister Abbas Araghchi said Iran is &ldquo;just as prepared for diplomacy as we are for war.&rdquo; He is pressing a seven-day plan under which Hormuz would reopen once the U.S. lifts its blockade of Iranian ports and its oil sanctions. Washington still wants strict limits on uranium enrichment, which Iran rejects. The timing of the plans gives the war a clear place in the midterm campaign.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/10/22/nx-s1-6011514/us-israel-iran-war">NPR, Oct 22</a>, <a href="https://www.investing.com/news/economy-news/us-israel-prepare-for-renewed-iran-strikes-after-midterm-elections--nyt-4964461">NYT via Investing.com</a>, <a href="https://www.washingtontimes.com/news/2026/oct/22/us-israel-drawing-attack-plans-iran-midterms-report/">Washington Times, Oct 22</a>, <a href="https://www.timesofisrael.com/us-israel-said-to-draft-plans-for-resumed-strikes-on-iran-after-midterm-elections/">Times of Israel</a>, <a href="https://www.cnbc.com/2026/10/22/us-iran-trump-hormuz-.html">CNBC, Oct 22</a>, <a href="https://gulfnews.com/world/mena/hormuz-stays-shut-until-us-accepts-irans-7-day-deal-araghchi-1.500717768">Gulf News</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Taiwan &middot; China</span>
+          <h2 class="story-headline">Taiwan&rsquo;s coast guard says China is pairing maritime militia boats with coast guard ships to extend &ldquo;battlefield preparation&rdquo; into the western Pacific</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>According to a Reuters report published Friday, Taiwan&rsquo;s Coast Guard Administration says Beijing is using fishing-militia vessels alongside its coast guard to expand operations around Taiwan and farther into the western Pacific. Taipei says the activity is also meant to pressure Japan and the Philippines. It says the activity has increased since June in waters where the three countries&rsquo; economic zones overlap, after Tokyo and Manila announced talks on drawing their maritime boundary.</p>
+          <p>Militia boats are civilian-flagged but organized by the state. That lets Beijing keep up a constant presence and test its neighbors&rsquo; responses while staying below the level of a military confrontation. With U.S. attention and naval assets focused on the Iran war and the Gulf, Taipei is presenting the pattern as a regional problem rather than only a cross-strait one, and is drawing Tokyo and Manila into its account of the threat.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/world/articles/2026-10-23/taiwan-says-china-using-militia-boats-to-expand-battlefield-preparation-in-western-pacific">Reuters via U.S. News, Oct 23</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE / TECH / ENERGY / CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; AI Spending</span>
+          <h2 class="story-headline">Meta beats revenue forecasts but reports its first cash burn in more than a decade and raises its spending floor, and the stock posts its worst day in nearly three months</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Meta reported third-quarter revenue of $64.6 billion after Wednesday&rsquo;s close, ahead of analysts&rsquo; estimates of about $63.4 billion. But it raised the bottom of its 2026 capital-spending range to $135 billion to $145 billion, up from $130 billion to $145 billion, almost all of it for AI data centers. Free cash flow was negative for the first time in more than a decade: about &minus;$1.2 billion by analysts&rsquo; usual measure, or &minus;$2.1 billion by Meta&rsquo;s own, which also counts finance-lease payments. A year earlier it was positive $11.2 billion. Earnings also absorbed a $9.89 billion legal charge for a settlement over teen mental health. The board approved a new class of non-voting shares, and Reuters reported that investors objected to the plan to sell stock to help fund the buildout. The cost of insuring Meta&rsquo;s debt against default reached a record high.</p>
+          <p>The shares rose nearly 6% after hours, then reversed. They closed down about 7% on Thursday, by one tally, and helped pull the S&amp;P 500 down roughly 1.2%. Tesla also fell after its own results. The question for investors is no longer whether AI demand exists but whether the companies building for it can pay for the buildout from their own cash flow. Microsoft, Alphabet and Amazon report next.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://247wallst.com/investing/2026/10/22/meta-falls-3-as-higher-ai-spending-outlook-overshadows-earnings-beat-alphabet-dips-microsoft-holds-steady/">24/7 Wall St., Oct 22</a>, <a href="https://www.investing.com/news/stock-market-news/meta-beats-q3-estimates-approves-new-nonvoting-share-class-as-ai-spending-surges-4963949">Investing.com</a>, <a href="https://www.aol.com/articles/meta-falls-investors-balance-muse-120729000.html">Reuters via AOL</a>, <a href="https://www.trefis.com/stock/meta/articles/620144/what-is-driving-the-move-in-meta-stock/2026-10-23">Trefis, Oct 23</a>, <a href="https://www.cnbc.com/2026/10/21/tesla-tsla-q3-2026-earnings-report.html">CNBC (Tesla), Oct 21</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Grid &middot; Virtual Power Plants</span>
+          <h2 class="story-headline">Google expands its Voltus deal to a 1-gigawatt virtual power plant on the PJM grid, adding 1,070 megawatts to the 100 megawatts it signed in June</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Under the deal announced Thursday, Google will pay Voltus to sign up homes and businesses in PJM, the 13-state grid that serves about 67 million people. Participants will run down batteries, adjust smart thermostats or cut industrial load when the grid is strained, through 2040. They get bill savings and direct payments, and Google gets capacity it can count against the demand from its data centers. The companies say it is one of the largest distributed-capacity portfolios any hyperscaler has paid for. Voltus already manages more than 9 gigawatts of demand response and raised $225 million this month.</p>
+          <p>PJM forecasts that data centers and other large loads will add 30 to 34 gigawatts of demand by the early 2030s. Capacity prices have risen sharply, and data centers have become an issue in this fall&rsquo;s campaigns. Utility Dive and Latitude Media describe the deal as a test of whether demand-side resources can grow fast enough to absorb some of the AI load before new power plants come online.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.utilitydive.com/news/google-voltus-vpp-virtual-power-pjm/833717/">Utility Dive</a>, <a href="https://www.canarymedia.com/articles/virtual-power-plants/google-plans-big-virtual-power-plant-in-energy-strapped-pjm-grid">Canary Media</a>, <a href="https://blog.google/innovation-and-ai/infrastructure-and-cloud/global-network/virtual-power-plant-1-gigawatt/">Google</a>, <a href="https://www.voltus.co/press/google-voltus-1gw">Voltus</a>, <a href="https://www.latitudemedia.com/news/google-is-purchasing-1-gw-of-distributed-capacity-in-pjm/">Latitude Media</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Batteries &middot; Europe</span>
+          <h2 class="story-headline">German home-battery pioneer sonnen files for insolvency two months after Shell sold it, even as its U.S. arm says sales have doubled</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Handelsblatt reported Thursday that sonnen GmbH has filed for insolvency, and the company confirmed it to the paper. Shell bought sonnen in 2019 and sold it in August to Tiven, a family office linked to Aurelius co-founder Gert Purkert. Under the plan, some entities will be wound down and others restructured under self-administration, with only one production site kept. Service is expected to continue for more than 150,000 customers, and about 400 headquarters staff have been told. Other German home-storage makers have also failed, and EnBW&rsquo;s Senec unit has stopped taking new orders.</p>
+          <p>The U.S. business is doing much better. sonnen USA says its sales have doubled and that it expects to deliver more than 180 megawatt-hours of home storage this year. Electrek notes that it is unclear how the German proceedings will affect U.S. customers and warranties. The split reflects a wider trend: Europe&rsquo;s home-battery market is consolidating after the subsidy-driven boom, while U.S. demand is growing as power prices rise and utilities pay customers to share stored power.</p>
+        </div>
+        <div class="sources">Sources: <a href="http://www.pv-magazine.com/2026/10/22/sonnen-files-for-insolvency/">pv magazine, Oct 22</a>, <a href="https://www.ess-news.com/2026/10/22/sonnen-files-for-insolvency/">ESS News, Oct 22</a>, <a href="https://electrek.co/2026/10/22/sonnen-files-for-insolvency-in-germany-as-us-sales-double">Electrek, Oct 22</a>, <a href="https://www.energy-storage.news/sonnen-files-for-insolvency-in-germany-two-months-after-shell-offloading/">Energy-Storage.News</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">NBA</span>
+          <h2 class="story-headline">The 76ers come back from 29 points down to beat Cleveland 114&ndash;106 in their home opener, the biggest comeback of LeBron James&rsquo;s career</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Cleveland led 69&ndash;45 at halftime on Thursday, and the lead reached 29 points. Philadelphia&rsquo;s starters then scored 64 of the team&rsquo;s 69 second-half points. Tyrese Maxey had 32 points, six assists and two steals and led a 15&ndash;0 run in the fourth quarter. Joel Embiid&rsquo;s basket with 6:54 left gave the Sixers their first lead of the night, 96&ndash;95. Embiid finished with 24 points, Jaylen Brown 21, and James 17 points, 10 rebounds and five assists in his first home game as a 76er. Donovan Mitchell scored 32 for Cleveland. NBA.com called it a franchise-record rally. Philadelphia is 2&ndash;0.</p>
+          <p>Elsewhere Thursday, Oklahoma City beat Denver 96&ndash;84 behind Jalen Williams and Chet Holmgren. Baseball&rsquo;s World Series between the Brewers and Rays starts tonight in Milwaukee.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://6abc.com/post/76ers-stun-cavs-114-106-thrilling-29-point-comeback-win/19970890/">6abc Philadelphia</a>, <a href="https://www.nba.com/news/4-takeaways-76ers-cavaliers-2026-27">NBA.com</a>, <a href="https://www.foxsports.com/nba/cleveland-cavaliers-vs-philadelphia-76ers-oct-22-2026-game-boxscore-106547">Fox Sports box score, Oct 22</a>, <a href="https://www.cbssports.com/nba/gametracker/boxscore/NBA_20261022_DEN@OKC/">CBS Sports (DEN@OKC), Oct 22</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">English Football</span>
+          <h2 class="story-headline">Bournemouth beat 10-man Milan 3&ndash;0 for a third straight Europa League win, while Crystal Palace draw 2&ndash;2 at Be&#351;ikta&#351; and Sunderland 1&ndash;1 at Lech Pozna&#324;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Bournemouth won on set pieces Thursday. Justin Kluivert and Marcus Tavernier scored first-half penalties, Milan goalkeeper Mike Maignan was sent off between them, and Amine Adli added a late free kick. Bournemouth have won all three of their league-phase games. In Istanbul, Wilfred Ndidi put Be&#351;ikta&#351; ahead in first-half stoppage time. Palace then took the lead through Yeremy Pino and Jean-Philippe Mateta, who also had an early goal ruled out for offside after a VAR review. Junior Olaitan equalized in the 73rd minute. Be&#351;ikta&#351; finished with ten men after &Uuml;mit Akda&#287;&rsquo;s red card. Palace manager Pierre Sage criticized the officiating. The result follows Palace&rsquo;s 5&ndash;0 Premier League loss to Brighton. Sunderland drew 1&ndash;1 in Pozna&#324;.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.uefa.com/uefaeuropaleague/news/02aa-21e410bcbe25-9352142b4434-1000--europa-league-matchday-3-highlights-and-round-up-bournemouth/">UEFA Matchday 3 round-up</a>, <a href="https://www.vavel.com/en-us/soccer/2026/10/22/1276325-bournemouth-vs-ac-milan-live-score-uefa-europa-league.html">VAVEL, Oct 22</a>, <a href="https://www.flashscore.com/news/soccer-europa-league-crystal-palace-besiktas-report-2026-10-22/6P1Yuc94/">Flashscore, Oct 22</a>, <a href="https://www.anews.com.tr/sport/2026/10/23/10-man-besiktas-hold-crystal-palace-to-2-2-draw-in-europa-league">A News, Oct 23</a>, <a href="https://www.vavel.com/en-us/soccer/2026/10/22/1276308-lech-poznan-vs-sunderland-live-score-uefa-europa-league.html">VAVEL (Lech&ndash;Sunderland), Oct 22</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal</span>
+          <h2 class="story-headline">Arsenal wait on Saka&rsquo;s scan results before Saturday&rsquo;s match against Everton, with Eze the likely replacement on the right if he is out</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Arseblog&rsquo;s reaction to Wednesday&rsquo;s 2&ndash;2 draw at Bayern was headlined &ldquo;honours even at the Allianz Arena, but worries over Saka,&rdquo; and the worry has not eased since. Bukayo Saka, who left after about ten minutes, was due for a scan on Thursday. No diagnosis had been made public by Friday morning. Arteta has said the quadriceps injury &ldquo;doesn&rsquo;t look good at all&rdquo; and that &ldquo;when a player comes off with sharp pain, it&rsquo;s never good news.&rdquo; He is expected to give an update at Friday&rsquo;s pre-match press conference.</p>
+          <p>Previews of the Everton game disagree on Saka&rsquo;s chances. Sports Mole rules him out, while other outlets list him as a doubt. If he misses the game, Eberechi Eze is expected to move to the right of the 4-2-3-1. Piero Hincapi&eacute; is pushing to return, and Christos Tzolis is still out. <em>(The Athletic&rsquo;s Arsenal desk was not reachable in this window; corroboration is from Yahoo Sports and Arsenal-focused outlets.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.com/2026/10/honours-even-at-the-allianz-arena-but-worries-over-saka">Arseblog</a>, <a href="https://sports.yahoo.com/articles/arsenal-await-bukayo-saka-scan-171017348.html">Yahoo Sports</a>, <a href="https://www.goal.com/en/news/mikel-arteta-admits-bukayo-saka-injury-arsenal-draw-bayern-munich/blt6ca1376f615bd896">Goal</a>, <a href="https://readarsenal.com/2026/10/23/arsenal-injury-news-saka-hincapie-tzolis-everton/">ReadArsenal, Oct 23</a>, <a href="https://www.sportsmole.co.uk/football/arsenal/injury-news/injuries-and-suspensions/saka-update-hincapie-chances-arsenal-injury-suspension-list-vs-everton_607420.html">Sports Mole</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
