@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>History &amp; Ideas — Tailored News</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — History & Ideas (weekly)
+     Shares the daily-brief design system verbatim.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;
+    --take-left:    #5a6b7a;
+    --take-right:   #8a7350;
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:        #17140f;
+      --paper-raised: #201c15;
+      --ink:          #ece5d6;
+      --ink-soft:     #b3aa96;
+      --ink-faint:    #7c7361;
+      --rule:         #3a3427;
+      --rule-soft:    #2c281f;
+      --accent:       #d68a5f;
+      --take-left:    #7f92a3;
+      --take-right:   #b39a6f;
+      --take-left-bg:  #1c1f22;
+      --take-right-bg: #221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:        #17140f;
+    --paper-raised: #201c15;
+    --ink:          #ece5d6;
+    --ink-soft:     #b3aa96;
+    --ink-faint:    #7c7361;
+    --rule:         #3a3427;
+    --rule-soft:    #2c281f;
+    --accent:       #d68a5f;
+    --take-left:    #7f92a3;
+    --take-right:   #b39a6f;
+    --take-left-bg:  #1c1f22;
+    --take-right-bg: #221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 1.125rem;
+    line-height: 1.62;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  .page {
+    max-width: calc(var(--measure) + var(--pad) * 2);
+    margin: 0 auto;
+    padding: 0 var(--pad) 5rem;
+  }
+
+  /* ---------- Masthead ---------- */
+  .masthead {
+    text-align: center;
+    padding: 2.75rem 0 1.5rem;
+  }
+  .masthead-title {
+    font-size: clamp(2.5rem, 11vw, 4rem);
+    line-height: 0.95;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    margin: 0;
+  }
+  .masthead-subtitle {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-top: 0.7rem;
+  }
+  .masthead-rule {
+    border: 0;
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    height: 4px;
+    margin: 1.25rem auto 0;
+  }
+  .masthead-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    white-space: nowrap;
+    transition: border-color 0.15s;
+  }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Standfirst ---------- */
+  .standfirst {
+    max-width: 30rem;
+    margin: 2.5rem auto 0;
+    text-align: center;
+    font-style: italic;
+    font-size: 1.2rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    text-wrap: pretty;
+  }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3rem; }
+
+  /* ---------- Essay (story) ---------- */
+  .story {
+    border-top: 1px solid var(--rule-soft);
+    padding: 0.35rem 0;
+  }
+  .story:first-of-type {
+    border-top: 4px double var(--rule);
+    margin-top: 2.5rem;
+  }
+
+  .story > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 1.4rem 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: 1rem;
+  }
+  .story > summary::-webkit-details-marker { display: none; }
+
+  .story-domain {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.55rem;
+  }
+  .story-headline {
+    font-size: clamp(1.5rem, 5.5vw, 1.95rem);
+    line-height: 1.16;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .story-toggle {
+    font-family: var(--mono);
+    font-size: 1.4rem;
+    line-height: 1;
+    color: var(--ink-faint);
+    margin-top: 0.15rem;
+    transition: transform 0.2s ease;
+    user-select: none;
+  }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+
+  .story-body { padding-bottom: 1.75rem; }
+  .story-body p { margin: 0 0 1.1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  /* essayistic drop-cap on the opening paragraph */
+  .story-body > p:first-child::first-letter {
+    font-size: 3.1rem;
+    line-height: 0.8;
+    float: left;
+    padding: 0.05em 0.12em 0 0;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .sources {
+    font-family: var(--mono);
+    font-size: 0.64rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-top: 1.4rem;
+    padding-top: 0.6rem;
+    border-top: 1px dashed var(--rule);
+  }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Footer ---------- */
+  .colophon {
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 4px double var(--rule);
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    text-align: center;
+    line-height: 1.8;
+  }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) {
+    body { font-size: 1.1875rem; }
+  }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle {
+    position: fixed;
+    top: 0.9rem;
+    right: 0.9rem;
+    z-index: 20;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.8rem;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%);
+  }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">History &amp; Ideas</h1>
+    <div class="masthead-subtitle">A weekly reading from Tailored News</div>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Week of October 19, 2026</span>
+      <!-- edition: Sunday, October 25, 2026 -->
+      <a class="masthead-link" href="index.html">&larr; Back to the daily brief</a>
+    </div>
+  </header>
+
+  <p class="standfirst">Three longer reads for the week &mdash; the kind of thing worth turning over slowly with a second cup of coffee.</p>
+
+  <section class="section">
+
+    <!-- ESSAY 1 -->
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-domain">Philosophy &middot; Epistemology</span>
+          <h2 class="story-headline">When you &ldquo;just know&rdquo; something&rsquo;s off: a philosopher argues that gut seemings can justify belief directly, and explains why that doesn&rsquo;t make them infallible</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <p>In <strong>Aeon</strong> this week, Marc A. Moffett, a philosopher at the University of Texas at El Paso, defends an idea most of us rely on without examining: that a sense that something is wrong can count as a reason, not just a feeling. He starts with the oldest puzzle in the theory of knowledge, the regress of justification. If every belief needs another belief to support it, the chain never ends. Moffett sides with the foundationalists, who say the chain stops somewhere. For him it stops at seemings, the way things present themselves to us. When a tree visually seems to be there, you already have some justification for believing it is, before any argument. He argues that the uneasy sense that a person or situation is &ldquo;off&rdquo; works the same way.</p>
+        <p>The essay&rsquo;s key move is about what does the justifying. For Moffett it is not the feeling attached to the experience, the emotional color of unease, but the way we apprehend the thing, the content that presents itself as true and pulls us toward believing it. That distinction lets him say two things at once. Intuitions are central to our ability to get around the world rationally. They also give only defeasible justification, which can be overturned, so they can be wrong and should not always be trusted. The essay arrives at a time when &ldquo;trust your gut&rdquo; is both self-help advice and a political slogan. Moffett offers a more careful version: a gut sense earns a place among our reasons, but it can be outweighed by better ones.</p>
+        <div class="sources">Sources: <a href="https://aeon.co/essays/sometimes-you-just-know-somethings-off-but-how">Aeon (Moffett), Oct 20</a></div>
+      </div>
+    </details>
+
+    <!-- ESSAY 2 -->
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-domain">History &middot; Archaeology</span>
+          <h2 class="story-headline">A Roman Londoner&rsquo;s coffin, a late-Saxon cross and a carbon date: Westminster Abbey&rsquo;s archaeologist names the abbot who was probably reburied inside it</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <p>In 1869, workmen at Westminster Abbey dug up a limestone sarcophagus. Its Latin inscription says two sons, Valerius Superventor and Marcellus, had it made for their father, Valerius Amandinus, a well-off Briton in fourth-century Roman London. But the lid had later been recarved with a large Christian cross, and the bones inside did not seem to fit the inscription. In a new paper in the <em>Journal of the British Archaeological Association</em>, the abbey&rsquo;s consultant archaeologist Warwick Rodwell offers an answer. Radiocarbon dating puts the skeleton between AD 987 and 1052, which matches the cross. The Roman coffin had been reused about 700 years after it was made, for a late Anglo-Saxon burial of some standing.</p>
+        <p>Rodwell compares that date with the abbey&rsquo;s own list of its leaders and narrows the field to two men. Ælfwig was abbot from 993 until about 1020, and his successor Wulfnoth died in 1049. Rodwell slightly favours Ælfwig, who was already a monk of Westminster when he was elected. Neither man&rsquo;s birth date is known, there is no DNA, and nothing names the occupant, so the identification is likely but unproven. The case is also a reminder of how the late Saxon church reused Rome, in a monastery that would soon become the coronation church of England. The sarcophagus is now on display in the abbey&rsquo;s Queen&rsquo;s Diamond Jubilee Galleries.</p>
+        <div class="sources">Sources: <a href="https://www.smithsonianmag.com/smart-news/archaeologists-may-have-solved-the-mystery-of-a-roman-sarcophagus-excavated-at-westminster-abbey-in-1869-180989732/">Smithsonian</a>, <a href="https://www.agi.it/estero/news/2026-10-21/westminster-abbey-sarcofago-romano-mistero-39641965/amp/">AGI, Oct 21</a>, <a href="https://www.livescience.com/archaeology/case-of-mysterious-medieval-skeleton-buried-in-roman-era-sarcophagus-at-westminster-abbey-finally-solved">Live Science</a>, <a href="https://www.medievalists.net/2026/10/mysterious-skeleton-at-westminster-abbey-may-belong-to-medieval-abbot/">Medievalists.net</a>, <a href="https://archaeologymag.com/2026/10/skeleton-in-roman-sarcophagus-at-westminster-abbey/">Archaeology Magazine</a></div>
+      </div>
+    </details>
+
+    <!-- ESSAY 3 -->
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-domain">Religion &middot; Medieval History</span>
+          <h2 class="story-headline">A single east-facing grave confirms a lost Norse church near Erik the Red&rsquo;s farm, the first found in Greenland in more than 60 years</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <p>For about two decades, archaeologists suspected that a rectangular stone enclosure at Qinngua, near Narsarsuaq in southern Greenland, surrounded a church. It sits roughly three miles from Brattahl&iacute;&eth;, the estate of Erik the Red. The layout looked right, but without burials they could not be sure, and digs in the 2000s found none. This summer a team from the National Museum of Denmark, Greenland&rsquo;s National Museum and Archives, the University Museum of Bergen and UNESCO&rsquo;s Kujataa site found a skeleton inside the walls. It was buried with the head to the east, the customary orientation for Christian burial. &ldquo;This is &lsquo;the smoking gun,&rsquo;&rdquo; said Christian Koch Madsen, one of the researchers. Smithsonian&rsquo;s write-up this week brought the find to a wider audience.</p>
+        <p>The researchers suspect the church dates to between 1100 and 1300, when Greenland&rsquo;s Norse settlers were establishing Christian institutions. If so, it adds to a dense map of churches in a small, remote colony. Brattahl&iacute;&eth; itself has traces of three, including Thjodhild&rsquo;s church, often called the first in the Americas. That density matters for the old question of why the Norse disappeared from Greenland in the 15th century. Each new church helps show how Greenland was tied to the wider Christian world, and how that connection weakened. The team hopes to return to date the building more precisely if it can find funding.</p>
+        <div class="sources">Sources: <a href="https://www.smithsonianmag.com/smart-news/archaeologists-searching-for-evidence-of-a-norse-church-in-greenland-have-found-the-smoking-gu-near-erik-the-reds-settlement-180989716/">Smithsonian</a>, <a href="https://oldnorse.org/2026/10/22/archaeologists-searching-for-evidence-of-a-norse-church-in-greenland-have-found-the-smoking-gun-near-erik-the-reds-settlement/">Smithsonian syndication via oldnorse.org, Oct 22</a>, <a href="https://www.medievalists.net/2026/09/medieval-norse-church-discovered-in-greenland/">Medievalists.net (Sept announcement)</a>, <a href="https://thevikingherald.com/article/a-sensation-archeologists-reveal-norse-church-in-greenland/1436">The Viking Herald</a></div>
+      </div>
+    </details>
+
+  </section>
+
+  <footer class="colophon">
+    <div>Tailored News &middot; History &amp; Ideas &middot; Weekly</div>
+    <div><a href="index.html">&larr; Return to the daily brief</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+
+</body>
+</html>

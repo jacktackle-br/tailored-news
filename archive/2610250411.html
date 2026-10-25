@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Sunday, October 25, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+
+<!-- EVENING:SLOT:START -->
+<!-- EVENING:SLOT:END -->
+
+  <!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Courts &middot; Alaska Senate</span>
+          <h2 class="story-headline">Peltola&rsquo;s campaign, Senate Democrats and ACLU-backed voting groups move to join the Justice Department&rsquo;s Alaska certification suit and ask a judge to throw it out</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Saturday, two sets of parties asked to intervene in the federal lawsuit the Justice Department filed Thursday. The suit seeks to stop Alaska from certifying its U.S. Senate result if Republican Sen. Dan Sullivan loses narrowly. The first motion came from Democrat Mary Peltola&rsquo;s campaign, Alaskans for Mary, and the Democratic Senatorial Campaign Committee. The second came from the League of Women Voters of Alaska, Common Cause and two individual voters, represented by the American Civil Liberties Union. NBC News reports that the Democratic filers also asked the judge to dismiss the case. Their argument is that federal executive power does not extend to running state elections. They also say the National Voter Registration Act, which the department relies on, does not let Washington set candidate eligibility or ballot design. They call the suit an unprecedented federal attempt to take over election administration while early voting is already under way.</p>
+          <p>The Justice Department&rsquo;s theory is that voters may confuse the incumbent with a second candidate on the ballot, retired teacher Daniel J. Sullivan Jr. The department asks that certification be held up only if his votes could have changed the outcome, pending an investigation. Alaska&rsquo;s courts had already ordered him onto the ballot. Trump has said he ordered the suit. Election-law scholars quoted in coverage, including Notre Dame&rsquo;s Derek Muller, doubt it will advance before Election Day, if at all. Sen. Lisa Murkowski, a Republican, has said the department &ldquo;should never have filed this lawsuit.&rdquo; The court has not yet ruled on the motions.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Democrats see a lawsuit built in advance to overturn a result the president dislikes. The DSCC called it a &ldquo;sham lawsuit to overturn the will of Alaska voters and steal an election,&rdquo; and Peltola called it &ldquo;flagrant corruption.&rdquo; Their legal point is that states run elections, Alaska&rsquo;s own courts have already settled the ballot question, and the federal government is trying to reopen it. <em>(No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece found; this draws on the DSCC, Peltola and the intervenors&rsquo; filings as reported.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Supporters, among them the Daily Signal&rsquo;s coverage, accept the department&rsquo;s premise that a same-name candidate exists to siphon votes from the incumbent and that confused voters deserve protection. Other conservatives doubt the legal route. On PBS NewsHour, National Review&rsquo;s Ramesh Ponnuru said he saw no clear federal hook and that it is &ldquo;hard to see this lawsuit going very far.&rdquo; Murkowski&rsquo;s rebuke, and the Sullivan campaign saying it did not ask for the suit, show the move is contested inside the GOP. <em>(No in-window National Review, Dispatch, WSJ editorial or Reason column found.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/2026/10/24/alaska-senate-doj-certification-lawsuit.html">CNBC, Oct 24</a>, <a href="https://www.nbcnews.com/politics/2026-election/democrats-ask-judge-dismiss-trump-administrations-challenge-alaska-sen-rcna605472">NBC News</a>, <a href="https://www.democracydocket.com/news-alerts/democrats-move-to-fight-dojs-attempt-to-preemptively-block-alaska-senate-results-if-republican-loses/">Democracy Docket</a>, <a href="https://www.aljazeera.com/news/2026/10/24/dan-sullivan-vs-dan-sullivan-why-is-trumps-doj-suing-in-alaska">Al Jazeera, Oct 24</a>, <a href="https://www.washingtonpost.com/national-security/2026/10/23/doj-seeks-block-alaska-senate-result-if-republican-incumbent-narrowly-loses/">Washington Post, Oct 23</a>, <a href="https://www.pbs.org/newshour/show/capehart-and-ponnuru-on-trumps-threat-to-block-alaska-election-results">PBS NewsHour (Capehart &amp; Ponnuru)</a>, <a href="https://www.dailysignal.com/2026/10/23/doj-sues-alaska-over-voter-confusion/">Daily Signal, Oct 23</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Campaign 2026 &middot; Georgia &middot; Trade</span>
+          <h2 class="story-headline">At a Georgia rally for Senate challenger Mike Collins, Trump announces that Audi will build a $4 billion plant near Macon and credits his tariffs</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Speaking Saturday in Perry, Georgia, ten days before Election Day, Trump said Volkswagen&rsquo;s Audi would build its first U.S. assembly plant in Middle Georgia. Audi puts the investment at $4 billion and about 4,500 jobs. Trump and Georgia officials used $4.2 billion, and Trump also claimed a far larger jobs number. A government official told Reuters the plant is expected to build 200,000 SUVs a year. A U.S. official involved in the talks said the models would include the Q7, Q8 and Q9. Construction is set to begin in 2027, with production targeted for the early 2030s. Audi CEO Gernot D&ouml;llner appeared at the rally. &ldquo;Without tariffs, they wouldn&rsquo;t be coming in,&rdquo; Trump said, calling it the largest investment in U.S. auto history. Reuters and Bloomberg report that Volkswagen&rsquo;s plan includes talks on some form of tariff relief. In January, VW chief Oliver Blume said a U.S. Audi plant could not be funded under the existing tariff burden.</p>
+          <p>The rally backed Rep. Mike Collins, who is challenging Democratic Sen. Jon Ossoff, and gubernatorial nominee Rick Jackson. It was Trump&rsquo;s second Georgia stop in about a week, and CBS Atlanta reports he repeated his claim that the 2020 election was stolen. Ossoff held a canvass launch in Atlanta the same afternoon with Pete Buttigieg, focused on health care and living costs. Public polls this month have Ossoff ahead, by more than eight points in the RealClearPolitics average.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Critics see a factory announcement timed to rescue a trailing Senate candidate. The plant won&rsquo;t produce a car until the 2030s, and voters are paying higher prices from tariffs now. They also note that Audi&rsquo;s U.S. sales have fallen under those tariffs and that VW reportedly made its commitment alongside talks on a tariff carve-out. If so, the plant is evidence of the damage done, not proof the policy works. <em>(No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece found; this draws on critical context in news coverage and Georgia Democrats&rsquo; earlier tariff criticism.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>The White House and its allies say this is the payoff tariffs were meant to produce. Ohio Sen. Bernie Moreno said the plant &ldquo;would never have happened without tariffs, without common sense regulations and without eliminating California&rsquo;s ability to regulate fuel economy standards.&rdquo; Free-market conservatives, the Reason and WSJ-editorial wing, would answer that investment won through a negotiated exemption shows the tariffs work as leverage for deals, not as a general tax that pays for itself. <em>(No in-window National Review, Dispatch, WSJ editorial or Reason piece found; the free-market point is a characterization of that wing&rsquo;s long-standing position, not a quote.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/business/articles/2026-10-24/trump-announces-at-a-georgia-campaign-rally-that-audi-will-build-a-new-auto-factory-in-the-state">AP via U.S. News, Oct 24</a>, <a href="https://www.japantimes.co.jp/business/2026/10/25/economy/trump-tariffs-audi-factory-election/">Reuters via Japan Times, Oct 25</a>, <a href="https://www.cnbc.com/2026/10/24/trump-audi-factory-georgia.html">CNBC, Oct 24</a>, <a href="https://news.bloomberglaw.com/international-trade/trump-defends-tariffs-at-rally-as-he-says-audi-to-build-us-plant">Bloomberg Law</a>, <a href="https://www.ajc.com/politics/2026/10/trump-republican-georgia-rally/">AJC</a>, <a href="https://www.cbsnews.com/atlanta/news/trump-will-rally-georgia-republicans-despite-party-divisions-in-battleground-state/">CBS Atlanta</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Iran &middot; Gulf</span>
+          <h2 class="story-headline">A U.S. intelligence memo warns that Iranian plots against Americans have reached &ldquo;advanced stages,&rdquo; as the State Department orders non-emergency staff out of Saudi Arabia</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Director of National Intelligence Jay Clayton warned Secretary of State Marco Rubio in an unclassified memo dated Oct. 23, copied to CIA Director John Ratcliffe, that Iran has &ldquo;substantially increased&rdquo; efforts to target U.S. personnel. The memo says lethal plotting against U.S. citizens has reached advanced stages in the Middle East and in some other countries. U.S. officials confirmed it is authentic after Axios first reported it. The State Department has ordered non-emergency government employees and their families to leave U.S. missions in Saudi Arabia. It later clarified that the order covers only Saudi Arabia, after earlier signals that families would also be withdrawn from other posts. On Saturday it updated travel advisories for more than a dozen countries across the Gulf and Middle East, citing the threat from Iran-aligned Houthis.</p>
+          <p>The moves come as the U.S.&ndash;Iran war nears its eighth month and Houthi attacks on Saudi Arabia escalate. Earlier in the week, Reuters reported that Aramco had told staff to evacuate its Dhahran headquarters. Brent crude ended Friday near $117, its highest close since spring, on expectations that the U.S. could resume strikes on Iran. U.S. officials have told reporters that new strikes are being considered for after the Nov. 3 midterms. The memo and the staff drawdown suggest Washington expects Tehran to act against U.S. targets before then.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.japantimes.co.jp/news/2026/10/25/world/iran-target-us-personnel/">Reuters via Japan Times, Oct 25</a>, <a href="https://cnbc.com/2026/10/24/iran-threats-us-embassies-middle-east.html">CNBC, Oct 24</a>, <a href="https://www.business-standard.com/amp/world-news/us-intel-warns-of-iranian-threats-to-american-diplomats-in-west-asia-126102400074_1.html">Business Standard, Oct 24</a>, <a href="https://www.foxnews.com/politics/iran-substantially-increased-efforts-target-americans-abroad-us-intelligence-memo-warns">Fox News</a>, <a href="https://www.npr.org/2026/10/23/g-s1-149514/up-first-newsletter-iran-war-midterm-voting-trump-bbc">NPR Up First, Oct 23</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Russia &middot; Ukraine</span>
+          <h2 class="story-headline">Ukrainian drones kill three in Belgorod and hit an industrial plant in the Urals&rsquo; Perm region, days before a local ceasefire in occupied Oleshky is due to begin</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Overnight into Sunday, Ukrainian drone strikes killed three people and injured 14 in Russia&rsquo;s Belgorod region, according to its governor, who said dozens of apartment blocks, cars and houses were damaged. In the Perm region, deep in the Ural Mountains, Governor Dmitry Makhonin said a drone hit an industrial facility and injured five workers. He did not say what the plant makes. Russia&rsquo;s Defense Ministry claimed it had downed hundreds of Ukrainian drones across more than two dozen regions, a figure Reuters could not verify. Ukraine&rsquo;s air force said Russia launched 153 drones at Ukraine overnight and that 119 were shot down or suppressed.</p>
+          <p>Diplomacy is moving on a much smaller scale. Moscow and Kyiv have agreed to a limited humanitarian ceasefire in occupied Oleshky, on the Dnipro&rsquo;s left bank, to let aid in and civilians out. The White House credits Melania Trump with brokering it. The two sides and Washington have given different start dates, and the Kremlin says timing is still being coordinated. Long-range strikes on both sides continue alongside it, and a broader round of talks is tentatively expected next month.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.themoscowtimes.com/2026/10/25/ukrainian-attacks-kill-3-in-belgorod-hit-perm-industrial-plant-a94077">Moscow Times (citing Reuters), Oct 25</a>, <a href="https://srnnews.com/three-people-killed-and-14-injured-in-ukrainian-attacks-on-russias-belgorod-region-governor-says">Reuters via SRN News</a>, <a href="https://www.nbcnews.com/world/ukraine/russia-ukraine-agree-ceasefire-city-brokered-melania-trump-rcna605217">NBC News</a>, <a href="https://www.aljazeera.com/news/2026/10/23/white-house-says-melania-trump-secured-a-ceasefire-in-ukraines-oleshky">Al Jazeera, Oct 23</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Serbia &middot; Elections</span>
+          <h2 class="story-headline">Serbia votes in a snap parliamentary election that pits Aleksandar Vu&#269;i&#263;&rsquo;s party against a list backed by the student protest movement</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Polls opened Sunday for 250 seats, with 18 lists competing. The AP describes the vote as a referendum between President Vu&#269;i&#263;&rsquo;s right-wing Serbian Progressive Party and the youth-backed Students&rsquo; List, grown from the protests that began after a railway station canopy collapsed in Novi Sad in 2024. The AP reports that the two are believed to be roughly neck and neck, making this the least predictable Serbian election in years. Seats are shared proportionally above a 3% threshold. The electoral commission has up to 96 hours to certify, and an official tally is not expected before Monday.</p>
+          <p>International and local monitors have raised concerns about the campaign, citing detentions, near-total government control of broadcast media, and reports of surveillance and cyberattacks against activists. Vu&#269;i&#263; has said his side would concede if it lost, but has also warned that protests alleging fraud would be put down. Opposition fraud protests followed the 2023 vote. NPR reports that the student movement is now trying to win at the ballot box what more than a year of street protests has not.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.ksat.com/news/world/2026/10/25/serbia-holds-a-parliamentary-election-as-populist-vucic-faces-protesting-students/">AP via KSAT, Oct 25</a>, <a href="https://www.wsls.com/news/world/2026/10/25/polls-have-opened-in-a-serbian-election-pitting-a-student-led-protest-movement-against-populist-leader-aleksandar-vucic/">AP via WSLS, Oct 25</a>, <a href="https://npr.org/2026/10/24/nx-s1-6012799/european-student-protests-take-aim-at-serbias-elections">NPR, Oct 24</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE, TECH, ENERGY & CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; AI Infrastructure</span>
+          <h2 class="story-headline">Nvidia&rsquo;s role as a backer of AI cloud companies faces its first real test, as CoreWeave, Nebius and IREN shares fall 30% or more this month</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>CNBC reports that the &ldquo;neoclouds&rdquo; Nvidia has helped finance are under strain as credit tightens. These are the cash-burning companies that rent out Nvidia GPUs. Shares of CoreWeave, Nebius and IREN are each down at least 30% in October. The spread on CoreWeave&rsquo;s credit default swaps has risen past 11%, a level that signals real worry about repayment. Nvidia&rsquo;s exposure goes beyond its equity stakes. As of July it had disclosed $36 billion in off-balance-sheet cloud agreements that act as guarantees for neocloud partners. It has also guaranteed up to $105 billion tied to OpenAI&rsquo;s proposed 10-gigawatt Ohio data center.</p>
+          <p>Jensen Huang told CNBC that demand is not the problem. Interest in neocloud capacity is &ldquo;off the charts,&rdquo; he said, and &ldquo;what is missing in the middle is the working capital to fuel that growth.&rdquo; Skeptics such as New Constructs&rsquo; David Trainer warn that if compute demand falls short of &ldquo;super lofty expectations,&rdquo; the guarantees could come back to Nvidia&rsquo;s balance sheet. The test comes during a week of broader AI-funding nerves, with OpenAI working to close a large round of its own.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/2026/10/24/nvidias-role-as-ai-financier-faces-first-big-test-as-neoclouds-take-market-hit.html">CNBC, Oct 24</a>, <a href="https://www.marketalleys.com/post/cnbc-nvidia-s-financing-role-faces-test-as-neoclouds-take-market-hit-2026-10-24">MarketAlleys summary, Oct 24</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Energy &middot; Nuclear</span>
+          <h2 class="story-headline">The UN nuclear agency&rsquo;s chief says nuclear power could more than triple by 2060, driven by electrification and AI data centers</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The head of the International Atomic Energy Agency said Friday that worldwide use of nuclear power could more than triple by 2060, according to the AP. The drivers are electrification of transport and industry, fast-rising demand from AI data centers, and tech companies seeking reliable, carbon-free power around the clock. It is one of the more bullish outlooks the agency has offered, and it comes as governments that had been phasing out reactors reconsider.</p>
+          <p>The U.S. is the clearest test case. Earlier this month the AP reported that the Energy Department is lending up to $4.4 billion to restart three closed plants: Palisades in Michigan, the Crane Clean Energy Center (Three Mile Island Unit 1) in Pennsylvania, and Duane Arnold in Iowa. Together they would restore about 2.25 gigawatts. Two have long-term contracts with Big Tech buyers. Palisades, the furthest along, began loading fuel in late August. No commercial reactor has yet resumed generating power after entering decommissioning, which is why the restarts are watched as a gauge of how fast the projected growth can actually be built.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.business-standard.com/world-news/nuclear-power-use-could-more-than-triple-by-2060-says-iaea-chief-126102400062_1.html">AP via Business Standard, Oct 24</a>, <a href="https://www.arabnews.com/world/nuclear-power-could-more-than-triple-by-2060-un-agency-says-3007969">AP via Arab News</a>, <a href="https://www.michiganpublic.org/transportation-infrastructure/2026-10-16/united-states-nuclear-plants-palisades-michigan">AP via Michigan Public, Oct 16 (background)</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">MLB &middot; World Series</span>
+          <h2 class="story-headline">Brewers come back from 4&ndash;0 down to beat the Rays 5&ndash;4 and lead the World Series 2&ndash;0, and the game ends on a disputed check-swing call</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Tampa Bay scored four times in the first inning at American Family Field on Saturday, then didn&rsquo;t score again. Milwaukee chipped back, and Sal Frelick&rsquo;s solo home run in the sixth, his first in three months, tied it at 4&ndash;4. Cooper Pratt&rsquo;s RBI single in the seventh gave the Brewers their first lead, and their pitchers held the Rays scoreless over the final eight innings. Yahoo Sports pointed to Rays defensive miscues that opened the door to the comeback.</p>
+          <p>The ending will be debated. With two outs in the ninth, a full count and the tying run on third, Yandy D&iacute;az was rung up on a check-swing appeal, and fans argued online about whether he went around. MLB.com&rsquo;s recap calls it a game-ending check-swing strike. The series moves to St. Petersburg with Milwaukee two wins from the title.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnn.com/2026/10/25/sport/live-news/world-series-game-2">CNN, Oct 25</a>, <a href="https://www.espn.com/mlb/story/_/id/50273821/brewers-rally-vs-rays-game-2-take-2-0-world-series-lead">ESPN</a>, <a href="https://www.mlb.com/news/brewers-win-world-series-game-2-2026">MLB.com</a>, <a href="https://sports.yahoo.com/mlb/article/world-series-2026-rays-build-early-lead-and-then-unravel-as-miscues-open-the-door-for-the-latest-brewers-comeback-in-game-2-075729400.html">Yahoo Sports</a>, <a href="https://sports.yahoo.com/articles/fans-debate-check-swing-call-054147780.html">Yahoo Sports (check-swing)</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">English Football &middot; Premier League</span>
+          <h2 class="story-headline">Nicolas Jackson scores twice as Aston Villa end Manchester City&rsquo;s perfect league start, and ten-man Chelsea lose at home to Spurs for the first time since 1990</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>At Villa Park, Jackson scored in the 6th minute. Erling Haaland headed City level in the 52nd, and Jackson took advantage of mistakes by Marc Gu&eacute;hi and Gianluigi Donnarumma to win it in the 60th. City had more of the ball and more shots, but Villa goalkeeper Zion Suzuki made several big saves. It is City&rsquo;s first Premier League defeat of the season. They stay top on 21 points, and Villa climb to sixth on 11.</p>
+          <p>At Stamford Bridge, Cole Palmer was sent off for two bookings within about ten minutes. With 13 minutes left, goalkeeper Mike Penders, under pressure from Jan Paul van Hecke, palmed a Tottenham corner into his own net. Mathys Tel then cut in from the left and scored low into the corner. It is only Spurs&rsquo; second league win ever at Stamford Bridge and their first since 1990, and their second win in six days under Roberto De Zerbi. <em>(BBC Sport pages could not be reached from this run; facts are from ESPN, Sky Sports and Opta&rsquo;s Analyst.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.espn.com/soccer/report/_/gameId/401879256">ESPN, Villa 2&ndash;1 City (Oct 24)</a>, <a href="https://www.skysports.com/football/aston-villa-vs-manchester-city/report/559515">Sky Sports</a>, <a href="https://www.espn.com/soccer/story/_/id/50265416/man-city-lose-100-premier-league-record-defeat-aston-villa">ESPN</a>, <a href="https://www.skysports.com/football/news/13601416/chelsea-0-2-tottenham-mike-penders-error-and-mathys-tel-earn-spurs-rare-victory-at-stamford-bridge-as-cole-palmer-sent-off">Sky Sports, Chelsea 0&ndash;2 Spurs</a>, <a href="https://theanalyst.com/articles/chelsea-vs-tottenham-stats-premier-league-10-2026">The Analyst</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal</span>
+          <h2 class="story-headline">Konsa scores his first Arsenal goal and Gabriel heads in a second as a rotated side beats Everton 2&ndash;0 to draw level on points with City</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Arteta made five changes from Wednesday&rsquo;s 2&ndash;2 draw in Munich, and Arseblog News called it a rotated Arsenal that &ldquo;ease[d] past&rdquo; Everton. Gy&ouml;keres started up front. Ezri Konsa opened the scoring in the 7th minute, tapping in after Gabriel flicked on an &Oslash;degaard corner and Jordan Pickford scrambled. It was Konsa&rsquo;s first goal for the club. Gabriel, making his 200th Premier League appearance, headed in Ben White&rsquo;s cross in the 68th. Arsenal had 20 shots and 1.77 expected goals to Everton&rsquo;s eight and 0.48. With City losing at Villa, the champions are level on points at the top. Arteta called it &ldquo;a big win&rdquo; and complained about a &ldquo;terrible&rdquo; fixture schedule.</p>
+          <p>The bad news is Bukayo Saka. He hurt his quadriceps against Bayern, and BBC Sport and Arseblog report he could be out for six to eight weeks, possibly up to a dozen matches. Arteta said fluid around the injury made the first scan hard to read. A repeat scan in seven to ten days will show how long he is out. <em>(The Athletic&rsquo;s Arsenal coverage was not reachable from this run; corroboration is from Sky Sports, beIN and Arsenal.com.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.news/2026/10/report-arsenal-2-0-everton-inc-goals-2/">Arseblog News report</a>, <a href="https://arseblog.news/2026/10/arteta-reacts-everton-oct-2026/">Arseblog News (Arteta reacts)</a>, <a href="https://arseblog.com/2026/10/arsenal-v-everton-live-blog-16/">Arseblog live blog</a>, <a href="https://www.beinsports.com/en-asia/football/premier-league/articles/arsenal-2-0-everton-konsa-and-gabriel-goals-take-champions-level-with-man-city-2026-10-24">beIN Sports, Oct 24</a>, <a href="https://www.skysports.com/football/arsenal-vs-everton/report/559514">Sky Sports</a>, <a href="https://www.arsenal.com/news/report-arsenal-2-0-everton-apRhd9V5M87w">Arsenal.com</a>, <a href="https://www.livescore.com/en/news/football/premier-league/mikel-arteta-slams-arsenals-terrible-schedule-after-everton-win-as-bukayo-saka-faces-up-to-12-games-out-goal/">LiveScore</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
