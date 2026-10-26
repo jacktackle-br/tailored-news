@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Monday, October 26, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+<!-- EVENING:SLOT:START -->
+<!-- EVENING:SLOT:END -->
+
+  <!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Campaign 2026 &middot; Michigan Senate</span>
+          <h2 class="story-headline">&ldquo;I&rsquo;ve never called him a terrorist&rdquo;: Mike Rogers keeps some distance from Trump&rsquo;s attacks on Abdul El-Sayed but insists the Democrat hasn&rsquo;t disavowed the Muslim Brotherhood</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Republican Senate nominee Mike Rogers was asked on NBC&rsquo;s &ldquo;Meet the Press&rdquo; on Sunday about President Trump calling his Democratic opponent, Abdul El-Sayed, a terrorist. &ldquo;I&rsquo;ve never called him a terrorist,&rdquo; Rogers said, and described the race as &ldquo;me versus Abdul.&rdquo; He also repeated his claim that El-Sayed has not disavowed the Muslim Brotherhood. When moderator Kristen Welker said El-Sayed had done so, Rogers replied, &ldquo;No, he has not, he dismissed the question,&rdquo; and accused her of &ldquo;giving him a pass.&rdquo; At an Oct. 17 town hall El-Sayed answered &ldquo;Sure, yeah, absolutely&rdquo; when asked whether he disavows the group, then objected that the question implies his faith makes him disloyal. PolitiFact rated Rogers&rsquo;s earlier claim that El-Sayed &ldquo;didn&rsquo;t disavow&rdquo; the group as False. Welker also put to Rogers his own 2012 remark that the U.S. would have to &ldquo;reach out to and talk to&rdquo; moderate members of the Brotherhood.</p>
+          <p>Trump went further at a Port Huron rally for Rogers later on Sunday. According to NPR, the AP and the Washington Post, he called El-Sayed a &ldquo;jihadist&rdquo; and a &ldquo;Muslim Brotherhood member&rdquo; and said he would have to pass through a metal detector to enter the Senate. NBC News reported that he offered no evidence for any of these claims. Bishara Bahbah, a founder of Arab Americans for Trump, called the remarks &ldquo;out of line and crazy,&rdquo; and El-Sayed&rsquo;s campaign called the attacks bad faith. The seat is open because Democrat Gary Peters is retiring, and polls have the race close. Barack Obama campaigned in Detroit for El-Sayed on Saturday.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Democrats and progressive critics see a closing message built on religious bigotry. On this view, El-Sayed has already answered the question, and asking again and again treats a Muslim candidate&rsquo;s loyalty as permanently in doubt. Sen. Bernie Sanders said Trump and his allies are turning to Islamophobia because they have &ldquo;nothing to say&rdquo; about working people&rsquo;s concerns. <em>(No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece found; this draws on reaction quoted in news coverage.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Rogers&rsquo;s defenders, including RedState, NewsBusters and the Daily Wire, made the interview itself the story. They argued that Welker went easy on El-Sayed and that pressing a candidate on his ideology is not an attack on his faith. That is the line Rogers drew when he said El-Sayed&rsquo;s religion &ldquo;isn&rsquo;t the issue&rdquo; but his views are &ldquo;dangerous.&rdquo; Rogers&rsquo;s refusal to repeat the &ldquo;terrorist&rdquo; label suggests the campaign wants the Brotherhood argument without the president&rsquo;s wording. <em>(No in-window National Review, Dispatch, WSJ editorial or Reason piece found; the sources here are partisan media, not the whitelisted outlets.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/10/26/nx-s1-6016816/trump-escalates-anti-muslim-attacks">NPR/AP, Oct 26</a>, <a href="https://www.washingtonpost.com/politics/2026/10/25/trump-escalates-campaign-rhetoric-calling-el-sayed-jihadist/">Washington Post, Oct 25</a>, <a href="https://www.usnews.com/news/best-states/michigan/articles/2026-10-25/trumps-midterm-swing-brings-him-to-michigan-as-republicans-aim-to-undermine-el-sayed-in-senate-race">AP via U.S. News, Oct 25</a>, <a href="https://www.nbcnews.com/politics/2026-election/trump-leans-islamophobic-rhetoric-michigan-rally-rcna605572">NBC News</a>, <a href="https://www.nbcnews.com/meet-the-press/video/mike-rogers-on-trump-calling-abdul-el-sayed-a-terrorist-i-ve-never-called-him-a-terrorist-272191045618">Meet the Press (video)</a>, <a href="https://www.realclearpolitics.com/video/2026/10/25/mike_rogers_its_unbelievable_how_the_national_media_defends_abdul_el-sayed.html">RealClearPolitics, Oct 25</a>, <a href="https://politifact.com/factchecks/2026/oct/19/mike-rogers/el-sayed-muslim-brotherhood-michigan-senate/">PolitiFact, Oct 19 (background)</a>, <a href="https://www.aljazeera.com/news/2026/10/26/trump-dials-up-islamophobia-at-michigan-senate-rally-against-abdul-el-sayed">Al Jazeera, Oct 26</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Campaign 2026 &middot; Senate Map</span>
+          <h2 class="story-headline">Trump begins his final pre-election week in states he carried easily, starting tonight in Mississippi, where Sen. Cindy Hyde-Smith&rsquo;s race has tightened</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Trump is due to speak at 6 p.m. Central on Monday at Crossroads Arena in Corinth, Mississippi, for Republican Sen. Cindy Hyde-Smith. He won Mississippi by more than 20 points in 2024. Her Democratic challenger is Scott Colom, a district attorney, and independent Ty Pinkins is also on the ballot. The Cook Political Report has moved the race from &ldquo;solid&rdquo; to &ldquo;likely&rdquo; Republican. Outside money has followed: the Democratic-aligned Senate Majority PAC is spending $1.2 million on TV ads for Colom, and the GOP-aligned Senate Leadership Fund more than $1 million to defend Hyde-Smith. Public polling is thin. The most recent survey was by Change Research for a Democratic-aligned group and had Hyde-Smith at 43%, Colom at 40% and Pinkins at 6%. A separate survey Colom&rsquo;s campaign promoted as showing a tie was later reported by the Magnolia Tribune to be fabricated. Hyde-Smith calls the tighter polling &ldquo;just noise.&rdquo;</p>
+          <p>Mississippi begins a week CNN describes as a final sprint mostly through red states where Republicans are playing defense. Trump holds rallies in Corpus Christi and Lubbock, Texas, on Tuesday, then goes to Ohio, Florida and Iowa before the Nov. 3 election. The schedule reflects a difficult national picture for his party. His approval stands at 31% in the latest Reuters/Ipsos poll and at 33% in a Washington Post&ndash;ABC&ndash;Ipsos survey, and Reuters/Ipsos shows Democrats ahead by 12 points on the generic congressional ballot.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>To Democrats, sending the president to a state he won by 20 points with a week left shows how far the battlefield has moved. Colom says the visit proves Republicans are worried, and he has challenged Trump to a debate. Kamala Harris has also campaigned for him in the state. <em>(No in-window Mother&nbsp;Jones, Vox, Slate or Guardian opinion piece found; this reflects the Colom campaign&rsquo;s argument as reported.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Republicans describe the stop as protecting a lead, not saving a collapsing race. Trump said he would go &ldquo;if I need to get her over the top,&rdquo; and Hyde-Smith&rsquo;s campaign promises to &ldquo;run through the tape.&rdquo; Conservative outlets such as the Magnolia Tribune have focused on what they see as Democratic inflation of the polls, above all the discredited &ldquo;tied&rdquo; survey. <em>(No in-window National Review, Dispatch, WSJ editorial or Reason piece found.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.kold.com/2026/10/25/trump-rally-hyde-smith-mississippi-senate-race-tightens/">Gray TV/KOLD, Oct 25</a>, <a href="https://thehill.com/homenews/senate/6169566-trump-rally-mississippi-senate-race/">The Hill</a>, <a href="https://www.cnn.com/2026/10/25/politics/live-news/midterm-election-congress">CNN live, Oct 25</a>, <a href="https://magnoliatribune.com/2026/10/20/poll-pushed-by-colom-claiming-senate-race-with-hyde-smith-is-tied-was-fake-fabricated/">Magnolia Tribune, Oct 20 (background)</a>, <a href="https://www.washingtonpost.com/politics/2026/10/18/trump-approval-hits-record-low-handing-democrats-clear-midterm-edge/">Washington Post, Oct 18 (background)</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Venezuela</span>
+          <h2 class="story-headline">Nobel laureate Mar&iacute;a Corina Machado returns to Venezuela after ten months abroad and is mobbed by supporters in Caracas, testing Washington&rsquo;s deal with acting President Delcy Rodr&iacute;guez</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Machado appeared Sunday at a church service in Barquisimeto, in Lara state, then traveled by road to Caracas, where hundreds of supporters swarmed her car. It was her first appearance in Venezuela since December. Her party says she had tried at least seven times to return. She did not say how she got back. Trump said he knew nothing about the return in advance and repeated his support for Rodr&iacute;guez. Secretary of State Marco Rubio called it a &ldquo;direct result&rdquo; of U.S.-backed reconciliation talks, which have also brought releases of political prisoners. Opposition figure Edmundo Gonz&aacute;lez said he would join her &ldquo;very soon.&rdquo;</p>
+          <p>The AP describes the return as a test of how much control Washington has over Venezuela. U.S. forces removed Nicol&aacute;s Maduro in January, and Rodr&iacute;guez, Maduro&rsquo;s former deputy, has stayed on as interim leader with Washington&rsquo;s backing beyond the period she was authorized to serve. No election date has been set. Rodr&iacute;guez has promised elections without a timetable, and the U.S. says Venezuela must stabilize first. Machado&rsquo;s movement is pushing for a presidential vote, and she has said she will run. With her now in the country, the question of when that vote happens is likely to become harder to put off.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/world/2026/10/25/venezuela-maria-corina-machado-return-democracy-maduro/4a9e5c2c-d08e-11f1-9931-2a41b76fc976_story.html">AP via Washington Post, Oct 25</a>, <a href="https://www.npr.org/2026/10/25/nx-s1-6016222/venezuela-maria-corina-machado-leader-returns-exile">NPR, Oct 25</a>, <a href="https://www.usnews.com/news/world/articles/2026-10-25/venezuela-opposition-leader-maria-corina-machado-returns-to-venezuela">Reuters via U.S. News, Oct 25</a>, <a href="https://thehill.com/policy/international/6170833-machado-returns-venezuela/">The Hill</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Middle East &middot; Saudi Arabia &amp; Yemen</span>
+          <h2 class="story-headline">Riyadh&rsquo;s main airport reopens after two weeks, and the Houthis fire at it again within hours; Saudi-led forces say they intercepted the missile and struck launchers near Sanaa</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>King Khalid International Airport resumed flights Sunday, about two weeks after a Houthi strike killed 13 people and wounded more than 300, the deadliest attack inside the kingdom in more than a decade. Within hours, the Iran-backed Houthis said they had fired at the airport again. On Monday their spokesman, Yahya Saree, claimed a ballistic missile hit &ldquo;with precision&rdquo; and said drones struck oil pumping stations, including on Saudi Arabia&rsquo;s East-West crude line. Coalition spokesman Turki al-Maliki said Saudi air defenses &ldquo;intercepted and destroyed&rdquo; a ballistic missile headed for Riyadh. He said coalition jets then hit Houthi missile storage and launch sites and destroyed two launchers in Sanaa. Al Jazeera separately reported a Houthi barrage intercepted near Mecca on Sunday. Saudi Arabia has not confirmed any damage, and the competing claims have not been independently verified.</p>
+          <p>The fighting is part of the wider regional war with Iran. Reports of possible new U.S. or Israeli strikes on Iran pushed Brent crude to a six-month high on Friday. Talks to end the war remain stalled, and Tehran says messages are still passing through intermediaries. European governments are weighing a two-stage plan that would first address the Strait of Hormuz and then the nuclear program, but this has been reported only through Iranian media and Tehran&rsquo;s reported response has been cool.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.france24.com/en/live-news/20261025-flights-resume-at-riyadh-airport-as-houthis-attack-saudi">AFP via France 24, Oct 25</a>, <a href="https://www.usnews.com/news/world/articles/2026-10-25/saudi-arabia-reopens-airport-as-attacks-by-houthi-rebels-persist-and-other-mideast-news">AP via U.S. News, Oct 25</a>, <a href="https://www.aljazeera.com/news/2026/10/26/saudi-led-coalition-says-it-struck-houthi-missile-facilities">Al Jazeera, Oct 26</a>, <a href="https://www.aljazeera.com/news/2026/10/25/saudi-air-defences-intercept-houthi-barrage-near-mecca">Al Jazeera, Oct 25</a>, <a href="https://abcnews.com/International/live-updates/iran-live-updates-houthis-claim-new-attack-riyadh/?id=137563447">ABC News live</a>, <a href="https://www.cnbc.com/2026/10/25/saudi-arabia-houthi-missile-drone-interceptions.html">CNBC, Oct 25</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Russia &middot; Ukraine</span>
+          <h2 class="story-headline">Russian strikes kill four in the Dnipropetrovsk region and hit a Vinnytsia apartment block, and Zelenskyy says Kyiv has received only 24 Patriot interceptors in three months</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Zelenskyy said a Russian attack in the Dnipropetrovsk region on Saturday evening killed four people and injured 22, among them an 11-year-old girl. Local reports place the deadly strike in Synelnykove. Overnight, a drone hit a five-story residential building in Vinnytsia and injured six. Ukraine&rsquo;s air force said Russia launched 153 drones and cruise missiles in the wave and that 119 drones were downed or jammed. Zelenskyy said that in the past week Russia fired about 1,600 guided aerial bombs, 48 missiles and nearly 2,300 attack drones at Ukraine. Russia&rsquo;s Defense Ministry said it destroyed 532 Ukrainian drones overnight.</p>
+          <p>Zelenskyy urged European partners to &ldquo;unblock the already agreed-upon deliveries&rdquo; of Patriot interceptors. He said Ukraine needs about 350 a month and has received only 24 in the past three months, as the Iran war drains stockpiles. The Patriot is Ukraine&rsquo;s only defense against ballistic missiles. The strikes come after Vladimir Putin told U.S. envoy Steve Witkoff last week that he would resume talks after Nov. 10. The Kremlin has since said it sees little &ldquo;substance&rdquo; in Ukrainian and European proposals.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://abcnews.com/International/ukraine-unblock-patriot-missile-delivery-zelenskyy-after-deadly/story?id=137550094">AP via ABC News</a>, <a href="https://kyivindependent.com/russian-attacks-kill-8-injure-51-across-ukraine-over-past-day-as-drone-strikes-residential-building-in-vinnytsia">Kyiv Independent</a>, <a href="https://www.kyivpost.com/post/88109">Kyiv Post</a>, <a href="https://knews.media/2026/10/25/zelensky-reports-casualties-from-russian-attacks-amid-ongoing-conflict/">KNews, Oct 25</a>, <a href="https://www.france24.com/en/europe/20261022-russia-missiles-kyiv-ukraine-peace-talks">France 24, Oct 22 (background)</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE, TECH, ENERGY & CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; Satellites</span>
+          <h2 class="story-headline">Ukraine rejects Elon Musk&rsquo;s claim that its military broke Starlink&rsquo;s terms of service, a day after high-speed service for its drones was restored</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Ukraine&rsquo;s Defense Ministry said Saturday that Starlink and Starshield connections again work on equipment moving faster than 400 km/h (249 mph). That ended about ten days in which drones flying above roughly 100 mph lost their links without warning. Trump had said he asked Musk to lift the limits. Musk then said on X that Ukraine&rsquo;s military had &ldquo;violated Starlink terms of service and used it for offensive drone strikes to kill people,&rdquo; and that SpaceX had &ldquo;simply enforced our terms.&rdquo; Earlier in the month he had said limits on the government-run Starshield service are set by the U.S. military and &ldquo;ultimately POTUS.&rdquo;</p>
+          <p>Ukrainian specialists said Musk&rsquo;s account doesn&rsquo;t fit how the systems work. Serhii Beskrestnov, a defense-technology adviser to Zelenskyy, said civilian Starlink on drones was already capped at about 70&ndash;90 km/h inside Ukraine and does not work over Russia, so it could not be used for medium- or deep-range strikes. Former ministry drone adviser Serhii Sternenko called the claim &ldquo;technically impossible&rdquo; and said satellite-linked strike missions run only on Starshield. Who ordered the slowdown is still disputed. CBS News, citing people familiar with the matter, reported that it was Musk&rsquo;s decision and not a Pentagon or White House order.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/2026/10/25/ukraine-musk-starlink-terms-dispute.html">CNBC, Oct 25</a>, <a href="https://www.cnn.com/2026/10/25/europe/starlink-musk-violation-accusations-intl">CNN, Oct 25</a>, <a href="https://www.pbs.org/newshour/world/ukraine-disputes-elon-musks-claim-that-its-military-violated-starlinks-terms-of-service">AP via PBS NewsHour</a>, <a href="https://www.npr.org/2026/10/24/nx-s1-6015482/ukraine-starlink-working-after-disruptions">NPR, Oct 24</a>, <a href="https://www.nbcnews.com/world/ukraine/elon-musk-spacex-closed-ukraine-starlink-loophole-limits-hit-drone-rcna605494">NBC News</a>, <a href="https://www.cbsnews.com/news/elon-musk-ukraine-spacex-starshield-trump-administration/">CBS News (background)</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Energy &middot; Oil Markets</span>
+          <h2 class="story-headline">Oil slips from six-month highs as the week opens, but Brent stays near $115 with Houthi strikes on Saudi energy sites keeping supply fears alive</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Crude fell when trading resumed Sunday evening and into Monday&rsquo;s Asian session. Brent futures were down about 1.9% at roughly $114.50 a barrel and U.S. West Texas Intermediate about 2.2% at around $101. On Friday, Brent had settled at $116.72, its highest close since late April, after gaining about 6% on the week. That rise came as attacks on Saudi Arabia intensified and Saudi Aramco evacuated its Dhahran headquarters. U.S. stock futures rose modestly on the dip in oil, after a losing week for the S&amp;P 500 and Nasdaq driven by worries about the AI trade.</p>
+          <p>The risks behind those prices were still in play overnight. The Houthis claimed drone strikes on Saudi oil pumping stations and a new missile attack on Riyadh&rsquo;s airport, and Saudi Arabia says it intercepted the missile. A sustained price above $100 matters well beyond energy markets. It feeds into gasoline prices a week before the U.S. midterms. It also strengthens the economic case Gulf importers and Europe are making for electrification and domestic generation. This is a busy week for markets: Microsoft and Alphabet report earnings Wednesday, and the Federal Reserve, European Central Bank and Bank of Japan announce rate decisions Wednesday through Friday.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/2026/10/25/stock-market-today-live-updates.html">CNBC live, Oct 25&ndash;26</a>, <a href="https://investing.com/news/commodities-news/oil-falls-from-6mth-highs-saudi-attacks-keep-supply-risks-in-focus-4971338">Reuters via Investing.com</a>, <a href="https://www.marinelink.com/news/brent-crude-prices-reach-fivemonth-high-543881">Reuters via MarineLink (Friday background)</a>, <a href="https://www.aljazeera.com/news/2026/10/26/saudi-led-coalition-says-it-struck-houthi-missile-facilities">Al Jazeera, Oct 26</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Climate &middot; Extreme Heat</span>
+          <h2 class="story-headline">Europe&rsquo;s summer heat killed about 50,000 people in its cities, with two-thirds of the deaths attributed to climate change, and Bloomberg Economics puts the cost to EU output at nearly &euro;17 billion</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Researchers at Imperial College London and the London School of Hygiene &amp; Tropical Medicine estimate that extreme heat in summer 2026 caused 50,391 deaths across 854 European cities. They attribute about two-thirds of those deaths to human-caused warming. The findings are published in two peer-reviewed papers in <em>Nature Health</em>. Lead author Clair Barnes said the summer was likely the worst on record for heat deaths across much of Europe. The figures come from models, not counted deaths. The team says its method has previously produced estimates broadly in line with tolls that national health agencies published later.</p>
+          <p>The new element this weekend is the economic cost. A Bloomberg Economics estimate, reported Sunday, puts the hit to EU GDP at about 0.17% from April to September, close to &euro;17 billion, from lost working hours and lower productivity. The two numbers arrive two weeks before the COP31 climate talks open in Antalya, Turkey. The latest UN-based outlook, reported in <em>Nature</em> last week, projects warming peaking at 2.6&ndash;2.8&nbsp;&deg;C under current policies even if global emissions have leveled off.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.japantimes.co.jp/environment/2026/10/25/climate-change/europe-summer-heat-toll/">Bloomberg via Japan Times, Oct 25</a>, <a href="https://www.npr.org/2026/10/23/g-s1-149498/europe-heat-deaths">AP via NPR, Oct 23</a>, <a href="https://www.cnn.com/2026/10/22/climate/europe-heat-wave-deaths-50000">CNN, Oct 22</a>, <a href="https://www.nature.com/articles/d41586-026-03355-x"><em>Nature</em> news (background)</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">NFL &middot; Sunday Night Football</span>
+          <h2 class="story-headline">Seattle&rsquo;s defense holds Patrick Mahomes to 165 yards and hands the Chiefs their first loss, 20&ndash;3, as Jaxon Smith-Njigba gains 150 receiving yards</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>At Lumen Field on Sunday night, the Seahawks held Kansas City to 213 total yards and 11 first downs, and the Chiefs converted 3 of 11 third downs. Mahomes went 19 of 33 for 165 yards with an interception and no touchdowns, his second straight game without a touchdown pass. Kenneth Walker III ran for 36 yards on 14 carries against his former team. Sam Darnold threw for 257 yards, including a 28-yard touchdown to Smith-Njigba, who had nine catches. Emanuel Wilson ran for 100 yards and put the game away with a 21-yard touchdown run with 3:47 left. Harrison Butker missed field goals from 58 and 45 yards.</p>
+          <p>Seattle lost receiver Rashid Shaheed to a knee injury and left tackle Charles Cross to an ankle injury. The Seahawks host the 5&ndash;2 Bears next Monday night, and the Chiefs play at Denver. In baseball, the World Series resumes tonight in St. Petersburg for Game 3, with Milwaukee leading Tampa Bay 2&ndash;0.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.espn.com/nfl/story/_/id/50252989/seahawks-beat-chiefs-sunday-night-football-smith-njigba">ESPN</a>, <a href="https://www.cbssports.com/nfl/news/seahawks-hand-chiefs-their-first-loss-of-the-season-in-20-3-win/">CBS Sports</a>, <a href="https://www.usnews.com/news/sports/articles/2026-10-25/jaxon-smith-njigba-has-150-receiving-yards-and-a-score-in-the-seahawks-20-3-win-over-the-chiefs">AP via U.S. News, Oct 25</a>, <a href="https://www.cbssports.com/nfl/gametracker/boxscore/NFL_20261025_KC@SEA/">CBS box score, Oct 25</a>, <a href="https://www.mlb.com/news/2026-world-series-game-3-storylines-brewers-vs-rays">MLB.com (Game 3 preview)</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Premier League &middot; Sunday</span>
+          <h2 class="story-headline">Bournemouth win 3&ndash;0 at Old Trafford after Michael Carrick drops Bruno Fernandes, and Andoni Iraola&rsquo;s Liverpool beat Brighton 2&ndash;0 to move into fourth</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Manchester United had their worst afternoon of the season at home. Carrick, the interim head coach, left Bruno Fernandes out of the squad entirely after the captain criticized the team&rsquo;s tactics following a midweek Champions League defeat. Bournemouth then scored through Rayan (38&prime;) and Tavernier (43&prime;) before the break. Evanilson added a third on 71 minutes after goalkeeper Senne Lammens failed to clear cleanly. ESPN called it &ldquo;a new low,&rdquo; and NBC Sports wrote that Carrick&rsquo;s days as manager &ldquo;look almost over.&rdquo;</p>
+          <p>At Anfield, Liverpool scored twice in four first-half minutes. Florian Wirtz&rsquo;s shot went in off Brighton&rsquo;s Pascal Gross, and Alexander Isak then finished Bradley Barcola&rsquo;s cutback. It was Iraola&rsquo;s first home league win as Liverpool manager and the club&rsquo;s fourth straight win in all competitions. Liverpool move above Chelsea into fourth, a point behind Brighton, who lost for the first time since August. Elsewhere, Newcastle won 2&ndash;0 at Crystal Palace after losing three of their previous four league games.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.espn.com/soccer/report/_/gameId/401879252">ESPN report, Oct 25</a>, <a href="https://www.nbcsports.com/soccer/live/manchester-united-vs-bournemouth-live-updates-score-goals-highlights-stats-2026-october-25">NBC Sports, Oct 25</a>, <a href="https://www.skysports.com/football/news/13601439/man-utd-0-3-bournemouth-michael-carrick-drops-bruno-fernandes-but-sees-cherries-humble-united-at-old-trafford">Sky Sports</a>, <a href="https://www.espn.com/soccer/story/_/id/50276225/liverpool-brighton-premier-league-commentary-analysis-score-result">ESPN (Liverpool&ndash;Brighton)</a>, <a href="https://www.skysports.com/football/liverpool-vs-brighton-and-hove-albion/report/559521">Sky Sports report</a>, <a href="https://www.premierleague.com/en/news/4744555/what-we-learned-from-sundays-premier-league-matches">Premier League</a> <em>(BBC Sport unreachable this run)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal</span>
+          <h2 class="story-headline">After SaturdayAfter a weekend off, Arsenal go torsquo;s win over Everton, Arsenal go to League Two Fleetwood in the Carabao Cup on Tuesday, five days before a trip to an in-form Liverpool</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Arsenal&rsquo;s Saturday win over Everton, covered in yesterday&rsquo;s brief, was their seventh in eight league games. Arseblog News leads its coverage with Mikel Arteta calling it &ldquo;a big win&rdquo; and praising a side with five changes for keeping its level. Arseblog also noted that Ezri Konsa&rsquo;s opener was Arsenal&rsquo;s first goal from a corner this season. Next is a Carabao Cup fourth-round tie on Tuesday at 8&nbsp;p.m. UK time against League Two Fleetwood Town, drawn after a rotated Arsenal beat Ipswich 4&ndash;2 in the last round. Expect more rotation and chances for younger and fringe players, a squad approach Arteta has stressed all season.</p>
+          <p>Sunday&rsquo;s results make the next league game harder. Arsenal play at Anfield next Sunday, Nov. 1, and Iraola&rsquo;s Liverpool arrive in form after beating Brighton for a fourth straight win, with Isak scoring regularly. <em>(The Athletic&rsquo;s Arsenal desk could not be reached this run for corroboration.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.news/2026/10/arteta-reacts-everton-oct-2026/">Arseblog News</a>, <a href="https://arseblog.news/2026/10/report-arsenal-2-0-everton-inc-goals-2/">Arseblog News report</a>, <a href="https://arseblog.com/2026/10/arsenal-2-0-everton-konsa-and-gabriel-get-the-goals/">Arseblog</a>, <a href="https://arseblog.news/2026/09/arsenal-draw-fleetwood-town-in-carabao-cup-fourth-round/">Arseblog News (Fleetwood draw)</a>, <a href="https://www.fotmob.com/teams/9825/overview/arsenal">FotMob fixtures</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
