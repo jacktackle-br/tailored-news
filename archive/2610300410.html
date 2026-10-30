@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Friday, October 30, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+<!-- EVENING:SLOT:START -->
+<!-- EVENING:SLOT:END -->
+
+  <!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Election 2026 &middot; Alaska Senate</span>
+          <h2 class="story-headline">Trump won&rsquo;t say whether Peltola should be seated if she wins, as Alaska&rsquo;s governor orders a probe of her campaign over the &ldquo;second Dan Sullivan&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Thursday, President Trump declined to say whether Democrat Mary Peltola should be seated if she beats Republican Sen. Dan Sullivan on Tuesday. He said those involved in an alleged spoiler scheme &ldquo;should be prosecuted.&rdquo; Alaska Gov. Mike Dunleavy ordered a state investigation into whether Peltola&rsquo;s campaign broke state law. He told NewsNation that any finding of illegal activity &ldquo;may in fact impact whether someone is seated in the U.S. Senate.&rdquo; The Justice Department has already sued to block Alaska from certifying the race if Peltola wins, and a federal court has let Democrats and the Peltola campaign intervene in that suit.</p>
+          <p>The trigger was a New York Times report on Oct. 28. Citing 12 sources plus texts and documents, it said Peltola campaign aides, its lawyers and staff at the Democratic Senatorial Campaign Committee helped recruit a Petersburg man named Daniel J. Sullivan onto the ballot. The Times said former campaign manager Elisa Rios first described Peltola as &ldquo;definitely aware,&rdquo; then retracted that. Peltola says she &ldquo;knew nothing&rdquo; about the other candidate and calls the story a &ldquo;distraction.&rdquo; Her campaign and the DSCC deny any recruitment. NPR said it had not independently confirmed the Times&rsquo; reporting. Polls before the story showed Peltola ahead. Because Alaska uses ranked-choice voting, confused voters could rank both Sullivans.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>The left splits in two. Mother&nbsp;Jones focuses on the federal response. Its framing: the Justice Department is suing to decertify Alaska&rsquo;s result &ldquo;only if Republicans lose,&rdquo; a one-way remedy that legal experts doubt will hold up. Slate does not let Democrats off the hook. It calls the alleged tactic underhanded and condescending to voters, and argues it could backfire on Peltola. It also says that if Sullivan narrowly loses, that may simply mean Alaskans preferred Peltola.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>National Review&rsquo;s Corner calls the scheme contemptible and &ldquo;the world&rsquo;s least surprising scoop,&rdquo; and says it taints the race. Reason makes the libertarian case two ways. One piece calls the recruitment an attempt to confuse voters. A Volokh Conspiracy post on the law says that prosecuting the second Sullivan would raise serious First Amendment problems, and doubts the trick works under ranked-choice voting. The Bulwark, from the anti-Trump right, calls it &ldquo;a very bad look&rdquo; if true but notes both parties have used ballot-stacking before. <em>(Bulwark shown as intra-right dissent.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/politics/articles/2026-10-29/alaskas-governor-orders-a-probe-into-peltolas-senate-campaign-over-spoiler-candidate-controversy">AP via U.S. News, Oct 29</a>, <a href="https://time.com/article/2026/10/29/trump-wants-democratic-alaska-senate-nominee-peltola-prosecuted-over-candidate-controversy/">TIME, Oct 29</a>, <a href="https://www.npr.org/2026/10/29/nx-s1-6022069/alaskas-all-important-senate-race-is-roiled-by-report-on-alleged-spoiler-candidate">NPR, Oct 29</a>, <a href="https://www.adn.com/politics/2026/10/28/nyt-report-peltola-campaign-national-democrats-helped-get-sen-sullivans-namesake-challenger-on-ballot/">Anchorage Daily News, Oct 28</a>, <a href="https://www.motherjones.com/politics/2026/10/doj-dan-sullivan-alaska-peltola-lawsuit-decertify-election/">Mother Jones</a>, <a href="https://slate.com/news-and-politics/2026/10/dan-sullivan-mary-peltola-alaska-senate.html">Slate</a>, <a href="https://www.nationalreview.com/corner/in-alaska-the-worlds-least-surprising-scoop/">National Review</a>, <a href="https://reason.com/2026/10/28/to-confuse-voters-mary-peltolas-campaign-recruited-a-second-dan-sullivan/">Reason, Oct 28</a>, <a href="https://reason.com/volokh/2026/10/29/the-law-and-democrats-allegedly-recruiting-second-dan-sullivan-to-run-in-alaska-senate-race/">Volokh/Reason, Oct 29</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Economy &middot; Midterms</span>
+          <h2 class="story-headline">The last data before the vote: GDP grew at a 3.4% rate in the third quarter, beating forecasts, but September inflation picked up to 3.6%</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The Commerce Department&rsquo;s advance estimate, released Thursday, shows real GDP grew at a 3.4% annualized rate from July through September. That was up from 2.2% in the second quarter and above forecasts of roughly 3.1&ndash;3.2%. Consumer spending rose at a 3.8% rate. Business investment, driven by the AI build-out, rose 12.7%. Exports fell 5.7%. Reuters credited spending and AI investment with outweighing the drag from higher oil prices tied to the Iran war.</p>
+          <p>The inflation numbers were less favorable. The PCE price index, the Fed&rsquo;s preferred gauge, rose 0.5% in September alone and 3.6% from a year earlier, even though it rose at only a 2.1% annual rate over the quarter. Personal income rose 0.2% in September, less than prices. This is the last major economic report before Tuesday&rsquo;s election, and it will be revised twice more.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Left outlets point voters to the price data rather than the growth number. Slate argues that prices are up and real wages are down because of Trump&rsquo;s policies, and notes that paychecks have shrunk year over year for six straight months. Mother&nbsp;Jones says Trump&rsquo;s claim that the economy is fine is contradicted by its own numbers, especially a gas price spike tied to the war.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window editorial on the GDP release was found from National Review, The Dispatch or the WSJ editorial page. In The Dispatch, John McCormack argues that Trump&rsquo;s economic approval is far worse than it was before the 2018 midterms, and that 2026 could be a bigger blue wave than 2018 <em>(date not confirmed)</em>. The GOP&rsquo;s official message is that growth is beating expectations. Reason, from the libertarian side, criticizes the president&rsquo;s closing promises, such as a $5,000 &ldquo;dividend,&rdquo; as an attempt to &ldquo;bribe and extort the voters.&rdquo;</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/2026/10/29/pce-inflation-report-september-2026-.html">CNBC, Oct 29</a>, <a href="https://www.axios.com/2026/10/29/dp-q3-economy-energy">Axios, Oct 29</a>, <a href="https://www.investing.com/news/economy-news/us-economic-growth-accelerates-in-third-quarter-4983581">Reuters via Investing.com</a>, <a href="https://www.npr.org/2026/10/29/nx-s1-6021008/economy-gdp-inflation-midterms-voters-affordability">NPR, Oct 29</a>, <a href="https://slate.com/news-and-politics/2026/10/economy-inflation-real-wages-trump-midterms.html">Slate</a>, <a href="https://www.motherjones.com/politics/2026/10/trump-claims-the-economy-is-alright-but-the-numbers-tell-a-different-story/">Mother Jones</a>, <a href="https://thedispatch.com/article/republicans-senate-house-of-represenatives-donald-trump-economy-democrats/">The Dispatch</a>, <a href="https://reason.com/2026/10/29/trumps-latest-attempt-to-salvage-the-midterms-bribe-and-extort-the-voters/">Reason, Oct 29</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Campaign &middot; White House</span>
+          <h2 class="story-headline">Trump cancels his weekend rallies in Kansas and Iowa for a &ldquo;72-hour sprint&rdquo; of phone rallies, and snaps &ldquo;I feel perfect&rdquo; when asked about his health</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The Republican National Committee said Thursday that Trump will not hold his Saturday rally in Salina, Kansas, or his Sunday rally in Dubuque, Iowa. Instead he will do telerallies by phone in at least 19 states, including those two. A White House official said there would be more than 20 before Election Day. RNC Chairman Joe Gruters said the change would let the president reach more voters, and the RNC credited Republican candidates&rsquo; &ldquo;strong position&rdquo; in both states. Asked whether his health was the reason, Trump said, &ldquo;I feel perfect. I don&rsquo;t feel I have to go to Kansas.&rdquo;</p>
+          <p>He is still scheduled to rally in Daytona Beach, Florida, on Friday, and nothing has been announced for Monday, the last day of the campaign. AP reported that the change surprised some Republicans. Public polls show Democratic challengers unexpectedly competitive in Iowa, Kansas, Ohio, Mississippi and Alaska. Trump&rsquo;s approval rating is at a low point, and voters are frustrated by gas prices and the long war with Iran.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece from Mother&nbsp;Jones, Vox, Slate or Guardian opinion was found on the cancellations specifically. The line in Democratic and liberal coverage is that the president is pulling back from red states where his visits have not &ldquo;moved the needle.&rdquo; That quote is from a GOP operative, as reported by CNN. <em>(Reflects reported reactions, not a column.)</em></p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece from National Review or the WSJ editorial page was found. The RNC&rsquo;s argument is about efficiency: phone rallies reach more voters in more races at a time of high demand. From the anti-Trump right, The Bulwark&rsquo;s midterm newsletter reads the final week, from the Pentagon firing to the cancelled rallies, as a sign that Republicans are on the defensive. <em>(Intra-right dissent, not the mainstream-right position.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://spectrumlocalnews.com/us/snplus/politics/2026/10/30/trump-rally-kansas-iowa-canceled-telerally-midterm-elections-decision-2026">AP via Spectrum News, Oct 30</a>, <a href="https://whdh.com/news/trump-cancels-rallies-in-kansas-and-iowa-opting-for-telerallies-to-reach-more-voters-rnc-says/">AP via WHDH</a>, <a href="https://www.cnbc.com/2026/10/30/trump-vance-rally-midterm-elections-.html">CNBC, Oct 30</a>, <a href="https://www.aljazeera.com/news/2026/10/30/trump-cancels-iowa-kansas-midterm-events-opting-for-tele-rallies">Al Jazeera, Oct 30</a>, <a href="https://www.cnn.com/2026/10/30/politics/live-news/midterm-election-congress">CNN live, Oct 30</a>, <a href="https://www.thebulwark.com/p/is-this-heaven-no-its-the-midterms-trump-democrats-midterms-brewers-hegseth-general-fired-pentagon-poll">The Bulwark</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Iran &middot; Gulf &middot; Oil</span>
+          <h2 class="story-headline">Iran now says four tankers hit mines near Hormuz as Houthis claim strikes on Saudi refineries, and Brent climbs toward $116</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>A day after the Revolutionary Guards said three tankers caught fire after hitting mines on a southern Hormuz route that Washington backs, Iran&rsquo;s armed forces said a fourth tanker was burning east of the strait. Tehran disputes the U.S. military&rsquo;s statement that it has cleared the key routes of mines, and has demanded independent evidence. Iran&rsquo;s claims remain unverified. It has not named any of the ships, and Britain&rsquo;s UKMTO has given no cause for a vessel fire it reported. The U.S. blockade of Iranian ports continues. Iran has not answered Vice President Vance&rsquo;s letter proposing renewed talks, and CNBC reports growing expectations of U.S. strikes after Tuesday&rsquo;s midterms.</p>
+          <p>Fighting is also spreading on Saudi Arabia&rsquo;s side. The Houthis claimed strikes on the Ras Tanura and Rabigh refineries and an Aramco site at Abqaiq. Riyadh has not confirmed any damage. The Saudi-led coalition said it intercepted a cruise missile aimed at the western region and, on Wednesday, a ballistic missile aimed at Taif. Brent crude rose about 0.75% early Friday to roughly $115.70 a barrel, and WTI to about $102.70.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/2026/10/30/iran-trump-hormuz-oil-middle-east-.html">CNBC, Oct 30</a>, <a href="https://www.cnbc.com/2026/10/30/oil-rises-on-supply-concerns-as-houthis-attack-saudi-arabia.html">Reuters via CNBC, Oct 30</a>, <a href="https://www.arabnews.com/middle-east/irans-revolutionary-guards-say-three-oil-tankers-hit-mines-in-strait-of-hormuz-3008795">Arab News</a>, <a href="https://gulfnews.com/world/mena/middle-east-war-saudi-intercepts-houthi-missile-as-iran-warns-israel-against-strikes-1.500727751">Gulf News</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Russia &middot; Ukraine</span>
+          <h2 class="story-headline">A Russian drone hits a crowded platform at Dnipro station, killing at least 14, and Zelensky uses the attack to challenge the U.S. easing of sanctions</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Thursday, a jet-powered Russian drone hit a platform at Dnipro&rsquo;s main railway station while a commuter train and the No. 866 Dnipro&ndash;Zaporizhzhia passenger train were stopped there. The death toll rose from 13 to at least 14 by the afternoon, and police said at least 10 people were injured. Zelensky called it a &ldquo;horrific&rdquo; strike and said Russian attacks on Oct. 29 killed 19 people across Dnipro, Kremenchuk and Chernihiv. Overnight, ballistic missiles and drones also hit Kyiv, killing one person and injuring 15.</p>
+          <p>Zelensky linked the attack to diplomacy. He said sanctions on Moscow must stay in place and criticized a recent U.S.&ndash;Russia arrangement that eases some of them, arguing it has not slowed Russian attacks. The strike comes as the two sides prepare for U.S.-brokered talks next month, and as Russia keeps hitting energy infrastructure ahead of winter.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.abc.net.au/news/2026-10-30/russian-drone-strike-kills-at-least-14-at-rail-platform/107325816">ABC News (Australia), Oct 30</a>, <a href="https://www.france24.com/en/live-news/20261029-ukraine-says-at-least-13-killed-in-russian-attack-on-train-station">France 24 (AFP), Oct 29</a>, <a href="https://www.indiatvnews.com/news/world/russian-drone-hits-two-trains-stopped-at-station-in-central-ukraine-many-killed-injured-volodymyr-zelenskyy-latest-updates-2026-10-29-1058214">India TV, Oct 29</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Israel &middot; Election</span>
+          <h2 class="story-headline">With every vote counted, Israel is deadlocked: Netanyahu&rsquo;s bloc has 53 seats, Eisenkot&rsquo;s 48, and Arab parties a record 19</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The Central Elections Committee&rsquo;s complete count leaves Benjamin Netanyahu&rsquo;s bloc of Likud, Shas, United Torah Judaism, Otzma Yehudit and Religious Zionism with 53 seats, eight short of a majority in the 120-seat Knesset. Gadi Eisenkot&rsquo;s opposition bloc has 48. Arab-led parties won a record 19. The Times of Israel puts Likud at 27 and Eisenkot&rsquo;s Yashar at 21. Turnout was 77.9%. The committee says a voter-fraud investigation will not change the results, though certified totals are not expected before Nov. 4.</p>
+          <p>Neither side has an obvious path to 61. Eisenkot has ruled out serving under Netanyahu, even in a rotation, which makes a unity government unlikely. Some opposition members resist relying on Arab parties, even though opposition figures such as Yair Golan argue those parties take the anti-Netanyahu camp to 65. Al Jazeera reports that opposition leaders met Thursday to explore coalition options. If talks fail, Israel faces yet another election.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.aljazeera.com/news/2026/10/29/israel-election-result-shows-no-overall-majority-as-vote-count-complete">Al Jazeera, Oct 29</a>, <a href="https://www.timesofisrael.com/with-all-votes-counted-netanyahus-bloc-at-53-seats-eisenkots-48-arab-parties-19/">Times of Israel</a>, <a href="https://www.ynetnews.com/article/hjnatbkaml">Ynet</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE / TECH / ENERGY / CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; Cloud &amp; AI</span>
+          <h2 class="story-headline">AWS growth speeds up to 39%, but Amazon misses on revenue and profit and lifts 2026 capex to about $220 billion, and shares fall after hours</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Amazon Web Services revenue rose 39% to about $46 billion in the third quarter, and segment operating income rose 55% to $17.8 billion, above the roughly $17 billion consensus. Overall, Amazon&rsquo;s revenue rose 12% to $201.9 billion, just below estimates of $202.3 billion. Earnings were $1.89 a share against the $1.97 expected, even though operating income rose 61% to $28.1 billion. Fourth-quarter revenue guidance of $240&ndash;247 billion also came in under expectations at the midpoint.</p>
+          <p>The main concern for investors is spending. Andy Jassy raised the 2026 capital-spending plan by about $20 billion to roughly $220 billion, mostly for AI infrastructure. Shares fell in extended trading, with reports ranging from about 5% to 8%. Together with Microsoft&rsquo;s and Alphabet&rsquo;s results earlier this week, the quarter shows cloud demand still rising fast, while investors weigh how much spending it is worth.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/2026/10/29/aws-q3-earnings-report-2026.html">CNBC, Oct 29</a>, <a href="https://www.benzinga.com/markets/earnings/26/10/62719400/amazon-delivers-q3-double-miss-aws-growth-accelerates-shares-drop">Benzinga</a>, <a href="https://qz.com/amazon-aws-cloud-growth-fastest-earnings-102926">Quartz</a>, <a href="https://finance.yahoo.com/markets/stocks/articles/amazon-com-q3-earnings-call-001416198.html">Yahoo Finance</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Climate &middot; Diplomacy</span>
+          <h2 class="story-headline">Ten days before COP31, the EU&rsquo;s climate chief rules out new finance pledges and calls the talks &ldquo;dead in the water&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>EU climate commissioner Wopke Hoekstra said the bloc will not bring new climate-finance commitments to COP31, which runs Nov. 9&ndash;20 in Antalya, Türkiye. Bloomberg reported that he described finance talks as &ldquo;dead in the water&rdquo; after two years of little progress on cutting global emissions. The EU and its member states provided &euro;32.3 billion in public climate finance to developing countries in 2025, and the bloc is the world&rsquo;s largest contributor.</p>
+          <p>The hosts are concentrating on targets rather than money. The Turkish presidency, working with Australia on negotiations, is promoting a &ldquo;35 by 35&rdquo; goal to raise electricity&rsquo;s share of final energy use from about a fifth to 35% by 2035, along with a buildings-efficiency compact. Critics note that the electrification pledge has no clean-power commitment. Australia has said the summit&rsquo;s cover decision may acknowledge that 1.5&deg;C will likely be overshot. Only 77 heads of state or government are scheduled to speak, about a third fewer than at COP28.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.bloomberg.com/news/articles/2026-10-29/eu-climate-chief-rules-out-fresh-finance-pledges-at-cop31">Bloomberg, Oct 29</a>, <a href="https://oilprice.com/Latest-Energy-News/World-News/EU-Rules-Out-New-Climate-Finance-Pledges-at-COP31.html">OilPrice</a>, <a href="https://www.climatechangenews.com/2026/10/07/australia-says-cop31-co-presidency-will-work-on-a-cover-decision/">Climate Home News (background), Oct 7</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Science &middot; Geoengineering</span>
+          <h2 class="story-headline">A sunshade in space, once dismissed as fantasy, gets its most detailed feasibility study yet, which says construction could begin in 20 to 40 years</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Nature reports on a new study from the Planetary Sunshade Institute, a Los Angeles nonprofit. The report draws on a consortium of engineers and climate scientists, including some from NASA, and outside researchers call it the most detailed analysis yet of blocking a little sunlight from space. The idea is a vast structure near the Sun&ndash;Earth L1 point that could cool the planet by about 1&deg;C. Because launch costs are falling, the report says construction could become viable in as few as 20 to 40 years. The work was funded by a &pound;400,000 (about $530,000) grant from the UK&rsquo;s Advanced Research and Invention Agency.</p>
+          <p>Scientists remain divided. The timeline depends on heavy-lift rockets that can carry millions of tonnes into deep space. Chantal Cappelletti, a space-systems engineer at the University of Nottingham, says many still see the idea as &ldquo;just fantasy.&rdquo; Cornell climate scientist Daniele Visioni, who once called space-based approaches science fiction, now says they deserve serious attention. Unlike spraying aerosols into the stratosphere, a sunshade would be a physical structure, with different risks and a different governance problem.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.nature.com/articles/d41586-026-03415-2">Nature News</a>, <a href="https://planetarysunshade.org/">Planetary Sunshade Institute</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">NFL &middot; Thursday Night Football</span>
+          <h2 class="story-headline">Jordan Love throws three touchdowns and the defense sacks Bryce Young six times as the Packers beat the Panthers 27&ndash;19</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>At Lambeau Field on Thursday night, Love went 30-of-41 for 288 yards with one interception. He threw touchdown passes to Tucker Kraft (12 yards), Matthew Golden (24) and Josh Jacobs (4). Green Bay&rsquo;s pass rush sacked Young six times, according to the Packers&rsquo; game story and Bleacher Report. DAZN&rsquo;s headline says five. It was a measure of revenge for the Packers, who lost to Carolina at Lambeau last season on a last-second field goal.</p>
+          <p>Carolina got close late. Young threw a 26-yard touchdown to Jalen Coker on fourth down to make it 27&ndash;19, but the Panthers did not score again. In the NBA the same night, Memphis rookie Cameron Boozer had his first career triple-double (18 points, 12 rebounds, 12 assists) as the Grizzlies beat Portland 124&ndash;103 to go 5&ndash;0.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://abcnews.com/Sports/wireStory/love-throws-3-td-passes-packers-beat-panthers-137695117">AP via ABC News</a>, <a href="https://www.nfl.com/news/panthers-packers-on-thursday-night-football-what-we-learned-from-green-bay-s-27-19-win">NFL.com</a>, <a href="https://www.dazn.com/en-GB/news/american-football/packers-vs-panthers-tnf-recap-love-golden-jacobs-watson-young/1c1vyci8eomf1tccngltdiap3">DAZN</a>, <a href="https://www.cbssports.com/nba/gametracker/boxscore/NBA_20261029_MEM@POR/">CBS Sports box score, Oct 29</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">English Football &middot; Premier League</span>
+          <h2 class="story-headline">Matchday 9 starts with Chelsea v Manchester United at Stamford Bridge, and Liverpool host Arsenal on Sunday</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The ninth round of the Premier League starts at 12:30 GMT Saturday with Chelsea v Manchester United. At 15:00 come Bournemouth v Leeds, Brentford v Nottingham Forest, Coventry v Sunderland, Hull City v Ipswich and Manchester City v Brighton, the second meeting of City and Brighton in a week after their Carabao Cup tie. Tottenham host Crystal Palace at 17:30, and Aston Villa host Fulham in the evening. Spurs are 14th with nine points from eight games after last weekend&rsquo;s win at Chelsea.</p>
+          <p>Sunday&rsquo;s main game is Liverpool v Arsenal at Anfield. Previews say Hugo Ekitike is out until late December with an Achilles problem, so Alexander Isak is expected to lead the line. Dominik Szoboszlai (hamstring) and Victor Muñoz (knee) are doubts. Previews published today disagree on who Liverpool&rsquo;s manager is, so this brief leaves the name out until a dated report settles it. <em>(BBC Sport football pages were not reachable this run.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://premierleaguenewsnow.com/2026/10/30/liverpool-arsenal-preview-team-news-lineups-prediction/">Premier League News Now, Oct 30</a>, <a href="https://www.bets.co.za/soccer/english-premier-league/premier-league-predictions-saturday-31-october-2026-round-9-20261030-0004/">Bets.co.za fixture list, Oct 30</a>, <a href="https://hotspurhq.com/tottenham-vs-crystal-palace-premier-league-preview-team-news-how-to-watch">Hotspur HQ</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal</span>
+          <h2 class="story-headline">Dowman&rsquo;s appeal is rejected and his three-match ban stands, ruling him out at Anfield, against Hull and at Newcastle</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Thursday, an independent Regulatory Commission dismissed Arsenal&rsquo;s claims of both wrongful dismissal and excessive punishment over 16-year-old Max Dowman&rsquo;s 85th-minute red card at Fleetwood. The card followed his reaction to a heavy challenge from Harrison Neal. The FA will publish written reasons later. Arseblog is not happy. Its headline is &ldquo;Dowman ban upheld, football&rsquo;s rules need to change,&rdquo; and it argues that a three-match ban for the incident is heavy-handed.</p>
+          <p>Practically, Arsenal go to Anfield on Sunday without their teenage playmaker, and with a long injury list. Previews list William Saliba and Bukayo Saka as injured, and Riccardo Calafiori, Declan Rice, Noni Madueke and Christos Tzolis as doubts. Arseblog News says the club is sweating on Madueke in particular. One preview says Eberechi Eze is the only fully fit senior winger. ESPN and other outlets confirmed the ruling. The Athletic&rsquo;s Arsenal desk could not be reached this run.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.com/2026/10/dowman-ban-upheld-footballs-rules-need-to-change/">Arseblog</a>, <a href="https://arseblog.news/2026/10/arsenal-lose-dowman-appeal-as-three-match-ban-upheld/">Arseblog News</a>, <a href="https://www.espn.com/soccer/story/_/id/50319947/arsenal-max-dowman-handed-three-game-ban-red-card-appeal-rejected">ESPN</a>, <a href="https://www.naijanews.com/2026/10/30/arsenals-max-dowman-handed-three-match-ban-after-appeal-fails/">Naija News, Oct 30</a>, <a href="https://premierleaguenewsnow.com/2026/10/30/liverpool-arsenal-preview-team-news-lineups-prediction/">Premier League News Now, Oct 30</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
