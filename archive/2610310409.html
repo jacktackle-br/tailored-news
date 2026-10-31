@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Saturday, October 31, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+<!-- EVENING:SLOT:START -->
+<!-- EVENING:SLOT:END -->
+
+  <!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Election 2026 &middot; Courts</span>
+          <h2 class="story-headline">A federal judge bars the Justice Department from pressuring election officials to set aside ballots or purge voters, four days before the vote</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Friday, U.S. District Judge Trina Thompson in San Francisco issued a temporary restraining order against the Justice Department and Homeland Security. The agencies may not tell state or local election officials to set aside ballots, remove voters from the rolls or stop processing ballots based only on federal claims that some voters are ineligible, and may not threaten to prosecute officials who refuse. The department must also tell the court about any pending search-warrant applications or grand jury subpoenas tied to its lists of allegedly ineligible voters. Thompson found the agencies likely violated the Voting Rights Act&rsquo;s ban on voter intimidation, writing that their actions &ldquo;are likely to have the effect of interfering with election administration and disenfranchising lawful voters.&rdquo; The order runs through Nov. 16. Labor unions and civil rights groups brought the suit; the Justice Department had no immediate comment.</p>
+          <p>It is the latest setback for the administration&rsquo;s pre-election legal push. Earlier this week, another federal judge and then the 9th Circuit, twice in less than a week, refused the department&rsquo;s bid to make California set aside mail ballots from about 20,000 voters it calls likely noncitizens. Reuters reported that the department has also subpoenaed California election officials in a criminal probe, and filed further motions in its suit to block certification of Alaska&rsquo;s Senate race. Early voting is nearing 50 million ballots, a midterm record. <em>(One outlet, Axios, named a different judge; Reuters, CNN and others name Thompson.)</em></p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece on this ruling from Mother&nbsp;Jones, Vox, Slate or Guardian opinion could be verified this run.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece on this ruling from National Review, The Dispatch, the WSJ editorial page or Reason could be verified this run.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnn.com/2026/10/30/politics/emergency-order-halts-doj-pressure-campaign-election-officials">CNN, Oct 30</a>, <a href="https://www.rte.ie/news/us/2026/1031/1597445-us-elections/">RT&Eacute; (wire), Oct 31</a>, <a href="https://www.usnews.com/news/world/articles/2026-10-30/trump-escalates-legal-challenges-against-states-as-election-day-nears">Reuters via U.S. News, Oct 30</a>, <a href="https://1027wbow.com/2026/10/31/us-campaign-for-control-of-congress-enters-final-weekend/">Reuters via WBOW, Oct 31</a>, <a href="https://www.aljazeera.com/news/2026/10/30/us-appeals-court-again-rejects-trump-bid-to-set-aside-california-ballots">Al Jazeera, Oct 30</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">National Security &middot; Iran</span>
+          <h2 class="story-headline">The U.S. tells Middle East allies to prepare for renewed Iran strikes after Tuesday&rsquo;s election; Trump says &ldquo;anything&rsquo;s possible&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The U.S.&ndash;Iran war has been largely paused for months, and reports this week say it could resume soon after the midterms. AP, citing diplomats, reported that the U.S. has warned Middle East allies to prepare for possible renewed strikes after Nov. 3, though Trump has not made a final decision. MS NOW, citing three senior Gulf Arab officials, reported that a short, intense round of strikes could begin as early as Nov. 4. A White House official said election results would not factor into Trump&rsquo;s Iran decisions. Asked about post-election strikes, Trump said &ldquo;anything&rsquo;s possible.&rdquo;</p>
+          <p>The Washington Post reported that U.S. officials say weeks of secretive military operations have restored oil flows through the Strait of Hormuz to near prewar levels, and renewed fighting would test those gains. Iran disputes U.S. claims that shipping lanes are clear and says several tankers have struck mines this week. Iran has said it would hit U.S. bases and Gulf energy sites if attacked.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Slate&rsquo;s Ian Prasad Philbrick argues that the nearly eight-month war is a main reason Republicans may lose ground Tuesday: high gas prices and voter fatigue weigh on GOP candidates, and some vulnerable Republicans now want the war ended. He reads Trump&rsquo;s promise not to strike before the vote, while hinting at attacks afterward, as an admission that the war is unpopular.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece on the post-election strike plans from National Review, The Dispatch, the WSJ editorial page or Reason could be verified this run.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/world/2026/10/30/resumed-iran-war-after-midterms-would-put-fragile-gains-hormuz-test/">Washington Post, Oct 30</a>, <a href="https://www.npr.org/2026/10/30/nx-s1-6022458/after-monthslong-pause-u-s-could-renew-conflict-with-iran-after-midterms">NPR, Oct 30</a>, <a href="https://www.haaretz.com/middle-east-news/2026-10-31/ty-article/report-trump-planning-to-resume-iran-strikes-as-soon-as-one-day-after-midterms/000001a1-908c-d03f-aded-daffa1180000">Haaretz, Oct 31</a>, <a href="https://www.cnbc.com/2026/10/30/iran-trump-hormuz-oil-middle-east-.html">CNBC, Oct 30</a>, <a href="https://slate.com/news-and-politics/2026/10/iran-war-midterms-trump-gas-prices-election.html">Slate, Oct 30</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">G20 &middot; Diplomacy</span>
+          <h2 class="story-headline">G20 foreign ministers scrap their group photo in Atlanta after European diplomats refuse to stand with Lavrov</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The U.S.-hosted G20 foreign ministers&rsquo; meeting opened in Atlanta on Friday without its traditional &ldquo;family photo.&rdquo; Several European diplomats objected to being photographed with Russian Foreign Minister Sergey Lavrov, and AP, citing two U.S. officials, reported that some threatened to walk out. CNN reported the U.S. had considered taking two photos, one with Lavrov and one without, before dropping the photo so it would not become a &ldquo;diplomatic distraction.&rdquo; German Foreign Minister Johann Wadephul said there is &ldquo;no normality with Russia.&rdquo; Lavrov said that if what matters most is &ldquo;who is standing next to them,&rdquo; then &ldquo;that says it all,&rdquo; and that Russia&rsquo;s position on Ukraine is unchanged. He called a short talk with Secretary of State Marco Rubio &ldquo;fairly good&rdquo; (CNN); other outlets render it &ldquo;decent&rdquo; or &ldquo;not bad, though brief.&rdquo;</p>
+          <p>Rubio opened the meeting by calling it &ldquo;a moment of choosing&rdquo; and urged cooperation on energy, food, supply chains and freedom of navigation. The meeting runs through Saturday, ahead of a leaders&rsquo; summit in Miami in December. The photo fight is symbolic, but it shows the gap between Washington, which is talking directly with Moscow, and European allies who refuse to. With the Ukraine and Iran wars dividing the group, few breakthroughs are expected.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnn.com/2026/10/30/politics/g20-tensions-photo-canceled-lavrov-rubio">CNN, Oct 30</a>, <a href="https://www.bloomberg.com/news/articles/2026-10-30/-family-photo-of-g20-officials-scrapped-with-lavrov-present">Bloomberg, Oct 30</a>, <a href="https://news.webindia123.com/news/Articles/World/20261031/4513872.html">ANI, Oct 31</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Europe &middot; Unrest</span>
+          <h2 class="story-headline">France deploys 70,000 police for a third weekend of cost-of-living protests, as youth-led rallies spread to more than 30 German cities</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>France has deployed about 70,000 police and gendarmes for Saturday&rsquo;s protests, Reuters and AP reported. It is the third weekend in a row of protests over living costs and education. Interior Minister Laurent Nu&ntilde;ez warned of a &ldquo;very high risk&rdquo; of disorder, especially after dark on Halloween night, and the government promised an &ldquo;extremely firm&rdquo; response. Protests on Oct. 17 turned into rioting and looting. Marches are being kept out of city centers, and the Paris march has been moved to the edge of the capital. Unions and student groups challenged the restrictions in court and lost.</p>
+          <p>The movement is spreading. Protests were planned in more than 30 German cities. In Berlin, organizers said more than 140,000 people had signed up online, and police expected about 10,000 at the Brandenburg Gate, AP reported. The protests are led by young people and follow Italy&rsquo;s general strike earlier this week, pointing to a Europe-wide backlash over living costs, with energy prices pushed up by the Iran war. Saturday&rsquo;s turnout and arrest figures were not yet available at press time.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/world/2026/10/31/protests-europe-youth-france-germany-spain/fbdd8a8c-d4f1-11f1-9931-2a41b76fc976_story.html">AP via Washington Post, Oct 31</a>, <a href="https://usnews.com/news/world/articles/2026-10-30/france-braces-for-fresh-unrest-government-vows-tough-response">Reuters via U.S. News, Oct 30</a>, <a href="https://www.aljazeera.com/news/2026/10/31/germany-and-france-brace-for-protests-on-halloween-weekend">Al Jazeera, Oct 31</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Iran War &middot; Hormuz</span>
+          <h2 class="story-headline">October was the worst month yet for attacks on ships near Hormuz, as Trump says the war will &ldquo;end soon&rdquo; and Tehran plays down Qatar&rsquo;s proposals</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>October saw more attacks on merchant ships around the Strait of Hormuz than any month since the war began on Feb. 28. The National, citing data from the UK&rsquo;s maritime security agency (UKMTO), counted more than 30 incidents this month and 145 since the war started; other reports citing UKMTO put October at 35 or more. UKMTO says its figures likely undercount attacks.</p>
+          <p>On diplomacy, an official briefed on the talks told Reuters that Qatari mediators were in Tehran on Friday, coordinating with Washington, and a source told CBS News they carried the latest edits to a draft deal. The core dispute is sequencing: Washington wants Iran&rsquo;s nuclear program addressed first, Tehran wants the U.S. port blockade and oil sanctions lifted first. A senior Iranian official called Qatar&rsquo;s proposals &ldquo;unacceptable ideas and not an offer.&rdquo; Trump said Friday the war is &ldquo;going to end soon&rdquo; but did not say how. Outlets disagree on whether Qatar is carrying a formal draft or only ideas; either way, any deal will have to address Hormuz shipping as well as the nuclear question.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.thenationalnews.com/news/mena/2026/10/31/attacks-on-ships-transiting-hormuz-in-october-highest-since-start-of-war/">The National, Oct 31</a>, <a href="https://kfgo.com/2026/10/30/qatari-mediators-return-to-tehran-to-push-for-us-iran-deal-official-says/">Reuters via KFGO, Oct 30</a>, <a href="https://www.cbsnews.com/live-updates/iran-war-us-trump-diplomacy-threat-resume-attacks/">CBS News live updates, Oct 30</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE / TECH / ENERGY / CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; Chips</span>
+          <h2 class="story-headline">Intel stock falls almost 29%, its worst day since 1974, after a weak forecast and a deadly explosion at its Israel plant</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Intel shares closed down 28.6% at $65.76 on Friday, the chipmaker&rsquo;s worst day since July 1974 by Yahoo Finance&rsquo;s count. Roughly $140&ndash;145 billion in market value disappeared in one session, and other chip stocks fell with it. Third-quarter results beat expectations, with revenue of $16.5 billion, but Intel guided fourth-quarter revenue to $15&ndash;16 billion against analyst expectations of about $17 billion. It said weak PC demand and rising memory costs could last into 2027. Bank of America downgraded the stock to Neutral.</p>
+          <p>An explosion at Intel&rsquo;s Fab 28 in Israel killed two employees and critically injured a third, shutting the plant for about two weeks. Intel expects it to cut fourth-quarter revenue by about $300 million, with a similar hit in the first quarter. CEO Lip-Bu Tan called it an &ldquo;unfortunate and tragic accident.&rdquo;</p>
+        </div>
+        <div class="sources">Sources: <a href="https://uk.finance.yahoo.com/news/intel-stock-plunges-nearly-29-its-worst-day-since-1974-205955309.html">Yahoo Finance, Oct 30</a>, <a href="https://finance.yahoo.com/technology/articles/intel-shares-plunge-almost-30-165700205.html">Yahoo Finance, Oct 30</a>, <a href="https://www.benzinga.com/markets/tech/26/10/62749985/chip-stocks-1-trillion-wipeout-intel-nvidia-amd-tsmc-broadcom">Benzinga, Oct 30</a>, <a href="https://www.ynetnews.com/business/article/ryivnsmazl">Ynet, Oct 30</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Energy &middot; Policy</span>
+          <h2 class="story-headline">Rising power bills and data-center deals turn utilities into a rare midterm issue</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Electric bills rarely matter in U.S. national elections, but Reuters reports that they do this year, days before the midterms. Voters are angry about rising bills and about the power deals utilities strike with data centers. Bills have risen fastest in Ohio, Michigan and Pennsylvania, all swing states and data-center hot spots; in some places they have risen three times faster than inflation.</p>
+          <p>According to a survey by the consumer group PowerLines, utilities are on pace to ask regulators for about as much in rate increases this year as last year&rsquo;s record of nearly $31 billion. Regulators do not approve every request, and Reuters does not say how much of the increase is driven by data centers.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/politics/articles/2026-10-31/power-bills-and-data-centers-cast-rare-spotlight-on-utilities-in-us-midterms">Reuters via U.S. News, Oct 31</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Climate &middot; Nature</span>
+          <h2 class="story-headline">The UN nature summit in Yerevan ends in overtime with two agreements, but little new money</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Nearly 200 countries approved two agreements at the UN biodiversity summit (COP17) in Yerevan, Armenia, after almost two weeks of talks ran into overtime. The deals aim to get the world&rsquo;s 2030 nature goals back on track. The UN says key targets are falling behind, including protecting 30% of the world&rsquo;s land and oceans and raising conservation funding. Countries repeated a goal of $30 billion a year in nature finance for poorer countries by 2030.</p>
+          <p>The hardest fight was over subsidies that harm nature &mdash; support for fossil fuels, intensive farming and overfishing &mdash; which still total about $2.4 trillion a year. France&rsquo;s minister said the result was &ldquo;not commensurate&rdquo; with the crisis. Ecuador will host the next talks in 2028. (This is the biodiversity convention, separate from the COP31 climate talks next month.)</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.france24.com/en/environment/20261030-un-nature-summit-approves-two-key-agreements-after-marathon-negotiations">France 24, Oct 30</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Science &middot; Space</span>
+          <h2 class="story-headline">NASA asks companies how to boost and repair Hubble &mdash; or bring it down safely</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>NASA has asked private companies for ideas on the 36-year-old Hubble Space Telescope: plans to push it into a higher orbit, service it, or steer it into a controlled fall back to Earth. Responses are due November 30. Hubble has no engines of its own, and thin air at its altitude of about 470 km (292 miles) slowly drags it down; it could re-enter in the early-to-mid 2030s. NASA wants it lifted to at least 600 km (373 miles) by 2032 without damaging the telescope.</p>
+          <p>This is only a request for information, and NASA has set aside no money for a mission. Hubble&rsquo;s orbit was last raised by a space shuttle in 2002.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.theregister.com/science/2026/10/30/nasa-ponders-a-hubble-servicing-mission-or-a-controlled-deorbit/5306622">The Register, Oct 30</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">NBA &middot; NBA Cup</span>
+          <h2 class="story-headline">Curry scores 31 as the Warriors come back from 25 down to beat the Lakers 112&ndash;95</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Golden State fell behind by 25 points early on Friday night, then came back to beat the Lakers 112&ndash;95 in an NBA Cup game in San Francisco. Stephen Curry scored 31 points on 11-of-23 shooting, including 8 of 14 from three. He also passed Dominique Wilkins for 18th on the NBA&rsquo;s all-time scoring list.</p>
+          <p>Luka Don&#269;i&#263; scored 37 for Los Angeles, 21 of them in the first quarter, but the Lakers managed little after that and fell to 4&ndash;2.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.local10.com/sports/2026/10/31/stephen-curry-scores-31-points-and-outduels-luka-doncic-as-warriors-come-back-to-beat-lakers-112-95/">AP via Local 10, Oct 31</a>, <a href="https://www.espn.com/nba/recap/_/gameId/401909285">ESPN recap, Oct 30</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">English Football &middot; Championship</span>
+          <h2 class="story-headline">Brereton D&iacute;az scores the only goal as Sheffield United beat Wrexham in the league for the first time since 1982</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Sheffield United beat Wrexham 1&ndash;0 at Bramall Lane on Friday night. Ben Brereton D&iacute;az scored his first goal of the season after half an hour, after Wrexham goalkeeper Anthony Patterson parried a shot from Andr&eacute; Ayew straight to him. It was United&rsquo;s first league win over Wrexham since October 1982. The Blades moved up to 10th, one point outside the play-off places. Wrexham managed only one shot on target.</p>
+          <p>&ldquo;Everybody turned up,&rdquo; said Blades manager Chris Wilder. Wrexham manager Phil Parkinson questioned his own players: &ldquo;I don&rsquo;t feel we&rsquo;ve got a consistent level of effort, and desire every week.&rdquo; The Premier League&rsquo;s matchday 9 begins Saturday. <em>(BBC Sport was unreachable this run; Sky Sports and PA used instead.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.skysports.com/football/sheffield-united-vs-wrexham/report/560648">Sky Sports, Oct 30</a>, <a href="https://www.irishnews.com/sport/soccer/phil-parkinson-questions-wrexhams-desire-after-defeat-at-sheffield-united-VLO6BN4XCZPERCAL5VBFEL7M64/">PA via Irish News, Oct 30</a>, <a href="https://www.yorkshirepost.co.uk/sport/football/sheffield-united-chris-wilder-wrexham-9321852">Yorkshire Post, Oct 30</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal &middot; Liverpool Preview</span>
+          <h2 class="story-headline">Saka will miss Anfield with a thigh injury, as Arteta says &ldquo;it&rsquo;s time&rdquo; to end a 14-year wait for a league win there</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>At his Friday press conference, Mikel Arteta confirmed that Bukayo Saka will miss Sunday&rsquo;s game at Liverpool with the thigh injury he picked up in the 2&ndash;2 draw with Bayern Munich. Saka needs another scan to check the fluid and whether the tendon is involved. Arteta said he looks likely to miss England duty, but that will be decided next week. Declan Rice, Riccardo Calafiori and Christos Tzolis trained Friday and should be available. Noni Madueke faces a late fitness test on his ankle.</p>
+          <p>Arsenal have not won a league game at Anfield since September 2012: five draws and eight defeats since. &ldquo;It&rsquo;s 14 years that we haven&rsquo;t won there, so it&rsquo;s time to do it,&rdquo; Arteta said. Arseblog expects Madueke to start on the right if he passes the test, and notes Arteta went out of his way to praise him. <em>(The Athletic was unreachable this run; corroborated via Daily Cannon and Yahoo Sports.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.news/2026/10/arteta-eyes-end-to-14-year-anfield-drought-bigs-up-noni/">Arseblog News, Oct 30</a>, <a href="https://dailycannon.com/2026/10/arsenal-saka-injury/">Daily Cannon, Oct 30</a>, <a href="https://sports.yahoo.com/articles/mikel-arteta-delivers-positive-injury-141503901.html">Yahoo Sports, Oct 30</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
