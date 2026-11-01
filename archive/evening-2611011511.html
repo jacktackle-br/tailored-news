@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Sunday, November 1, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+<!-- EVENING:SLOT:START -->
+<div class="edition-band"><span class="kick">The Evening Edition</span><span class="big">Evening Briefing</span><span class="when">Updated Sunday, November 1, 2026</span></div>
+
+<section class="section" id="evening-politics"><div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Election 2026 &middot; Alaska &middot; Courts</span>
+          <h2 class="story-headline">Judge throws out the Justice Department&rsquo;s suit to segregate Alaska ballots and hold up certification of the Senate race; DOJ moves to appeal</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Sunday, two days before Election Day, U.S. District Judge Sharon Gleason dismissed the Justice Department&rsquo;s lawsuit against Alaska. The suit had asked the court to set aside ballots that ranked Daniel J. Sullivan Jr., the second candidate named Sullivan, and to block certification if Republican Sen. Dan S. Sullivan loses. Gleason ruled that the federal government lacked standing because it had not shown that a court order could remedy its claimed injury. She also refused to let the department amend the complaint. She called the requested remedy &ldquo;infeasible,&rdquo; since many ballots have already been cast and mixed together. Segregating ballots for a law-enforcement inquiry, she wrote, would &ldquo;clearly violate Alaskans&rsquo; right to a secret ballot.&rdquo;</p>
+          <p>The department quickly filed notice that it will appeal to the 9th Circuit. It called the dismissal procedural and noted that the judge did not reject its argument that the second Sullivan was a spoiler. The federal criminal investigation, a state inquiry and a House Oversight Committee probe all continue, and no one has been charged. Sen. Sullivan said he would &ldquo;accept the election results,&rdquo; and Sen. Lisa Murkowski said the suit should never have been filed. Democrat Mary Peltola&rsquo;s campaign called it a baseless effort by a &ldquo;weaponized&rdquo; Justice Department. Separately, no Supreme Court filing in the department&rsquo;s fight over 20,000 California mail ballots could be confirmed as of Sunday afternoon.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece on the ruling from Mother&nbsp;Jones, Vox, Slate or Guardian opinion could be verified this run.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece on the ruling from National Review, The Dispatch, the WSJ editorial page or Reason could be verified this run. On the record, Sullivan and Murkowski, both Republicans, distanced themselves from the department&rsquo;s strategy.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://spectrumlocalnews.com/nc/charlotte/politics/2026/11/01/judge-dismisses-lawsuit-seeking-to-block-certification-of-alaska-senate-race-if-gop-incumbent-loses">AP via Spectrum News, Nov 1</a>, <a href="https://www.adn.com/politics/2026/11/01/judge-throws-out-trump-ordered-lawsuit-seeking-to-block-certification-of-alaskas-us-senate-race/">Anchorage Daily News, Nov 1</a>, <a href="https://alaskapublic.org/news/politics/elections/2026-11-01/judge-tosses-doj-lawsuit-that-sought-to-block-election-results-if-republican-sen-dan-sullivan-loses">Alaska Public Media, Nov 1</a>, <a href="https://www.cnbc.com/2026/11/01/alaska-senate-doj-lawsuit-dismissed-sullivan-peltola.html">CNBC, Nov 1</a>, <a href="https://www.axios.com/2026/11/01/trump-doj-delay-alaska-midterm-results-rejected-judge">Axios, Nov 1</a>, <a href="https://www.aljazeera.com/news/2026/11/1/sullivan-vows-to-honour-alaska-race-outcome-us-judge-dismisses-doj-lawsuit">Al Jazeera, Nov 1</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Election 2026 &middot; Michigan Senate</span>
+          <h2 class="story-headline">Haley Stevens, the Democrat who lost the primary to Abdul El-Sayed, endorses Republican Mike Rogers two days before the vote</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Sunday, Rep. Haley Stevens appeared unannounced with Republican Mike Rogers at a Detroit church and endorsed him for Michigan&rsquo;s open Senate seat. She lost the August Democratic primary to Abdul El-Sayed. Stevens said El-Sayed&rsquo;s campaign had told her she was no longer welcome at its events. That followed a dispute over an outside ad blaming Michigan&rsquo;s cost of living on U.S. aid to Israel, which Stevens called antisemitic. Her video also cited El-Sayed&rsquo;s ties to streamer Hasan Piker. &ldquo;Today, I do not belong to Abdul&rsquo;s campaign,&rdquo; she said, while insisting she is &ldquo;not turning my back on Democrats.&rdquo; Her longtime chief of staff resigned, and more staff departures are expected.</p>
+          <p>Senate Minority Leader Chuck Schumer called the endorsement &ldquo;a despicable betrayal.&rdquo; Michigan Democratic Party chair Curtis Hertel said Stevens &ldquo;has abandoned everything she claims to care about.&rdquo; Mallory McMorrow, Rep. Debbie Dingell and Sen. Angela Alsobrooks campaigned with El-Sayed on Sunday. Rogers said he was &ldquo;honored,&rdquo; and Trump praised the move. El-Sayed brushed it off: &ldquo;At the end of the day, I actually don&rsquo;t think about Haley Stevens.&rdquo; The race is one of the handful that will decide Senate control, where Republicans currently hold a 53&ndash;47 majority.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece on the endorsement from Mother&nbsp;Jones, Vox, Slate or Guardian opinion could be verified this run. In straight news coverage, people close to El-Sayed argue the snub could help him by reinforcing his anti-establishment appeal.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece on the endorsement from National Review, The Dispatch, the WSJ editorial page or Reason could be verified this run. The RNC has pitched the split as an opening, telling Democrats who feel abandoned that they &ldquo;have a home&rdquo; with Rogers.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/11/01/nx-s1-6020993/michigan-senate-race-abdul-el-sayed-haley-stevens-mike-rogers">NPR, Nov 1</a>, <a href="https://www.aljazeera.com/news/2026/11/1/michigan-dem-haley-stevens-endorses-republican-senate-candidate-mike-rogers">AP via Al Jazeera, Nov 1</a>, <a href="https://www.cnbc.com/2026/11/01/michigan-senate-stevens-rogers-endorsement-el-sayed.html">CNBC, Nov 1</a>, <a href="https://www.axios.com/2026/11/01/haley-stevens-mike-rogers-church-michigan-senate">Axios, Nov 1</a>, <a href="https://thehill.com/homenews/campaign/6187116-el-sayed-dismisses-stevens-rogers-endorsement/">The Hill</a></div>
+      </div>
+    </details>
+</section>
+
+<section class="section" id="evening-foreign"><div class="section-header"><span class="section-label">Global Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Iran &middot; Hormuz</span>
+          <h2 class="story-headline">Iran&rsquo;s Revolutionary Guard says two tankers &ldquo;exploded&rdquo; on mines in Hormuz after using a route Tehran had not approved</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Iran&rsquo;s Revolutionary Guard navy said Sunday that two tankers, one of them a supertanker, hit mines and exploded in the Strait of Hormuz, Reuters reported. It said the ships had taken an &ldquo;unauthorized route&rdquo; outside the corridor Tehran is enforcing. Neither the ships nor any casualties have been independently confirmed, and the IRGC&rsquo;s counts have shifted: Friday&rsquo;s claim of four mine strikes was later revised to three. Sunday&rsquo;s claim comes hours after Foreign Minister Abbas Araghchi floated a two-day timeline for reopening the strait, conditional on U.S. concessions. Pakistan&rsquo;s military spokesman said Islamabad was &ldquo;cautiously optimistic&rdquo; about mediating between Iran and the U.S.</p>
+          <p><strong>Analysis:</strong> Tehran is offering a deal and showing it can enforce its terms at the same time. The mine claims, true or not, tell shippers that only Iran&rsquo;s routes are safe, while Araghchi&rsquo;s timeline puts the burden on Washington to act first. Combined with Trump&rsquo;s remark Saturday that remaining sites could be struck &ldquo;in 10 minutes,&rdquo; each side is raising the cost of the other side&rsquo;s next move before any talks resume. Insurers and oil markets are likely to treat the strait as closed until a Western navy or an independent party confirms otherwise.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/world/articles/2026-11-01/irans-irgc-navy-says-two-tankers-exploded-after-hitting-mines-in-hormuz">Reuters via U.S. News, Nov 1</a>, <a href="https://www.cnbc.com/2026/10/30/iran-trump-hormuz-oil-middle-east-.html">CNBC, Oct 30</a>, <a href="https://www.jpost.com/middle-east/iran-news/article-913514">Jerusalem Post</a>, <a href="https://investinglive.com/commodities/iran-says-two-tankers-hit-mines-in-hormuz-as-tehran-offers-two-day-reopening-plan/">InvestingLive</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Ukraine &middot; Russia</span>
+          <h2 class="story-headline">Russian strikes black out hundreds of thousands of Ukrainian homes as the Kherson truce ends and Moscow refuses to extend it</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>President Volodymyr Zelensky said overnight Russian strikes hit power infrastructure in four regions, leaving hundreds of thousands of households without electricity on Sunday. Emergency power cuts were imposed nationwide, and Kyiv lost power for most of the day. Ukraine&rsquo;s air force said it shot down 371 of 433 long-range drones launched since Saturday evening, and a strike in the Vinnytsia region killed two people. &ldquo;The Russians are seeking to maximally exploit the deficit of ballistic missile interceptors,&rdquo; Zelensky said, renewing his appeal for Patriot missiles. Ukraine hit back with drones: Russia reported 235 downed overnight and major damage at an industrial site in Nizhny Novgorod, and Kyiv says it struck a missile-fuel plant in Rostov.</p>
+          <p>A local humanitarian ceasefire around Russian-occupied Oleshky in Kherson region expired Sunday night, after letting civilians evacuate. A Ukrainian official said Moscow refused to extend it. <strong>Analysis:</strong> The Oleshky truce was the most significant arrangement between Kyiv and Moscow since the full-scale invasion. Its lapse, together with the heaviest week of grid strikes this autumn, suggests Russia has no interest in the broader energy-target ceasefire Washington is pushing and Kyiv says it supports. That leaves Ukraine facing winter with interceptor stocks as the limiting factor, just as the Iran war competes for the same Patriot supply.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://washingtontimes.com/news/2026/nov/1/residents-ukraines-kherson-prepare-return-war-localized-ceasefire">AP via Washington Times, Nov 1</a>, <a href="https://www.freemalaysiatoday.com/category/world/2026/11/02/russian-strikes-cut-power-to-thousands-in-ukraine">Reuters via Free Malaysia Today, Nov 2</a>, <a href="https://www.nbcnews.com/world/ukraine/russian-strikes-cut-power-thousands-ukraine-trumps-energy-ceasefire-rcna606784">NBC News</a>, <a href="https://www.aol.com/articles/russian-strikes-cut-power-thousands-194939000.html">BBC via AOL</a></div>
+      </div>
+    </details>
+</section>
+
+<div class="edition-return">Earlier today &mdash; the Morning Brief &darr;</div>
+<!-- EVENING:SLOT:END -->
+
+  <!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Election 2026 &middot; Final Weekend</span>
+          <h2 class="story-headline">On the last weekend before the midterms, the administration presses an Alaska criminal probe and says it will likely take the California ballot fight to the Supreme Court</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The administration said Saturday it would likely ask the Supreme Court to make California set aside mail ballots from more than 20,000 registered voters it says are likely noncitizens, Reuters reported. A district judge and then the 9th Circuit have already refused. In Alaska, U.S. Attorney Michael Heyman confirmed &ldquo;both a civil investigation and a criminal investigation&rdquo; into how a second candidate named Dan Sullivan got onto the Senate ballot. The Justice Department has asked U.S. District Judge Sharon Gleason to order state officials to &ldquo;preserve and segregate&rdquo; every ballot that ranks Dan J. Sullivan before Monday. State lawyers say that cannot be done without breaking ballot secrecy. The department has issued dozens of subpoenas, including to the campaigns of Democrat Mary Peltola and Dan J. Sullivan. The New York Times reported this week that Peltola&rsquo;s campaign helped recruit him; Peltola says she knew nothing about it. No one has been charged.</p>
+          <p>The Washington Post reports that the administration is reshaping its election lawsuits and investigations so they can continue after Tuesday. On Friday a federal judge in San Francisco barred federal pressure on election workers, and NPR notes how unusually prominent the Justice Department has been this close to a vote. The department says it is &ldquo;following the facts and the law, not anyone&rsquo;s political timetable.&rdquo; Nearly 50 million ballots have been cast early. All 435 House seats and 35 Senate seats are on the ballot, and Republicans hold the Senate 53&ndash;47. The Post says the competitive map is wider than either party expected. Trump spent Saturday at Mar-a-Lago, reinstated rallies he had cancelled, and is due in Kansas and Iowa on Sunday.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece on the Justice Department&rsquo;s final-weekend moves from Mother&nbsp;Jones, Vox, Slate or Guardian opinion could be verified this run.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>The Dispatch&rsquo;s end-of-campaign roundup is a realistic read for conservatives. Forecasters agree almost unanimously that Democrats will take the House, and a Senate map that once favored Republicans is now &ldquo;at best&rdquo; a toss-up. It points to Michigan&rsquo;s Rogers&ndash;El-Sayed race and to Republican defections in Kansas as signs of the party&rsquo;s weakness. <em>(Weekly roundup; exact publication date not independently verified.)</em></p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/politics/2026/10/31/trump-administration-retools-its-battle-over-elections-keep-fights-alive-after-election-day/">Washington Post, Oct 31</a>, <a href="https://www.washingtonpost.com/politics/2026/10/31/elections-final-days-candidates-face-political-map-few-predicted/">Washington Post, Oct 31</a>, <a href="https://www.npr.org/2026/10/31/nx-s1-6024423/criminal-probe-alaska-senate-candidate">NPR, Oct 31</a>, <a href="https://www.npr.org/2026/10/31/nx-s1-6020974/politics-norms-and-the-dojs-unprecedented-pre-election-headlines">NPR, Oct 31</a>, <a href="https://www.adn.com/politics/2026/10/31/justice-department-seeks-to-isolate-alaska-ballots-as-criminal-probe-underway-over-senate-candidate/">AP via Anchorage Daily News, Oct 31</a>, <a href="https://www.theglobeandmail.com/world/us-politics/article-us-midterm-campaign-final-weekend-alaska-california/">Reuters via Globe and Mail, Oct 31</a>, <a href="https://thedispatch.com/newsletter/weekly/midterms-vance-trump-legal-challenges/">The Dispatch</a></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Washington &middot; Courts</span>
+          <h2 class="story-headline">D.C. and Virginia sue to stop Trump&rsquo;s 250-foot triumphal arch days before construction is due to begin</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Saturday the District of Columbia and Virginia filed a federal suit in Washington to block President Trump&rsquo;s planned triumphal arch near the Potomac. The defendants are the National Park Service and the Interior Department. Attorneys general Brian Schwalb (D.C.) and Jay Jones (Virginia) argue that the project lacks the congressional authorization required under the Commemorative Works Act. They also say the 250-foot arch would far exceed the 130-foot limit in the Height of Buildings Act. The suit says construction would snarl traffic, add pollution and interfere with emergency services. The administration had planned to break ground on Nov. 5.</p>
+          <p>A separate suit by a Vietnam War veteran and others is already pending, and the two jurisdictions had raised objections earlier in October. A White House spokesperson defended the arch as a tribute to American service members. The case now turns on whether a judge will pause work before Thursday.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece on the lawsuit from Mother&nbsp;Jones, Vox, Slate or Guardian opinion could be verified this run. Mother Jones&rsquo; earlier coverage, from September and outside this window, focused on Trump&rsquo;s suggestion that the arch could host drones and snipers.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece on the lawsuit from National Review, The Dispatch, the WSJ editorial page or Reason could be verified this run.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/dc-md-va/2026/10/31/dc-virginia-sue-block-trumps-proposed-triumphal-arch/">Washington Post, Oct 31</a>, <a href="https://www.npr.org/2026/10/31/nx-s1-6024694/virginia-dc-sue-trump-arch">NPR, Oct 31</a>, <a href="https://www.aljazeera.com/news/2026/10/31/district-of-columbia-and-virginia-sue-to-block-trumps-triumphal-arch-plans">Al Jazeera, Oct 31</a>, <a href="https://www.nbcnews.com/politics/white-house/dc-virginia-lawsuit-stop-proposed-trump-arch-construction-rcna606705">NBC News</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Iran &middot; Hormuz</span>
+          <h2 class="story-headline">Trump says remaining Iranian sites could be hit &ldquo;in 10 minutes&rdquo; as Tehran floats a two-day Hormuz reopening, on its own terms</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Speaking to reporters at a Halloween event at Mar-a-Lago on Saturday, Trump said the U.S. still has to &ldquo;take care&rdquo; of one or two Iranian sites, naming the suspected underground nuclear complex at Pickaxe Mountain near Natanz. &ldquo;We can do that in 10 minutes,&rdquo; he said. He also said Washington is in no hurry, and he called a question about whether fighting resumes next week &ldquo;stupid.&rdquo; Secretary of State Marco Rubio said no decision has been made. Reuters reported that Supreme Leader Mojtaba Khamenei told commanders any threat must be met with an immediate response that has no geographic limits.</p>
+          <p>Meanwhile, Foreign Minister Abbas Araghchi said talks with Qatari mediators had cut Iran&rsquo;s proposed timeline for reopening the Strait of Hormuz from five days to two. The offer applies only once Washington accepts Tehran&rsquo;s demands, which include lifting the blockade of its ports, releasing frozen assets and waiving oil sanctions. He called a letter from Vice President Vance a &ldquo;positive step&rdquo; but said Iran sees &ldquo;no need to meet with the Americans at this stage.&rdquo; Trump said the letter was only about getting medical supplies into Iran. At sea, Qatar&rsquo;s Nakilat said its LNG carrier Al Mayeda was hit by &ldquo;unidentified objects&rdquo; in the Gulf on Friday evening. No one was hurt and no one has claimed the attack. That a ship belonging to the mediator was hit shows how exposed Gulf shipping remains.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.aljazeera.com/news/liveblog/2026/11/1/iran-war-live-araghchi-says-talks-under-way-on-2-day-plan-to-reopen-hormuz">Al Jazeera live, Nov 1</a>, <a href="https://www.aljazeera.com/news/liveblog/2026/10/31/iran-war-live-oil-tankers-hit-in-hormuz-trump-says-conflict-will-end-soon">Al Jazeera live, Oct 31</a>, <a href="https://www.jns.org/news/u-s-news/trump-on-remaining-iranian-nuclear-sites-we-can-do-that-in-10-minutes">JNS (citing Reuters), Oct 31</a>, <a href="https://foxnews.com/live-news/us-iran-war-trump-israel-strait-hormuz-10-31-26">Fox News live, Oct 31</a>, <a href="https://www.freemalaysiatoday.com/category/world/2026/11/01/qatari-lng-tanker-struck-in-gulf-says-state-media">Free Malaysia Today (wire), Nov 1</a>, <a href="https://www.iranintl.com/en/202610317760">Iran International, Oct 31</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">G20 &middot; Diplomacy</span>
+          <h2 class="story-headline">G20 foreign ministers leave Atlanta without a joint communiqu&eacute;, split over Russia&rsquo;s war in Ukraine</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The U.S.-hosted G20 foreign ministers&rsquo; meeting ended in Atlanta on Saturday without a joint statement. Differences over Russia&rsquo;s war in Ukraine were the main obstacle. Secretary of State Marco Rubio instead issued a chair&rsquo;s statement summarizing the talks and the areas of shared concern. At his closing press conference he stressed freedom of navigation in the Strait of Hormuz and the Black Sea, critical-mineral supply chains and food security. Russian Foreign Minister Sergey Lavrov said Moscow would not accept Ukraine becoming a &ldquo;military threat&rdquo; to Russia&rsquo;s security interests. Polish Foreign Minister Rados&#322;aw Sikorski said the lack of consensus was no surprise.</p>
+          <p>The meeting had opened with the group photo cancelled after European diplomats refused to pose with Lavrov. It closed with a document only the host signed, a sign of how hard the Miami leaders&rsquo; summit in December will be. Washington&rsquo;s decision not to invite South Africa added to the friction, and it is still unclear whether Vladimir Putin will attend in Miami.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtontimes.com/news/2026/oct/31/g20-foreign-ministers-atlanta-meeting-head-ending-without-consensus/">AP via Washington Times, Oct 31</a>, <a href="https://www.arabnews.com/world/g20-foreign-ministers-to-end-atlanta-meeting-without-consensus-on-key-issues-3009092">Arab News, Oct 31</a>, <a href="https://news.cgtn.com/news/2026-11-01/G20-FM-meeting-ends-without-joint-communique-amid-deep-divisions-1RHUmkOrXMI/p.html">CGTN, Nov 1</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE, TECH, ENERGY & CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; AI &amp; the Web</span>
+          <h2 class="story-headline">OpenAI, Google, Microsoft and Anthropic agree to honor one robots.txt signal for opting out of AI training</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Four of the biggest AI developers say they will respect a single, shared way for websites to refuse AI training. A site adds a robots.txt group under the policy token <code>__usage_ai-training</code> (for example, &ldquo;User-Agent: __usage_ai-training&rdquo; and &ldquo;Disallow: /&rdquo;). That one entry then tells all four companies the content may not be used to train models, instead of the site blocking each company&rsquo;s crawler separately. The token comes from a voluntary IETF Internet-Draft written by Anthropic&rsquo;s Kevin Kelley. It covers training only. Search indexing and crawling continue, and a site with no such entry is treated as having expressed no preference.</p>
+          <p>Rollout dates differ. Anthropic says the signal is already live, OpenAI says &ldquo;in the coming months,&rdquo; Microsoft says Feb. 1, 2027, and Google says early 2027. Google will treat the token as equivalent to blocking its Google-Extended crawler unless a site says otherwise. Microsoft is adding a separate control for &ldquo;grounding,&rdquo; meaning live retrieval for answers. For publishers fighting over training data, it is the first common opt-out the major labs have agreed on, though it does not cover content that has already been collected.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://santageai.com/news/2026/10/31/four-ai-labs-one-training-opt-out">Santage AI, Oct 31</a>, <a href="https://ppc.land/google-microsoft-openai-and-anthropic-back-one-ai-training-opt-out/">PPC Land</a>, <a href="https://gagadget.com/en/732472-google-openai-anthropic-and-microsoft-back-one-ai-opt-out/">Gagadget</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; Space Computing</span>
+          <h2 class="story-headline">Google&rsquo;s Suncatcher satellite runs an AI model on a data-center TPU in orbit for the first time, and the first answer is a haiku</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Google says its Project Suncatcher prototype, launched on a Falcon 9 on Oct. 1, has produced its first AI output from orbit. Engineers sent up a prompt during a ground-station pass asking the onboard Gemma 4 model to write a haiku about being in space. The answer came down as the satellite passed over Svalbard. The spacecraft carries four data-center-class TPUs powered by roughly a kilowatt of solar panels. Only one chip runs at a time, for about 15 to 20 minutes per session, because the satellite has limited ability to shed heat.</p>
+          <p>The test matters less for the poem than for what it proves about the hardware: data-center chips can survive launch and radiation and still compute in orbit. That is the first step toward Google&rsquo;s idea of solar-powered AI data centers in space. Two more satellites, with more power and optical links between them, are planned for 2027. Skeptics note that one working inference run says little about the cost, cooling and bandwidth problems that orbital data centers would face at scale.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.etvbharat.com/en/technology/google-project-suncatcher-tpu-space-data-centre-gemma-ai-haiku-enn26103104286">ETV Bharat, Oct 31</a>, <a href="https://www.unite.ai/project-suncatchers-orbiting-tpu-delivers-its-first-ai-generated-haiku/">Unite.AI</a>, <a href="https://www.npr.org/2026/10/01/nx-s1-5983697/project-suncatcher-google-ai-data-center-space">NPR (launch background), Oct 1</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Energy &middot; Oil</span>
+          <h2 class="story-headline">Brent ends October up about 13%, and Big Oil&rsquo;s war-driven profits nearly triple from a year ago</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Crude rose for a fourth straight week. On Friday the expiring December Brent contract settled at $117.64 a barrel, and the new front-month January contract at $113.43. Brent gained about 13.6% in October, and WTI closed at $104.12. Traders cited the tanker attacks near Hormuz, Houthi threats against Saudi energy sites, and the risk of renewed U.S. strikes on Iran after Tuesday&rsquo;s election.</p>
+          <p>NPR reports the war has produced a profit windfall. Third-quarter earnings were $15.4 billion for ExxonMobil, about double a year earlier, $10.8 billion for Shell and $9.9 billion for Chevron, up 180%. Executives said much of it will go to buybacks and dividends, and Exxon declared its largest-ever quarterly dividend. Diesel set a record in September and remains near it. Fuel prices are already a midterm issue. Exxon&rsquo;s CEO has previously called windfall taxes a &ldquo;misguided policy.&rdquo;</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/10/31/nx-s1-6008072/oil-company-profits-gasoline-diesel-prices">NPR, Oct 31</a>, <a href="https://energynow.com/2026/10/october-oil-gains-exceed-13-oil-climbs-more-than-2-friday-as-middle-east-attacks-intensify-wti-and-brent-finish-week-higher-october-gains-exceed-13/">EnergyNow, Oct 30</a>, <a href="https://247wallst.com/investing/2026/10/31/big-oils-iran-war-windfall-is-nearly-3-times-last-years-profits">24/7 Wall St., Oct 31</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Space &middot; Launch</span>
+          <h2 class="story-headline">SpaceX closes October with the 700th Falcon 9 launch, as the company shifts its focus to Starship</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>A Falcon 9 lifted off from Space Launch Complex 4 East at Vandenberg Space Force Base at 9:04 p.m. local time on Friday carrying Starlink satellites. It was the rocket&rsquo;s 700th launch and SpaceX&rsquo;s 11th orbital flight of October. Spaceflight Now notes that SpaceX is beginning to wind down the Falcon program as it moves to Starship.</p>
+          <p>The next Starship test, Flight 15, has a reported target of Nov. 12 from Starbase, pending FAA approval. SpaceX has not announced a date. The 700-flight milestone, and SpaceX&rsquo;s stated plan to retire Falcon, make the handoff to Starship the main story in commercial launch.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://spaceflightnow.com/2026/10/30/live-coverage-spacex-to-close-out-october-with-halloween-eve-falcon-9-launch/">Spaceflight Now, Oct 30</a>, <a href="https://starlust.org/spacex-starship-flight-15-possible-launch-date-revealed/">Starlust (Flight 15 target)</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Premier League &middot; Saturday</span>
+          <h2 class="story-headline">Brighton beat leaders Manchester City 1&ndash;0 at the Etihad, and Chelsea deepen Manchester United&rsquo;s slump</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Yasin Ayari scored in the 11th minute, from a De Cuyper assist, and Brighton held on to beat Manchester City 1&ndash;0. It was the leaders&rsquo; second straight league defeat after they opened the season with seven straight wins. Enzo Maresca sent on Phil Foden and Rayan Cherki as City chased the game, but Brighton held out and avenged their Carabao Cup loss at the Etihad. At Stamford Bridge, Chelsea beat Manchester United 2&ndash;0 through Morgan Rogers and a Cole Palmer penalty. Lisandro Mart&iacute;nez was sent off, and United&rsquo;s third straight defeat has raised questions about Michael Carrick&rsquo;s position.</p>
+          <p>Elsewhere, Tottenham beat Crystal Palace 2&ndash;0 after Jean-Philippe Mateta was sent off in the 13th minute. Archie Gray scored with a header and Jan Paul van Hecke added the second. Aston Villa drew 1&ndash;1 with Fulham: Nicolas Jackson scored for Villa, Fulham&rsquo;s Zan Suzuki deflected in an own goal, and Fulham controlled the second half. City&rsquo;s slip gives Sunday&rsquo;s Liverpool&ndash;Arsenal game even more weight at the top of the table. <em>(BBC Sport pages were not reachable this run; results confirmed via ESPN match reports and Sky Sports.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.espn.com/soccer/report/_/gameId/401879245">ESPN: Man City 0&ndash;1 Brighton, Oct 31</a>, <a href="https://www.espn.com/soccer/report/_/gameId/401879248">ESPN: Chelsea 2&ndash;0 Man Utd, Oct 31</a>, <a href="https://www.espn.com/soccer/report/_/gameId/401878761">ESPN: Spurs 2&ndash;0 Palace, Oct 31</a>, <a href="https://www.skysports.com/football/aston-villa-vs-fulham/live/559524">Sky Sports: Villa v Fulham</a>, <a href="https://theanalyst.com/articles/man-city-vs-brighton-stats-premier-league-10-2026">The Analyst</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal &middot; Liverpool Preview</span>
+          <h2 class="story-headline">Dowman&rsquo;s red-card appeal fails, leaving Arsenal short on the right for today&rsquo;s game at Anfield</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>An FA independent regulatory commission has rejected Arsenal&rsquo;s appeal against Max Dowman&rsquo;s straight red card in the Carabao Cup tie at Fleetwood. It dismissed both the wrongful-dismissal and excessive-punishment claims, so the teenager serves a three-match ban starting with today&rsquo;s game at Liverpool (4:30 p.m. GMT). Arteta said the club was &ldquo;very disappointed.&rdquo; With Bukayo Saka also out with a thigh injury, Arsenal have no first-choice option on the right. Declan Rice, Riccardo Calafiori and Christos Tzolis are back in training. Arteta also said a new contract for Rice is &ldquo;a matter of time.&rdquo;</p>
+          <p>Arseblog says the forward line &ldquo;must step up&rdquo; if Arsenal are to win a league game at Anfield for the first time in 14 years. It notes that Arteta presented the game as an opportunity rather than a burden, and the bookmakers have Arsenal as slight favourites. Liverpool list Victor Mu&ntilde;oz and Dominik Szoboszlai as doubts. With City losing again on Saturday, a win would make Arsenal&rsquo;s weekend a very good one. <em>(The Athletic&rsquo;s Arsenal desk was unreachable this run; corroborated via Yahoo Sports, Goal and Liverpool FC.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.com/2026/11/forward-line-must-step-up-to-help-deliver-first-anfield-win-in-14-years/">Arseblog, Nov 1</a>, <a href="https://arseblog.news/2026/11/arteta-new-rice-deal-a-matter-of-time/">Arseblog News, Nov</a>, <a href="https://sports.yahoo.com/articles/arsenal-dowman-red-card-appeal-175300066.html">Yahoo Sports</a>, <a href="https://www.goal.com/en/news/appeal-rejected-arsenal-max-dowman-ban-carabao-cup-red-card/blt3938e1d611f73b3f">Goal</a>, <a href="https://www.liverpoolfc.com/news/liverpool-v-arsenal-team-news-premier-league">Liverpool FC</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">College Football &middot; SEC</span>
+          <h2 class="story-headline">No. 3 Georgia turns four Florida turnovers into a 27&ndash;8 win, played indoors in Atlanta this year</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>With Jacksonville&rsquo;s EverBank Stadium under renovation, the Georgia&ndash;Florida rivalry moved to Mercedes-Benz Stadium in Atlanta. No. 3 Georgia led 24&ndash;0 at halftime and beat No. 17 Florida 27&ndash;8. The Bulldogs scored 17 points off four turnovers, outrushed the Gators 217&ndash;48, and recorded 11 tackles for loss and four sacks. Florida&rsquo;s star back Jadan Baugh was held to 38 yards on 17 carries. The Gators scored only late, on a short Tramell Jones Jr. run and a two-point conversion.</p>
+          <p>It was Georgia&rsquo;s sixth straight win in the series, and it puts the Bulldogs in a strong position to return to the SEC Championship Game.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.news4jax.com/sports/2026/10/31/no-3-georgia-takes-advantage-of-4-turnovers-by-no-17-florida-to-beat-gators-27-8/">AP via News4Jax, Oct 31</a>, <a href="http://www.espn.com/ncf/recap?gameId=401856734">ESPN recap, Oct 31</a>, <a href="https://www.dawgnation.com/football/georgia-dominates-florida-27-8-wins-sixth-straight-rivalry-series/GQMMM6CBKBFVVJT62R74KXPH2M/">DawgNation</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
