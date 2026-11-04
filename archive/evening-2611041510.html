@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Wednesday, November 4, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+<!-- EVENING:SLOT:START -->
+<div class="edition-band"><span class="kick">The Evening Edition</span><span class="big">Evening Briefing</span><span class="when">Updated Wednesday, November 4, 2026</span></div>
+
+  <section class="section" id="evening-politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Election 2026 &middot; Aftermath</span>
+          <h2 class="story-headline">Vance says &ldquo;the reason we lost is the war,&rdquo; and Trump calls that &ldquo;largely true&rdquo; but says he would do nothing differently on Iran</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The morning after Democrats won both chambers, Vice President JD Vance posted on X that the Iran war was the main reason Republicans lost: &ldquo;The reason we lost is the war,&rdquo; and &ldquo;everyone knows&rdquo; it. He also named the cost of living, inflation and the U.S. relationship with Israel. He challenged the war&rsquo;s defenders: &ldquo;If you&rsquo;d like to argue it was worth it, that losing the Senate for the next 6 years was worth it, then do so.&rdquo; Military Times called the post an apparent break with the administration. Vance had said little publicly about the war since it began this spring, even though he has been a key negotiator with Tehran. He is widely seen as a likely 2028 candidate.</p>
+          <p>At a White House event Wednesday, Trump called Vance&rsquo;s post &ldquo;largely true&rdquo; because the war had driven gas prices up &ldquo;short term.&rdquo; He defended the decision to go to war anyway, saying he &ldquo;would have done nothing different.&rdquo; Separately, he told the New York Times the war was a &ldquo;very wise decision&rdquo; and that Republicans lost mainly because he was not on the ballot. The Washington Post reports he also blamed weak GOP candidates and oil prices, and said he has &ldquo;total veto power&rdquo; over the incoming Democratic Congress. Other Republican lawmakers have pointed to tariffs, the White House ballroom project and weak candidates. AP&rsquo;s voter survey found about 6 in 10 voters thought military action against Iran was the &ldquo;wrong decision.&rdquo; But only about a third called the war &ldquo;crucial&rdquo; to their vote, compared with roughly half who said that about the cost of living (49%) and government corruption (55%).</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Slate reads Vance&rsquo;s post as his opening bid for 2028: an attempt to separate himself from Trump&rsquo;s most damaging policy without separating himself from Trump. Mother Jones focuses on Trump instead, arguing that after a historic defeat he went back to talking about his golden White House ballroom, one of the projects Republicans themselves blame.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>From the libertarian side, Reason argues that no single issue explains the GOP collapse. It puts Trump&rsquo;s tariffs at the top of the list, alongside the war, corruption, aggressive immigration enforcement, ongoing inflation and general exhaustion with Trump. No in-window piece on Vance&rsquo;s post from National Review, The Dispatch or the WSJ editorial page could be verified.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://indepthnh.org/2026/11/04/ap-news-briefs-vance-blames-iran-war-for-gop-midterm-losses/">AP News Briefs, Nov 4</a>, <a href="https://www.pbs.org/newshour/politics/vance-blames-iran-war-for-gop-midterm-losses">PBS/AP</a>, <a href="https://www.militarytimes.com/news/pentagon-congress/2026/11/04/the-reason-we-lost-is-the-war-vance-blames-midterm-gop-losses-iran-conflict/">Military Times, Nov 4</a>, <a href="https://www.forbes.com/sites/conormurray/2026/11/04/vance-blames-republican-midterm-losses-on-iran-war-everyone-knows-why-we-lost/">Forbes, Nov 4</a>, <a href="https://www.uppermichiganssource.com/2026/11/04/vance-blames-war-iran-republican-midterm-losses-if-youd-like-argue-it-was-worth-it-then-do-so/">Gray/AP, Nov 4</a>, <a href="https://www.washingtonpost.com/politics/2026/11/04/trump-reacts-midterm-losses-blames-gop-candidates-oil-prices-vows-vetoes/">Washington Post, Nov 4</a>, <a href="https://slate.com/news-and-politics/2026/11/democrats-midterms-senate-house-trump-iran-hegseth.html">Slate</a>, <a href="https://www.motherjones.com/politics/2026/11/trumps-go-to-after-a-historic-election-defeat-his-golden-ballroom/">Mother Jones</a>, <a href="https://reason.com/2026/11/04/how-did-republicans-lose-this-badly-voters-turned-against-trumps-tariffs/">Reason, Nov 4</a> <em>(Read through search excerpts only. Direct page fetches were blocked.)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Congress &middot; House GOP</span>
+          <h2 class="story-headline">Mike Johnson will not seek to lead House Republicans in the minority, and Scalise and Jordan set up a rematch for the job</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Speaker Mike Johnson told staff Wednesday morning that he will not run for House minority leader in the next Congress. That ends his roughly three years leading the conference after Republicans lost the House. He plans to stay in Congress as a rank-and-file member from Louisiana. In public, Johnson said Republicans &ldquo;faced some real odds&rdquo; and promised they would take the House back in 2028. AP corrected an earlier report: he was just elected to a sixth term, not an eighth.</p>
+          <p>Majority Leader Steve Scalise and Judiciary Chairman Jim Jordan both plan to run to replace him. They also both sought the top job in October 2023, before the conference settled on Johnson. People close to Scalise say his main goal is to win back the majority. Jordan is arguing that he is &ldquo;battle-tested&rdquo; on oversight and ready to counter Democratic investigations of Trump. Trump says he will stay neutral. Axios reports that candidates must declare by Friday and that House Republicans will vote on November 10 by secret ballot, with a majority of the conference needed to win.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window left-leaning commentary on Johnson&rsquo;s exit or the leadership race could be verified.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window right-leaning commentary on Johnson&rsquo;s exit or the leadership race could be verified.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/11/04/g-s1-151854/2026-midterms-mike-johnson-speaker">NPR, Nov 4</a>, <a href="https://www.washingtonpost.com/politics/2026/11/04/mike-johnson-wont-seek-house-minority-leader-position-after-midterm-losses/">Washington Post, Nov 4</a>, <a href="https://www.wral.com/news/ap/b8490-speaker-johnson-wont-seek-reelection-as-house-republican-leader-after-partys-midterm-wipeout/">AP via WRAL</a>, <a href="https://www.axios.com/2026/11/04/state-scalise-house-republicans-minority-leader-midterms">Axios, Nov 4</a>, <a href="https://rollcall.com/2026/11/04/house-gop-races-new-leadership-after-blue-wave/">Roll Call, Nov 4</a>, <a href="https://www.baltimoresun.com/2026/11/04/johnson-to-step-down-as-top-house-republican-scalise-jordan-plan-bids-to-replace-him/">Baltimore Sun, Nov 4</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <section class="section" id="evening-foreign">
+    <div class="section-header"><span class="section-label">Global Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Iran &middot; United States</span>
+          <h2 class="story-headline">Iran&rsquo;s leaders say U.S. voters rejected Trump&rsquo;s war, but Khamenei warns that a partisan shift in Washington changes nothing</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Iranian officials welcomed the Republican defeat in Tuesday&rsquo;s midterms, AP reports. Parliament Speaker Mohammad Baqer Qalibaf posted on X: &ldquo;Americans said NO TO WAR, and we endorse this message.&rdquo; Supreme Leader Ayatollah Mojtaba Khamenei struck a harder line. He said anyone hoping that partisan shifts in the U.S. would end its hostility toward Iran is &ldquo;gravely mistaken.&rdquo; The comments come as Qatari mediators continue working on a draft U.S.&ndash;Iran framework, a few days after limited U.S. strikes on Iranian targets in the Strait of Hormuz on the eve of the vote. In Washington, Trump said Wednesday he would make the same decision on the war again.</p>
+          <p><strong>Analysis:</strong> Tehran is trying to treat the midterms as a referendum on the war. AP&rsquo;s voter survey only partly supports that: most voters disapproved of the war, but far fewer said it decided their vote. The outcome changes Washington&rsquo;s politics more than its policy. Democrats will control war-powers votes and funding from January, but Trump still runs the war and the talks, and he has promised vetoes. Khamenei&rsquo;s remark suggests Tehran will not count on Congress and will keep negotiating through Qatar, on its own conditions about Hormuz and sanctions.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://spectrumlocalnews.com/nc/triad/politics/2026/11/04/iranian-officials-midterm-results-reject-trump-s-war">AP via Spectrum News, Nov 4</a>, <a href="https://www.wfsb.com/2026/11/04/iranian-officials-say-midterm-results-show-us-voters-have-rejected-trumps-war/">AP via WFSB, Nov 4</a>, <a href="https://www.cbsnews.com/live-updates/iran-war-us-trump-midterms-strait-of-hormuz/">CBS News live</a>, <a href="https://www.fox10tv.com/2026/11/03/us-strikes-strait-hormuz-create-more-questions-about-whats-ahead/">AP via Fox10, Nov 3</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <div class="edition-return">Earlier today &mdash; the Morning Brief &darr;</div>
+<!-- EVENING:SLOT:END -->
+
+  <!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Election 2026 &middot; Congress</span>
+          <h2 class="story-headline">Democrats win both the House and the Senate, flipping seven Republican Senate seats including Texas and Maine</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Democrats won control of both chambers of Congress in Tuesday&rsquo;s midterms. The Associated Press called the Senate for Democrats late Tuesday night, after Josh Turek beat Rep. Ashley Hinson in Iowa. It called the House early Wednesday. Democrats flipped seven Republican-held Senate seats. James Talarico beat Ken Paxton in Texas, Roy Cooper beat Michael Whatley in North Carolina, Sherrod Brown won in Ohio, Adam Hamilton beat Sen. Roger Marshall in Kansas, and Annie Andrews beat the appointed incumbent in South Carolina. In Maine, Troy Jackson unseated Susan Collins. Collins conceded, and the AP called the race just after 1 a.m. Eastern. Democrats also held open seats in New Hampshire (Chris Pappas) and Michigan (Abdul El-Sayed). Republican Pete Ricketts held Nebraska against independent Dan Osborn. Alaska and Mississippi were still uncalled Wednesday morning.</p>
+          <p>The size of the House majority is not yet settled, and dozens of races are still being counted. Network projections run from about 245 Democratic seats (CNBC) to at least 250 (MS NOW), well above the 218 needed for a majority. NPR reports that Republicans lost several districts they had redrawn to help themselves. NBC News says this is the first time since 2006 that the minority party has flipped both chambers on a single night. Hakeem Jeffries, expected to become Speaker, said &ldquo;today begins the great American comeback.&rdquo; Senate Majority Leader John Thune, who will lose that post in January, said Republicans would work with President Trump to &ldquo;stop the worst impulses of Democrat extremism.&rdquo; Trump told Fox News he was &ldquo;a little bit surprised&rdquo; by the losses. He also told the New York Times he was &ldquo;absolutely willing to accept those results.&rdquo; Reported exact counts differ between outlets because they were taken at different points in the night.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Slate calls the rout &ldquo;catharsis&rdquo; after a hard year, and Mother Jones calls it a historic blue wave and a national repudiation of Trump. Slate also highlights the night&rsquo;s firsts: the first openly gay senator and, if Jeffries is elected, the first Black Speaker of the House. Mother Jones argues the results prove that Republican mid-decade gerrymandering failed, since Democrats won Florida districts drawn to keep them out.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>National Review&rsquo;s editorial, headlined &ldquo;Armageddon,&rdquo; calls the result an overwhelming rebuke to Trump and Republicans, noting Democratic wins even in deep-red states. A National Review Corner post, &ldquo;The War, Stupid,&rdquo; blames the Iran war and calls it the end of &ldquo;Fox News Republicanism.&rdquo; From the libertarian side, Reason says Trump has entered his &ldquo;George W. Bush era,&rdquo; comparing this year to the 2006 midterms. No in-window piece from The Dispatch, the WSJ editorial page or The Bulwark could be verified.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/11/03/nx-s1-5992757/election-day-live-updates-key-races">NPR live, Nov 3</a>, <a href="https://www.npr.org/2026/11/04/g-s1-148952/maine-senate-race-susan-collins-troy-jackson">NPR (Maine), Nov 4</a>, <a href="https://www.npr.org/2026/11/04/nx-s1-6028588/redistricting-efforts-failed-republicans">NPR (redistricting), Nov 4</a>, <a href="https://www.forbes.com/sites/saradorn/2026/11/04/midterm-election-results-live-updates-democrats-sweep-house-and-senate-in-stunning-rout/">Forbes (AP calls), Nov 4</a>, <a href="https://www.nbcnews.com/politics/2026-election/democrats-capture-full-control-congress-nbc-news-projects-fueled-victo-rcna607042">NBC News</a>, <a href="https://www.cnbc.com/2026/11/03/midterm-elections-2026-live-updates.html">CNBC, Nov 3</a>, <a href="https://www.bloomberg.com/news/articles/2026-11-04/democrats-sweep-the-house-and-senate-in-us-midterms-seen-as-trump-referendum">Bloomberg, Nov 4</a>, <a href="https://www.cbsnews.com/live-updates/senate-election-results-2026/">CBS News</a>, <a href="https://slate.com/news-and-politics/2026/11/democrats-midterm-rout-catharsis-is-upon-us.html">Slate</a>, <a href="https://www.motherjones.com/politics/2026/11/democrats-house-blue-wave-midterm-election-trump/">Mother Jones</a>, <a href="https://www.nationalreview.com/2026/11/armageddon/">National Review</a>, <a href="https://www.nationalreview.com/corner/the-war-stupid/">NR Corner</a>, <a href="https://reason.com/2026/11/03/trump-enters-his-george-w-bush-era-as-democrats-sweep-house-and-senate/">Reason, Nov 3</a> <em>(Read through search excerpts only. AP, Reuters and NYT pages could not be reached directly.)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Election 2026 &middot; States</span>
+          <h2 class="story-headline">Hinojosa ousts Abbott in Texas as Democrats flip governorships, and Missouri voters reject both an abortion ban and the GOP congressional map</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Democrat Gina Hinojosa defeated three-term Gov. Greg Abbott in Texas. The AP called the race and Abbott conceded. She will be the state&rsquo;s first Democratic governor since Ann Richards and its first Latina governor. NPR reports Democrats also flipped governorships in Iowa (Rob Sand), Georgia (Keisha Lance Bottoms, set to be the first Black woman elected governor in the U.S.) and Ohio (Amy Acton, the state&rsquo;s first woman governor). Democrat Aaron Ford beat Nevada Gov. Joe Lombardo. Republicans held Florida, where Rep. Byron Donalds will become the state&rsquo;s first Black governor. Some of these calls were still listed as projections on Wednesday morning.</p>
+          <p>Voters in 39 states decided about 145 statewide measures. In Missouri, voters rejected Amendment 3, which would have restored a near-total abortion ban in the state constitution and banned gender-affirming surgery for minors. That reaffirms the abortion-rights measure Missouri passed in 2024. Missouri voters also rejected the Republican-drawn 2025 congressional map, about 62% to 38%, after the state&rsquo;s top court sent it to the ballot. Ohio and North Carolina wrote voter-ID requirements into their constitutions.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Slate and Mother Jones read the state results as the clearest proof of the wave&rsquo;s depth: wins in Texas and South Carolina, and gerrymandered seats lost anyway. Slate stresses the historic firsts among the new governors. No in-window piece focused on the ballot measures could be verified.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>National Review&rsquo;s editorial singles out the Democratic wins in &ldquo;deep-red states&rdquo; as the sign of how complete the rebuke was. No in-window conservative piece on the Missouri measures, or the Texas governor&rsquo;s race in particular, could be verified.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/11/03/g-s1-150844/gina-hinojosa-texas-governor-abbott">NPR (Texas), Nov 3</a>, <a href="https://www.texastribune.org/2026/11/03/texas-governor-greg-abbott-gina-hinojosa-election/">Texas Tribune, Nov 3</a>, <a href="https://www.washingtonpost.com/elections/results/2026/11/03/texas-governor-abbott-hinojosa-live-updates/">Washington Post results</a>, <a href="https://www.nbcnews.com/politics/2026-elections/governor-results">NBC governor results</a>, <a href="https://www.npr.org/2026/11/03/g-s1-151063/missouri-abortion-ban-transgender">NPR (Missouri abortion), Nov 3</a>, <a href="https://www.npr.org/2026/11/03/nx-s1-6028028/missouri-redistricting-ballot-measure">NPR (Missouri map), Nov 3</a>, <a href="https://www.komu.com/news/elections/missouri-2026-midterm-election-results-key-races-and-amendments/article_bfd35c26-3fac-4a11-8265-261b8410d127.html">KOMU</a>, <a href="https://www.yahoo.com/news/politics/articles/voters-back-abortion-rights-reject-052635782.html">AP via Yahoo</a>, <a href="https://slate.com/news-and-politics/2026/11/2026-midterms-blue-tsunami-history-firsts.html">Slate</a>, <a href="https://motherjones.com/politics/2026/11/republicans-gerrymandered-these-florida-districts-democrats-won-them-anyway">Mother Jones</a>, <a href="https://www.nationalreview.com/2026/11/armageddon/">National Review</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Iran &middot; Qatar Talks</span>
+          <h2 class="story-headline">Qatar says both sides are reviewing its draft to end the U.S.&ndash;Iran war, but an Iranian official tells Reuters a deal is still far off</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Qatar&rsquo;s foreign ministry said on Tuesday that Washington and Tehran are both reviewing proposals from its mediators. Its team has come back from Tehran to Doha and talks are continuing, the ministry&rsquo;s spokesman, Majed al-Ansari, said. A senior Iranian official told Reuters the two sides &ldquo;remain far&rdquo; from a deal and that nuclear talks can start only after Iran&rsquo;s conditions are met. An official briefed on the talks said both capitals were expected to respond within about 36 hours.</p>
+          <p>According to reporting that cites Reuters, the draft would have the U.S. lift its blockade of Iranian ports and Iran reopen the Strait of Hormuz. The U.S. would also grant a waiver for oil sales and cancel new sanctions, with other issues left for later. Trump has said a deal &ldquo;could happen&rdquo; but has not ruled out renewed strikes, and Iranian sources still see a new attack as more likely. With the midterms over and Democrats about to control Congress, Washington&rsquo;s room for a new military campaign is the next thing to watch.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.timeslive.co.za/news/world/2026-11-03-iran-us-still-far-apart-on-deal-to-end-war-as-qatar-pushes-mediation/">Reuters via TimesLive, Nov 3</a>, <a href="https://www.jpost.com/middle-east/iran-news/article-913580">Jerusalem Post</a>, <a href="https://www.arabnews.com/middle-east/qatari-mediators-travel-to-tehran-for-talks-on-potential-us-iran-deal-source-says-3009536">Arab News</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Israel &middot; Coalition Talks</span>
+          <h2 class="story-headline">Herzog begins consultations with Netanyahu&rsquo;s bloc on 53 seats and Eisenkot&rsquo;s on 48, with neither near 61</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>President Isaac Herzog opened two days of consultations with party leaders on Wednesday to decide who gets the first chance to form a government. He started with the smaller parties and was due to meet Netanyahu&rsquo;s Likud and Gadi Eisenkot&rsquo;s Yashar late in the day. The final count gives Netanyahu&rsquo;s bloc 53 of the Knesset&rsquo;s 120 seats and the opposition alliance led by Eisenkot 48. A majority needs 61.</p>
+          <p>The main opposition leaders agreed on Tuesday to recommend Eisenkot and to start drafting coalition agreements. Any path to 61 depends on the Arab-led parties, and the bloc is still split over whether to ally with them. Three of Netanyahu&rsquo;s four partners said they will recommend him. Netanyahu has ruled out a coalition with Arab-majority lists. Reports say the ultra-Orthodox United Torah Judaism is weighing backing Eisenkot instead. Analysts doubt either man can reach 61 soon.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.rte.ie/news/world/2026/1104/1597892-israel-election/">RT&Eacute;, Nov 4</a>, <a href="https://www.aljazeera.com/news/2026/11/3/israeli-opposition-leaders-back-eisenkot-to-oust-netanyahu">Al Jazeera, Nov 3</a>, <a href="https://www.timesofisrael.com/opposition-chiefs-meet-agree-to-launch-coalition-talks-but-path-remains-unclear/">Times of Israel</a>, <a href="https://www.wfmd.com/2026/11/04/netanyahu-faces-coalition-showdown-as-rivals-maneuver-to-form-israels-next-government/">Fox News via WFMD, Nov 4</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">World &middot; Reaction</span>
+          <h2 class="story-headline">European leaders welcome the midterm result, while Moscow and Beijing call it a U.S. internal matter</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Reactions collected by Reuters on Wednesday split along familiar lines. Spain&rsquo;s prime minister, Pedro S&aacute;nchez, said Americans had voted against policies &ldquo;that only serve to impoverish people.&rdquo; Norway&rsquo;s Jonas Gahr St&oslash;re called it a powerful signal of a change of course. South Africa&rsquo;s Cyril Ramaphosa said it would open a new era in world relations. A European Parliament vice-president said it could help support for Ukraine and the green transition. Japan, Taiwan and Greece said their ties with Washington would remain strong.</p>
+          <p>Russia&rsquo;s deputy foreign minister said Moscow&rsquo;s policy does not depend on political changes in other countries. China called the vote a U.S. internal affair and said it was ready to work with Washington. Less reliable reports say Iran&rsquo;s parliament speaker read the result as a rejection of Trump&rsquo;s Middle East policy. Congress&rsquo;s new Democratic majorities will gain oversight and budget leverage over the Iran war, aid to Ukraine and tariffs, but foreign policy stays mostly in the president&rsquo;s hands.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.internazionale.it/ultime-notizie-reuters/2026/11/04/international-politicians-react-to-democrats-winning-us-midterms">Reuters via Internazionale, Nov 4</a>, <a href="https://theprint.in/world/international-politicians-react-to-democrats-winning-us-midterms/3090261/">Reuters via ThePrint</a>, <a href="https://www.huffpost.com/entry/2026-midterms-international-reaction_n_6aeb033fe4b0f78622d7ae0a">HuffPost</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE / TECH ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Energy &middot; Utility Regulators</span>
+          <h2 class="story-headline">Democrats take Georgia&rsquo;s utility commission for the first time in three decades, on a campaign about power bills and data centers</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Democrats won both seats on the ballot for Georgia&rsquo;s Public Service Commission on Tuesday, giving them a 3&ndash;2 majority. It is their first majority on the board since about 1995. Peter Hubbard kept his seat against former commissioner Fitz Johnson, and Shelia Edwards beat Republican Josh Tolbert. The commission regulates Georgia Power. Rate increases dominated the race, along with the commission&rsquo;s approval of a large expansion of generation to serve data centers. Edwards campaigned on making data centers pay the full cost of the infrastructure they need, rather than passing it on to homes and small businesses.</p>
+          <p>Results elsewhere were mixed. In Louisiana, Republicans widened their lead on the Public Service Commission to two seats. Inside Climate News and Grist say energy costs, not climate itself, drove many of this year&rsquo;s campaigns. They argue a Democratic Congress could slow the rollback of clean-energy policy, but its scope is limited while Trump keeps his veto. The UN climate summit, COP31, opens in Antalya on November 9.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://georgiarecorder.com/2026/11/04/democrats-gain-control-of-georgia-board-that-regulates-utilities-for-first-time-in-decades/">Georgia Recorder, Nov 4</a>, <a href="https://thecurrentga.org/2026/11/03/democrats-flip-control-of-georgia-utility-commission-for-first-time-in-decades/">The Current, Nov 3</a>, <a href="https://heatmap.news/energy/georgia-psc-election-2026">Heatmap</a>, <a href="https://insideclimatenews.org/news/04112026/democrats-seize-congress-statehouses-in-referendum-on-the-economy/">Inside Climate News, Nov 4</a>, <a href="https://grist.org/elections/midterms-2026-blue-wave-climate-races-data-centers/">Grist</a>, <a href="https://www.wrkf.org/2026-11-03/louisiana-psc-election-results-hilferty-wins-district-1-seat-atkins-wins-in-district-5">WRKF, Nov 3</a></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; AI Chips &amp; China</span>
+          <h2 class="story-headline">Oracle drops a $7 billion deal to lease about 100,000 AI chips to Tencent after U.S. officials object, the FT reports</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Oracle has dropped a five-year agreement worth about $7 billion to lease Tencent up to roughly 100,000 advanced AI chips in its Southeast Asian data centers, the Financial Times reported on Wednesday. Its sources said U.S. officials told Oracle they were concerned about the deal. Reuters, which carried the report, said it could not verify it independently. Oracle, Tencent and the White House did not respond to requests for comment, and Oracle shares slipped about 1% before the market opened.</p>
+          <p>Current export rules still allow overseas leasing of AI chips, which is why the deal was legal when the FT first reported it in September. If the report is accurate, Washington used informal pressure to close that route rather than writing a new rule. The FT also reports that officials in Guangdong, where Tencent is based, have urged the company to back domestic Chinese chips.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.bloomberg.com/news/articles/2026-11-04/oracle-scraps-7-billion-deal-to-lease-chips-to-tencent-ft-says">Bloomberg, Nov 4</a>, <a href="https://www.globalbankingandfinance.com/oracle-abandons-7-billion-tencent-ai-deal-trump-pressure-ft/">Reuters via Global Banking &amp; Finance</a>, <a href="https://www.tradingkey.com/analysis/stocks/us-stocks/262273439-orcl-oracle-ai-qq-us-tradingkey">TradingKey</a> <em>(Financial Times original paywalled.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; AI Infrastructure</span>
+          <h2 class="story-headline">Super Micro&rsquo;s quarterly revenue nearly quadruples to $19.9 billion and it raises its full-year forecast</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Super Micro Computer reported revenue of about $19.9 billion on Tuesday for the quarter ended September 30. Analysts had expected about $16.3 billion. Adjusted earnings were $1.81 a share. AI systems were 71% of sales, up from 59% the quarter before. It forecast $19.5&ndash;21.5 billion for the current quarter and raised its full-year forecast to $72&ndash;82 billion, from $65&ndash;72 billion.</p>
+          <p>Gross margin was 12.7%, slightly above the company&rsquo;s preliminary range. One data-center customer accounted for 44% of revenue. Shares rose after hours; Reuters put the move at about 6%. The stock had fallen 27% over the past month on worries about AI infrastructure spending, and the report is the latest sign that orders for AI servers are still growing.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://1027wbow.com/2026/11/03/super-micro-forecasts-quarterly-revenue-above-estimates-on-strong-ai-server-demand/">Reuters via WBOW, Nov 3</a>, <a href="https://rollingout.com/2026/11/03/super-micro-earnings-beat-guidance/">Rolling Out, Nov 3</a>, <a href="https://www.investing.com/news/transcripts/earnings-call-transcript-supermicro-beats-q1-2026-estimates-raises-outlook-93CH-4996898">Investing.com transcript</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal &middot; Champions League Tonight</span>
+          <h2 class="story-headline">Saliba is back and &ldquo;ready to go&rdquo; as Arsenal visit Slavia Prague, with Dowman available in Europe</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Arsenal play Slavia Prague away at the Fortuna Arena on Wednesday night, 20:00 GMT, in the fourth round of the Champions League league phase. Arseblog calls William Saliba&rsquo;s return to full training a big boost and expects some rotation at the back. Arteta said in Prague that Saliba is &ldquo;ready to go.&rdquo; He called Slavia &ldquo;extremely well coached&rdquo; and noted they have not lost at home this season. Max Dowman&rsquo;s suspension applies only to domestic games, so he is available. Arseblog suggests starting him on the right.</p>
+          <p>Predicted line-ups differ. Most have Viktor Gy&ouml;keres up front and some rest for Declan Rice. A win would put Arsenal back in the top eight, which brings automatic entry to the round of 16. Arsenal won 3&ndash;0 in Prague in this fixture last season, so check the date on any old match report you come across.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.com/2026/11/saliba-returns-with-scope-for-rotation-against-slavia-prague/">Arseblog</a>, <a href="https://www.arsenal.com/news/every-word-from-artetas-pre-slavia-prague-presser-aaAhm2H16DEM">Arsenal.com presser</a>, <a href="https://dailycannon.com/2026/11/saliba-dowman-arsenal-training-slavia-praha/">Daily Cannon</a>, <a href="https://arsenalnews.co.uk/2026/11/04/predicted-arsenal-line-up-vs-slavia-prague-mikel-arteta-to-make-five-changes/">ArsenalNews.co.uk, Nov 4</a> <em>(The Athletic could not be reached for corroboration.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">English Football &middot; Champions League</span>
+          <h2 class="story-headline">Cunha scores twice and is sent off as Manchester United come from 2&ndash;0 down to beat Roma; Aston Villa lose 3&ndash;0 in Barcelona</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Manchester United beat Roma 3&ndash;2 at Old Trafford on Tuesday, ending a nine-game winless run in all competitions. Roma led 2&ndash;0 inside 17 minutes through Mat&iacute;as Soul&eacute; and a Donyell Malen penalty. Bruno Fernandes scored a penalty before half-time. Matheus Cunha then scored in the 83rd and 86th minutes, the first after a mistake by Leonardo Balerdi. He was booked for taking off his shirt after the winner and sent off for a second yellow card in stoppage time, so he will miss the next European game. The win takes some pressure off manager Michael Carrick.</p>
+          <p>Aston Villa lost 3&ndash;0 at Barcelona, where Lamine Yamal and Raphinha led the scoring. Elsewhere on Tuesday, PSG won 6&ndash;0 at Villarreal and Bayern Munich won 2&ndash;0 at Atl&eacute;tico Madrid.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.skysports.com/football/news/13607206/man-utd-3-2-roma-matheus-cunha-scores-two-and-is-sent-off-in-wild-comeback-to-end-nine-game-winless-run">Sky Sports</a>, <a href="https://theanalyst.com/articles/manchester-united-vs-roma-stats-uefa-champions-league-11-2026">The Analyst</a>, <a href="https://www.espn.com/soccer/story/_/id/50329034/uefa-champions-league-live-updates-atletico-madrid-bayern-munich-manchester-united-roma-barcelona-aston-villa">ESPN</a>, <a href="https://sports.yahoo.com/soccer/live/champions-league-scores-live-updates-highlights-barcelona-vs-aston-villa-manchester-united-roma-190000719.html">Yahoo Sports live</a>, <a href="https://newscord.org/article/manchester-united-overturn-roma-3-2-after-matheus-cunha-double-and-red-card--Story_20261103_ManUtdbeatRomatheoth83324d0b">Newscord, Nov 3</a> <em>(BBC Sport could not be reached.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">College Football &middot; Playoff Rankings</span>
+          <h2 class="story-headline">Miami is No. 1 in the first College Football Playoff rankings for the first time, ahead of Georgia, Utah and Indiana</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The selection committee released its first top 25 of the season on Tuesday night. Miami is No. 1 for the first time in the program&rsquo;s history. Georgia is second, Utah third and Indiana fourth. Alabama, Kentucky, Texas, UCLA, BYU and Ole Miss make up places five through ten. Notre Dame is 11th, Ohio State 12th and Boise State 25th.</p>
+          <p>The top four seeds get a first-round bye whether or not they win their conference. The rankings cover games through October 31. New rankings come out each Tuesday, starting November 10, and the final ones on December 6 will set the 12-team bracket.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.ncaa.com/news/football/article/2026-11-03/miami-georgia-lead-first-college-football-playoff-rankings-2026">NCAA.com, Nov 3</a>, <a href="https://collegefootballplayoff.com/news/2026/11/3/rankings">College Football Playoff, Nov 3</a>, <a href="https://www.espn.com/college-football/story/_/id/50290390/cfp-2026-first-committee-top-25-bracket">ESPN</a></div>
+      </div>
+    </details>
+  </section>
+
+
+  <!-- MORNING:END -->
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
