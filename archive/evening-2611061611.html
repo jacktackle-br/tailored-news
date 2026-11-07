@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Friday, November 6, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+<!-- EVENING:SLOT:START -->
+<div class="edition-band"><span class="kick">The Evening Edition</span><span class="big">Evening Briefing</span><span class="when">Updated Friday, November 6, 2026</span></div>
+
+<section class="section" id="evening-politics">
+  <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+  <details class="story story--politics" open>
+    <summary>
+      <div>
+        <span class="story-kicker">White House &middot; Shake-up</span>
+        <h2 class="story-headline">Trump replaces chief of staff Susie Wiles with Stephen Miller, three days after Republicans lost both chambers of Congress</h2>
+      </div>
+      <span class="story-toggle" aria-hidden="true">+</span>
+    </summary>
+    <div class="story-body">
+      <div class="facts">
+        <p>President Trump announced on Truth Social on Friday that Stephen Miller will replace Susie Wiles as White House chief of staff. Miller starts Monday, November 9. He has been deputy chief of staff for policy and homeland security adviser, and is best known as the architect of the administration&rsquo;s hard-line immigration policy. Trump called him one of his &ldquo;most trusted advisors.&rdquo; Trump said Wiles, the first woman to hold the job, is moving to his political operation. A White House official said she submitted her resignation Thursday night. In a post on X, Wiles said Friday was her last day as chief of staff and listed border security and tax cuts among the administration&rsquo;s achievements.</p>
+        <p>The change comes three days after midterms in which Republicans lost both the House and the Senate. The Washington Post and Bloomberg read it as a sign that Trump will not moderate or seek deals with the incoming Democratic Congress. Fox News reports that Miller and budget director Russ Vought have spent months listing policies on immigration, tariffs and spending that Trump could enact by executive order without Congress. House Minority Leader Hakeem Jeffries called Miller a &ldquo;dangerous xenophobe and reckless extremist,&rdquo; and Oversight Committee Democrats say they will investigate him. Public reaction from Republican lawmakers has been sparse. Most of what has been reported is anonymous.</p>
+      </div>
+      <div class="takes">
+        <div class="take take--left">
+          <span class="take-label">The Left-Leaning Take</span>
+          <p>Mother Jones ran the news under the headline &ldquo;Hell on Earth: Stephen Miller Is Trump&rsquo;s New Chief of Staff,&rdquo; treating the promotion as an escalation rather than a routine staff change. Only the headline could be read, not the full text. Democrats in Congress, including Rep. Adriano Espaillat, framed Tuesday&rsquo;s results as a rejection of the immigration agenda Miller built, and read the promotion as defiance of that verdict.</p>
+        </div>
+        <div class="take take--right">
+          <span class="take-label">The Right-Leaning Take</span>
+          <p>Libertarian: In Reason, Jacob Sullum argues that Miller will &ldquo;reinforce Trump&rsquo;s worst instincts&rdquo; instead of restraining him. He cites Miller&rsquo;s 2025 talk of suspending habeas corpus for deportations, his attacks on the Supreme Court&rsquo;s birthright-citizenship and tariff rulings, and his willingness to punish protected speech. No in-window editorial or opinion piece on the move from National Review, The Dispatch or the WSJ editorial page could be verified. National Review ran it as straight news.</p>
+        </div>
+      </div>
+      <div class="sources">Sources: <a href="https://www.npr.org/2026/11/06/nx-s1-6032795/stephen-miller-replace-susie-wiles-trumps-chief-of-staff">NPR, Nov 6</a>, <a href="https://www.washingtonpost.com/politics/2026/11/06/trump-names-stephen-miller-new-white-house-chief-staff/">Washington Post, Nov 6</a>, <a href="https://edition.cnn.com/2026/11/06/politics/stephen-miller-trump-susie-wiles">CNN, Nov 6</a>, <a href="https://www.cnbc.com/2026/11/06/trump-stephen-miller-wiles-chief-of-staff.html">CNBC, Nov 6</a>, <a href="https://www.bostonglobe.com/2026/11/06/nation/susie-wiles-replaced-stephen-miller-white-house-chief-of-staff/">AP via Boston Globe, Nov 6</a>, <a href="https://www.foxnews.com/politics/trumps-move-wiles-miller-signals-major-tactical-shift-governing-without-congress">Fox News</a>, <a href="https://thehill.com/homenews/house/6205303-democrats-trump-miller-promotion/">The Hill</a>, <a href="https://www.motherjones.com/politics/2026/11/hell-on-earth-stephen-miller-is-trumps-new-chief-of-staff/">Mother Jones</a>, <a href="https://reason.com/2026/11/06/as-chief-of-staff-stephen-miller-will-reinforce-trumps-worst-instincts/">Reason, Nov 6</a> <em>(Read through search excerpts only, because direct page fetches were blocked. No whitelisted columnist piece on the move could be verified in the window.)</em></div>
+    </div>
+  </details>
+  <p class="facts"><em>No other verified new political developments since this morning. The Hegseth impeachment push and the arch ruling are covered in the Morning Brief below.</em></p>
+</section>
+
+<section class="section" id="evening-foreign">
+  <div class="section-header"><span class="section-label">Global Affairs</span></div>
+
+  <details class="story" open>
+    <summary>
+      <div>
+        <span class="story-kicker">Iran &middot; Diplomacy</span>
+        <h2 class="story-headline">Trump speaks with Qatar&rsquo;s emir and says &ldquo;We&rsquo;re talking to them&rdquo; about Iran, as the Guards claim a U.S. drone over Qeshm and more tankers are reported hit</h2>
+      </div>
+      <span class="story-toggle" aria-hidden="true">+</span>
+    </summary>
+    <div class="story-body">
+      <div class="facts">
+        <p>On Friday, Trump spoke by phone with Qatar&rsquo;s Emir Sheikh Tamim bin Hamad Al Thani. A Qatari statement said they discussed diplomatic efforts to ease regional tensions. Asked about Iran afterward, Trump told reporters: &ldquo;We&rsquo;re talking to them.&rdquo; He has also said a decision on renewed strikes will come soon. Axios reported that CENTCOM is preparing for a possible return to major combat but has received no new orders. On Friday, Iran&rsquo;s Revolutionary Guards said they shot down a U.S. MQ-1 drone over Qeshm Island. IRNA reported that two missiles struck the island, with no casualties. There were also new reports of tankers hit in the Strait of Hormuz. None of these Iranian claims has been independently confirmed, and Trump has accused Tehran of inventing incidents to push up energy prices. Oil rose toward $100 a barrel on Friday after a days-long selloff.</p>
+        <p>Analysis: The two sides are still escalating and negotiating at the same time. Qatar remains the only working channel, and Trump&rsquo;s &ldquo;talking to them&rdquo; is the most conciliatory thing he has said since the election. Iran, meanwhile, keeps pressure on shipping and still says it will not negotiate until its seven preconditions are met. The war is also spreading. Reuters reported Thursday that Saudi Arabia issued alerts about possible danger at Yanbu, its Red Sea oil export hub, as Houthi attacks on the kingdom continue. The coalition said it intercepted a Houthi missile aimed at Medina.</p>
+      </div>
+      <div class="sources">Sources: <a href="https://www.semafor.com/article/11/06/2026/oil-prices-up-after-days-long-selloff-on-revived-us-iran-war-fears">Semafor, Nov 6</a>, <a href="https://yournews.com/2026/11/06/7256301/trump-says-iran-talks-are-progressing-as-tehran-warns-of/">YourNews, Nov 6</a>, <a href="https://www.turkiyetoday.com/world/trump-says-us-talking-to-iran-as-qatar-says-mediation-remains-active-3231889">T&uuml;rkiye Today</a>, <a href="https://www.aljazeera.com/news/liveblog/2026/11/6/iran-war-live-trump-warns-us-may-have-to-destroy-rest-of-iran">Al Jazeera live, Nov 6</a>, <a href="https://www.internazionale.it/ultime-notizie-reuters/2026/11/05/saudi-arabia-warns-of-potential-danger-in-yanbu-oil-hub-as-houthi-attacks-continue">Reuters via Internazionale, Nov 5</a> <em>(Read through search excerpts only. No Tier-1 text of Friday&rsquo;s call could be retrieved.)</em></div>
+    </div>
+  </details>
+
+  <details class="story">
+    <summary>
+      <div>
+        <span class="story-kicker">Paraguay &middot; Political Crisis</span>
+        <h2 class="story-headline">Paraguay&rsquo;s Senate opens Pe&ntilde;a&rsquo;s impeachment trial without him as top aides resign over the Ueno Bank collapse</h2>
+      </div>
+      <span class="story-toggle" aria-hidden="true">+</span>
+    </summary>
+    <div class="story-body">
+      <div class="facts">
+        <p>The AP reports that President Santiago Pe&ntilde;a did not appear for his Senate impeachment trial on Friday, though he had vowed to defend himself in person. He asked for more time, saying the summons had reached him only hours before, and senators rejected the request. Interior Minister Enrique Riera and other senior officials resigned. On Thursday, Pe&ntilde;a announced his resignation minutes before the Chamber of Deputies voted 78&ndash;0 to impeach him. Opposition lawmakers refused to let the resignation end the matter. They argued it would preserve his eligibility for a lifetime Senate seat. Accounts still differ on whether the resignation has formally taken effect. Removal requires 30 of the Senate&rsquo;s 45 votes. If he leaves office, Vice President Pedro Alliana would take over.</p>
+        <p>Analysis: The crisis began when the central bank closed Ueno Bank, freezing accounts used by about three million people. The impeachment charges focus on Pe&ntilde;a&rsquo;s former stake in Ueno&rsquo;s holding company and his appointment of a former Ueno executive to run the central bank that supervised it. The attorney general has opened three criminal investigations. Former president Horacio Cartes has backed Pe&ntilde;a&rsquo;s removal, which means the governing Colorado Party has turned on its own president. Paraguay is one of the few countries that still recognize Taiwan, so the outcome matters beyond its borders.</p>
+      </div>
+      <div class="sources">Sources: <a href="https://www.click2houston.com/news/2026/11/06/pena-skips-senate-impeachment-trial-as-paraguay-reels-from-ueno-bank-collapse/">AP via KPRC, Nov 6</a>, <a href="https://www.washingtonpost.com/world/2026/11/05/paraguays-president-out-after-bank-implosion-freezes-millions-accounts/">Washington Post, Nov 5</a>, <a href="https://www.npr.org/2026/11/05/nx-s1-6030842/paraguay-president-impeached-bank-collapse">NPR, Nov 5</a>, <a href="https://www.cnn.com/2026/11/05/americas/president-paraguay-resigns-latam-intl">CNN, Nov 5</a>, <a href="https://www.abc.net.au/news/2026-11-06/banking-crisis-plunges-paraguay-into-political-disarray/107355316">ABC (Australia), Nov 6</a> <em>(Read through search excerpts only.)</em></div>
+    </div>
+  </details>
+</section>
+
+<div class="edition-return">Earlier today — the Morning Brief ↓</div>
+<!-- EVENING:SLOT:END -->
+
+  <!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Pentagon &middot; Impeachment Threat</span>
+          <h2 class="story-headline">Hegseth calls Massie&rsquo;s impeachment articles a &ldquo;sham&rdquo; in a defiant video, and Trump says he is not replacing him, though NBC reports he has asked allies about successors</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Defense Secretary Pete Hegseth answered Rep. Thomas Massie&rsquo;s resign-or-be-impeached ultimatum on Thursday with a video posted to X. He called the eight articles of impeachment a &ldquo;sham&rdquo; brought by a &ldquo;disgruntled, defeated congressman,&rdquo; compared them to the two impeachments of Trump, and called the scrutiny &ldquo;the politics of personal destruction.&rdquo; Pentagon spokesman Sean Parnell said Hegseth &ldquo;will not back down or be deterred by politicians seeking to score partisan points.&rdquo; Massie lost his primary after crossing Trump. He says he will force a House vote when the lame-duck session returns, as early as next week, unless Hegseth resigns. The articles accuse Hegseth of waging war without congressional authorization, extrajudicial killings, and kidnapping a sovereign foreign leader. Speaker Mike Johnson has called the effort a stunt.</p>
+          <p>In public, Trump says he is not planning to replace Hegseth and that he has done &ldquo;a fantastic job.&rdquo; NBC News, citing two people familiar with the discussions, reports that Trump has privately asked some allies who should succeed him. The two accounts conflict. Republicans still hold the House until January, so impeachment would need several Republicans to join every Democrat. CNN reports that multiple GOP sources expect the measure to pass, but no whip count has been published. The pressure comes as Republicans, Vice President JD Vance among them, blame the Iran war for Tuesday&rsquo;s midterm losses.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece on Hegseth from Mother Jones, Vox, Slate or Guardian opinion could be verified. On the left outside those outlets, The Intercept quotes current and former officials calling Hegseth a &ldquo;dead man walking.&rdquo; Its argument is that the war&rsquo;s cost at the polls has made him a liability Republicans can no longer protect.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece on the impeachment push from National Review, The Dispatch, the WSJ editorial page, Reason or The Bulwark could be verified.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.nbcnews.com/politics/trump-administration/secretary-pete-hegseth-defiant-tone-impeachment-threat-thomas-massie-rcna607788">NBC News</a>, <a href="https://www.cnn.com/2026/11/05/politics/video/pete-hegseth-massie-response-video-vrtc">CNN (video), Nov 5</a>, <a href="https://www.cnn.com/2026/11/04/politics/pete-hegseth-impeachment-trump">CNN, Nov 4</a>, <a href="https://thehill.com/policy/defense/6202467-hegseth-massie-impeachment-threat/">The Hill</a>, <a href="https://spectrumnews1.com/ky/louisville/news/2026/11/05/massie-hegseth-impeachment">Spectrum News, Nov 5</a>, <a href="https://www.forbes.com/sites/siladityaray/2026/11/05/gop-rep-massie-threatens-pete-hegseth-impeachment-unless-he-resigns/">Forbes, Nov 5</a>, <a href="https://theintercept.com/2026/11/05/midterms-hegseth-impeach-pressure-massie-military/">The Intercept, Nov 5</a> <em>(Read through search excerpts only. Direct page fetches were blocked, and no Reuters or AP text could be retrieved.)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Courts &middot; Washington Projects</span>
+          <h2 class="story-headline">A federal panel approves Trump&rsquo;s 250-foot arch 8&ndash;4, and within an hour Judge Chutkan blocks construction for 14 days</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Thursday the National Capital Planning Commission approved President Trump&rsquo;s planned 250-foot memorial arch at Memorial Circle by a vote of 8&ndash;4, after a hearing of about nine and a half hours. All four no votes came from commissioners Trump did not appoint. The administration had said it might break ground right away. Within an hour, U.S. District Judge Tanya Chutkan issued a temporary restraining order that bars construction for 14 days while the case continues. She had already required the government to notify her within an hour of any commission vote. The plaintiffs are a group of Vietnam veterans, the District of Columbia and Virginia. In a 33-page opinion, Chutkan wrote that the arch &ldquo;appears to contravene&rdquo; the Commemorative Works Act, which requires Congress to authorize new memorials on federal land in Washington. She called it &ldquo;improbable&rdquo; that a 1925 bridge statute, which the administration cites, authorizes the arch.</p>
+          <p>Chutkan also questioned the government&rsquo;s security argument. In a court declaration, Defense Secretary Hegseth called the arch a &ldquo;generational national defense opportunity&rdquo; that could help counter drones. Chutkan wrote that these &ldquo;recent and unsupported attestations&rdquo; do not appear in the planning documents. The AP reports that the arch, the White House ballroom, the Kennedy Center closure and the East Potomac golf course overhaul may now face a second obstacle: Democrats who take control of Congress in January say they will use appropriations to challenge the projects. One outlet described the order as indefinite. Most, including CBS and Forbes, report the 14-day term.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece on the arch ruling from Mother Jones, Vox, Slate or Guardian opinion could be verified.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece on the arch ruling from National Review, The Dispatch, the WSJ editorial page, Reason or The Bulwark could be verified.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/11/06/nx-s1-6031990/trump-arch-planning-commission-injunction">NPR, Nov 6</a>, <a href="https://www.washingtonpost.com/politics/2026/11/05/trump-wants-his-arch-approved-thursday-and-immediately-start-work/">Washington Post, Nov 5</a>, <a href="https://www.cnn.com/2026/11/05/politics/trump-arch-ncpc-final-approval">CNN, Nov 5</a>, <a href="https://www.cbsnews.com/news/trump-arch-approval-national-capital-planning-commission/">CBS News</a>, <a href="https://www.forbes.com/sites/siladityaray/2026/11/06/judge-temporarily-halts-trumps-250-foot-arch-shortly-after-key-approval/">Forbes, Nov 6</a>, <a href="https://dailyjournal.net/2026/11/06/as-congress-returns-to-democrats-one-likely-casualty-emerges-trumps-district-of-columbia-projects/">AP via Daily Journal, Nov 6</a> <em>(Read through search excerpts only. No Lawfare piece on the ruling was found in the window.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Iran &middot; Diplomacy</span>
+          <h2 class="story-headline">Iran tells Reuters it has sent Washington a nuclear proposal through Qatar, but says it will not discuss it until the U.S. meets seven conditions</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>A senior Iranian official told Reuters on Thursday that Tehran has sent the United States a nuclear proposal through Qatari mediators. The official said Iran will discuss it only after Washington meets seven demands, including lifting sanctions, releasing frozen Iranian assets and paying war reparations. Senior security official Mohsen Rezaei said that until the conditions are met, &ldquo;we will neither open the Strait of Hormuz nor have negotiations.&rdquo; Washington says it is reviewing the proposal but has given no details. It has said nuclear issues must be part of any first round of talks.</p>
+          <p>Attacks at sea continued. On Thursday Iran&rsquo;s Revolutionary Guards said two tankers and a tugboat caught fire after trying to use &ldquo;unauthorised&rdquo; routes through the strait. UKMTO data show at least five vessels have reported incidents since Sunday, close to a record pace. Iran&rsquo;s accounts have not been independently verified. Analysis: the two tracks pull in opposite directions. Tehran is using the strait as leverage before any talks start, while Reuters sources still expect Trump to resume strikes after the midterms. Eurasia Group has cut its estimate of renewed U.S. strikes only modestly, from 65% to 60%.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/world/articles/2026-11-05/iran-sent-nuclear-proposal-to-the-us-via-qatar-senior-iranian-official-tells-reuters">Reuters via US News, Nov 5</a>, <a href="https://www.usnews.com/news/top-news/articles/2026-11-05/tankers-hit-in-hormuz-as-iran-keeps-up-pressure-after-us-vote">Reuters via US News (tankers), Nov 5</a>, <a href="https://www.aljazeera.com/news/2026/11/5/iran-says-tankers-struck-in-hormuz-amid-fears-of-new-us-attack">Al Jazeera, Nov 5</a>, <a href="https://english.alarabiya.net/amp/News/middle-east/2026/11/05/iran-says-two-tankers-and-tugboat-caught-fire-in-strait-of-hormuz">Al Arabiya, Nov 5</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Russia &middot; Ukraine</span>
+          <h2 class="story-headline">Melania Trump hosts Russian and Ukrainian officials at the White House, then the president meets Putin&rsquo;s envoy and predicts a deal that &ldquo;might involve all of Europe&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Thursday, First Lady Melania Trump hosted Russian and Ukrainian representatives at the White House to mark a six-day local ceasefire she helped broker in Oleshky, a Russian-occupied town in Ukraine&rsquo;s Kherson region. That ceasefire has since ended. She called for a &ldquo;more enduring&rdquo; truce. The Russian delegation included Kremlin envoy Kirill Dmitriev and human rights commissioner Yana Lantratova, who is under U.S. and EU sanctions. Ukraine&rsquo;s ombudsman Dmytro Lubinets was expected. Dmitriev thanked her for helping reunite children separated by the war, about three dozen so far. Her role is disputed in Ukraine. CNN reports that Ukrainian prosecutors have accused Lantratova of organizing the deportation of Ukrainian children to Russia.</p>
+          <p>Afterward, President Trump met Dmitriev privately. He did not meet the Ukrainian delegation. Trump did not say what they discussed, but he predicted &ldquo;a big, beautiful agreement&rdquo; soon that &ldquo;might involve all of Europe.&rdquo; A U.S. team is due to mediate Russia&ndash;Ukraine talks in Abu Dhabi on November 10&ndash;11. Analysis: the White House event took place in the same week Russia carried out one of the war&rsquo;s deadliest strikes on civilians, a bombing on a school shelter in the Zaporizhzhia region. Trump&rsquo;s optimism has not yet been matched by any public sign of movement from Moscow or Kyiv.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnn.com/2026/11/05/politics/melania-trump-russia-ukraine-ceasefire-white-house">CNN, Nov 5</a>, <a href="https://www.nbcnews.com/world/russia/trump-says-met-putin-envoy-sees-ukraine-deal-soon-rcna607804">NBC News</a>, <a href="https://english.alarabiya.net/News/world/2026/11/06/trump-says-he-met-putin-envoy-sees-ukraine-deal-soon">Reuters via Al Arabiya, Nov 6</a>, <a href="https://www.themoscowtimes.com/2026/11/06/trump-meets-privately-with-putin-envoy-after-white-house-event-marking-oleshky-ceasefire-a94188">Moscow Times, Nov 6</a>, <a href="https://www.cbc.ca/news/world/melania-trump-oleshky-ceasefire-meeting-9.7409316">CBC</a>, <a href="https://www.pbs.org/newshour/politics/watch-first-lady-melania-trump-hosted-russian-and-ukrainian-officials-trump-met-with-putins-envoy">PBS NewsHour</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE / TECH / ENERGY / CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; Chips</span>
+          <h2 class="story-headline">AMD, Qualcomm and Nvidia all fall more than 9% as chip stocks have their worst day in over a year, despite strong AI revenue</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Semiconductor stocks collapsed on Thursday. The Philadelphia Semiconductor Index fell more than 12%, the Nasdaq had its worst day since April 2025, and the S&amp;P 500 fell about 4.4%. Earnings were mixed. AMD said third-quarter revenue rose 21% to $16.5 billion on strong AI hardware sales, yet its stock fell about 17%. Qualcomm beat estimates but gave a weaker outlook and fell about 9%. Intel guided fourth-quarter sales lower. Nvidia fell about 9% to a seven-month low, $181.60, without reporting anything itself.</p>
+          <p>Several outlets link the sell-off partly to worries that the incoming Democratic Congress will tighten oversight of AI and data centers, but that explanation is speculative. Chip stocks were rebounding in premarket trading on Friday. One Jefferies strategist called Thursday&rsquo;s move &ldquo;reactionary&rdquo; rather than a fundamental reset. Figures differ slightly between outlets.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/2026/11/05/qualcomm-earnings-chip-stocks-election.html">CNBC, Nov 5</a>, <a href="https://spectrumlocalnews.com/us/snplus/business/2026/11/05/stock-market-ai-chip-selloff">Spectrum News, Nov 5</a>, <a href="https://invezz.com/nz/news/2026/11/06/nvidia-amd-and-intel-stocks-rebound-sharply-is-wall-streets-ai-panic-easing">Invezz, Nov 6</a> <em>(Read through search excerpts only. No Reuters or Bloomberg text could be retrieved.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Energy &middot; Oil</span>
+          <h2 class="story-headline">Brent rises $3.67 to $98.29 as new tanker attacks reverse part of the post-election plunge</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Oil recovered part of Wednesday&rsquo;s fall. Brent settled on Thursday at $98.29 a barrel, up $3.67 (3.9%), and U.S. West Texas Intermediate settled at $90.52, up $2.40. On Wednesday prices had fallen about 8% to two-month lows on bets that the midterm results would push Washington toward ending the Iran war. New tanker fires reported in the Strait of Hormuz on Thursday, plus Saudi alerts about possible danger at its Red Sea export hub at Yanbu amid continuing Houthi attacks, revived supply worries.</p>
+          <p>Brent is still on course for a large weekly loss. Eurasia Group says renewed escalation could push it to $110&ndash;$125. These numbers are futures settlements. Prices in early Friday trading are provisional.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.investing.com/news/commodities-news/oil-falls-for-a-fourth-day-on-expectations-for-lower-risk-of-iran-war-escalation-5002042">Reuters via Investing.com</a>, <a href="https://lufkindailynews.com/news_reuters/business/brent-crude-jumps-settles-up-over-3-after-tanker-attacks/article_061e302b-1abf-5f1f-8ab0-318bc6f4fbd3.html">Reuters via Lufkin Daily News</a>, <a href="https://thenationalnews.com/business/energy/2026/11/05/oil-rebounds-from-two-month-low-as-uncertainty-lingers-over-iran-war">The National, Nov 5</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Climate &middot; COP31</span>
+          <h2 class="story-headline">COP31 opens in Antalya on Monday, with finance the main dispute and UNEP warning that current plans lead to 2.6&deg;C of warming</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The UN climate summit begins in Antalya, T&uuml;rkiye, on November 9 and runs until November 20, with a leaders&rsquo; segment on November 11&ndash;12. Under an unusual arrangement, T&uuml;rkiye hosts and presides while Australia leads the negotiations, working closely with Pacific island states. Turkish officials say 91 heads of state and government have confirmed, a number that has not been independently checked. Developing countries want rich nations to meet their Paris finance commitments, and that is expected to be the main fight. Climate Home News expects the main negotiated outcome to be a &ldquo;cover decision.&rdquo; Australia has pointed to a new mechanism for a fair transition as a likely result. The second global stocktake also begins at this COP.</p>
+          <p>The background is grim. UNEP&rsquo;s Martin Krause says current national plans still lead to about 2.6&deg;C of warming this century. UNEP&rsquo;s October Emissions Gap report concluded that keeping to 1.5&deg;C without overshooting it is no longer possible. A strong El Ni&ntilde;o is forecast to make climate impacts worse. Before the summit, Turkey&rsquo;s energy minister set out a plan to move away from coal that he said needs $500 billion of investment over 13 years.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.climatechangenews.com/2026/11/05/cop31-briefing-what-to-expect-from-the-antalya-climate-summit/">Climate Home News, Nov 5</a>, <a href="https://news.un.org/en/story/2026/11/1168735">UN News, Nov 2026</a>, <a href="https://abcnews.com/Business/wireStory/turkey-outlines-plans-paradigm-shift-energy-ahead-climate-137903286">AP via ABC News</a>, <a href="https://en.yenisafak.com/turkiye/cop31-in-antalya-must-turn-climate-pledges-into-action-unep-official-3725226">Yeni &#350;afak (UNEP interview)</a> <em>(Read through search excerpts only. The AP item&rsquo;s date was not visible.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal &middot; Team News</span>
+          <h2 class="story-headline">Ben White is recalled by England while Madueke misses out again, and Arsenal host Hull on Saturday without Saka</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Thomas Tuchel named his England squad on Friday for the last two Nations League games, against Croatia at Wembley on November 12 and Spain in Madrid on November 15. Ben White is back for the first time since March, when some England fans booed him. Arseblog says the call-up is a reward for his recent form at Arsenal. Noni Madueke is left out for the second month running, even though he has been a regular while Bukayo Saka is injured. Tuchel called his omission &ldquo;a close call.&rdquo; Arseblog lists Ezri Konsa, Myles Lewis-Skelly and Eberechi Eze among the other Arsenal players called up. The main surprise elsewhere was the omission of Cole Palmer, with Jobe Bellingham and Josh King receiving first call-ups.</p>
+          <p>First, Arsenal host Hull City, 11th in the table, at the Emirates on Saturday at 3pm, as Premier League leaders after the win at Anfield and Wednesday&rsquo;s 2&ndash;1 win in Prague. Previews report that Saka is out with a quad problem and teenager Max Dowman is suspended. After the second half in Prague, Arteta wants more control. The main selection question is in central defence: Konsa or the returning William Saliba alongside Gabriel. <em>(The Athletic&rsquo;s Arsenal desk could not be reached for corroboration. Team news is from previews, not from a club statement.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.news/2026/11/white-earns-england-recall-madueke-misses-out/">Arseblog News</a>, <a href="https://www.englandfootball.com/articles/2026/Nov/06/england-senior-mens-squad-announcement-for-croatia-spain-games-20261106">England Football (FA), Nov 6</a>, <a href="https://www.skysports.com/football/news/13608698/england-squad-cole-palmer-phil-foden-and-kobbie-mainoo-left-out-as-jobe-bellingham-and-josh-king-called-up">Sky Sports</a>, <a href="https://dailycannon.com/2026/11/arsenal-england-call-ups-november-2026/">Daily Cannon</a>, <a href="https://www.sportsmole.co.uk/football/arsenal/preview/arsenal-vs-hull-city-prediction-team-news-lineups_608461.html">Sports Mole</a>, <a href="https://dave.sport/news/arsenal-hull-preview/">Dave</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">English Football &middot; Europe</span>
+          <h2 class="story-headline">Bournemouth win 3&ndash;1 at Sparta Prague and Brighton win at Getafe, but Sunderland are jeered off after a 2&ndash;0 home loss to Dinamo Zagreb</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>It was a mixed Thursday for English clubs in Europe. In the Europa League, Bournemouth won 3&ndash;1 against ten-man Sparta Prague, keeping their perfect record and staying second in the league phase on 12 points. Crystal Palace were reduced to ten men themselves and needed a Daichi Kamada equaliser to draw 1&ndash;1 with Hoffenheim. They are 21st with five points. Sunderland lost 2&ndash;0 at home to Dinamo Zagreb and were jeered by the Stadium of Light. They are 11th on seven points.</p>
+          <p>In the Conference League, Brighton won 1&ndash;0 at Getafe. They have seven points from three games and have not conceded yet. The domestic season stops after this weekend for the international break. <em>(BBC Sport&rsquo;s own pages could not be retrieved. These results come from dated match reports and UEFA&rsquo;s round-up.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://premierleaguenewsnow.com/2026/11/06/europa-league-results-bournemouth-palace-brighton-sunderland/">Premier League News Now, Nov 6</a>, <a href="https://uefa.com/uefaconferenceleague/news/02ab-220049e7e20f-44ef5f39bc84-1000--uefa-conference-league-matchday-3-highlights-and-round-up">UEFA</a>, <a href="https://azat.tv/en/bournemouth-sparta-prague-hoffenheim-palace-europa-league-update">Azat TV</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">NBA</span>
+          <h2 class="story-headline">Curry scores 29 as the Warriors beat the Heat 120&ndash;100 for their sixth straight win, and Booker&rsquo;s 30 ends the Suns&rsquo; skid</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Golden State beat Miami 120&ndash;100 at Chase Center on Thursday, its sixth straight win. The Warriors took control in the second half. Stephen Curry scored 14 of his 29 points in the third quarter. Yaxel Lendeborg added 17 points, eight rebounds and six assists. Golden State held Giannis Antetokounmpo to four second-half points.</p>
+          <p>Elsewhere, Devin Booker scored 30 and Dillon Brooks added 24 as Phoenix beat the Magic 117&ndash;104, ending a four-game losing streak. Orlando have now lost three in a row.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://chronicleonline.com/sports/nba/warriors-beats-heat-120-100-for-6th-straight-win/article_c1e317db-6d16-5874-ba51-e2d4ae1a2b87.html">AP via Citrus County Chronicle</a>, <a href="https://hothothoops.com/2026/11/06/warriors-second-half-surge-120-100-win-miami-heat-curry-draymond/">Hot Hot Hoops, Nov 6</a>, <a href="https://www.goldenstateofmind.com/warriors-scores-results/113257/another-big-3rd-quarter-gives-warriors-6th-straight-win">Golden State of Mind</a>, <a href="https://www.gmanetwork.com/news/sports/basketball/1008518/nba-scores-today-warriors-vs-heat-and-suns-vs-magic/story/">GMA News</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+
+  <!-- MORNING:END -->
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
