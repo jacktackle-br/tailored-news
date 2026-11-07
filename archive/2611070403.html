@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Saturday, November 7, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+<!-- EVENING:SLOT:START -->
+<!-- EVENING:SLOT:END -->
+
+  <!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">White House &middot; Shake-up</span>
+          <h2 class="story-headline">Sen. Tillis calls Stephen Miller &ldquo;the worst of all possible choices&rdquo; for chief of staff, as Trump signals more personnel changes are coming</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>A day after Trump named Stephen Miller to replace Susie Wiles as White House chief of staff, a small number of Republicans criticized the choice in public. Sen. Thom Tillis of North Carolina, who did not run for re-election and leaves the Senate in January, told CNN that Miller was &ldquo;the worst of all possible choices.&rdquo; He called the appointment a &ldquo;colossal mistake&rdquo; that Trump should reconsider, and blamed Miller&rsquo;s immigration approach for Tuesday&rsquo;s losses. ABC News reports that Rep. Don Bacon of Nebraska also blamed Miller&rsquo;s immigration policy for the midterm results. Most Republicans have stayed quiet, and a few have posted congratulations. Vice President JD Vance called the promotion &ldquo;well deserved.&rdquo; Miller starts on Monday, November 9.</p>
+          <p>More changes may follow. In a <em>60 Minutes</em> interview with Ross Douthat, taped before the Wiles announcement and airing Sunday on CBS, Trump said: &ldquo;I&rsquo;ll be making a few changes. I don&rsquo;t want to mention who.&rdquo; He also said he has confidence in Defense Secretary Pete Hegseth. That differs from election night, when he said he had no plans to change his Cabinet. The AP reports that Democrats, who take control of both chambers in January, are preparing to use oversight and spending bills to constrain immigration enforcement, Miller&rsquo;s signature issue. In the AP VoteCast survey, about 6 in 10 voters said the administration&rsquo;s enforcement had &ldquo;gone too far.&rdquo;</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Slate argues that the pick shows Trump &ldquo;has not learned anything&rdquo; from the midterm wave. It cites a Wall Street Journal postmortem reporting that Trump privately conceded Miller&rsquo;s deportation push had &ldquo;gone too far,&rdquo; and reports that he blamed Wiles for the losses anyway. New York Times columnist Jamelle Bouie, in a Bluesky post rather than a column, said putting Miller &ldquo;in the driver&rsquo;s seat&rdquo; puts everyone &ldquo;in genuine danger.&rdquo; He added that it could also give Democrats a path to 60-plus Senate seats in 2029.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window editorial or opinion piece from National Review, The Dispatch or the WSJ editorial page could be verified. National Review covered the appointment as straight news. The disagreement on the right is mostly among elected Republicans. Tillis and Bacon blame Miller for the losses, while MAGA-aligned senators have defended him publicly. Reason&rsquo;s Jacob Sullum, writing from a libertarian position, argued on Friday that Miller will &ldquo;reinforce Trump&rsquo;s worst instincts&rdquo; rather than restrain them.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://thehill.com/homenews/administration/6205824-tillis-slams-trump-miller-hire/">The Hill</a>, <a href="https://abcnews.com/Politics/trump-chief-staff-susie-wiles-miller-replace/story?id=137921244">ABC News</a>, <a href="https://www.cbsnews.com/news/trump-60-minutes-midterm-election-firings-susie-wiles/">CBS News</a>, <a href="https://edition.cnn.com/2026/11/06/politics/live-news/midterm-election-congress">CNN live, Nov 6</a>, <a href="https://www.usnews.com/news/politics/articles/2026-11-07/after-their-midterm-win-and-stephen-millers-promotion-democrats-gear-up-for-a-fight-on-immigration">AP via U.S. News, Nov 7</a>, <a href="https://www.npr.org/2026/11/06/nx-s1-6032795/stephen-miller-replace-susie-wiles-trumps-chief-of-staff">NPR, Nov 6</a>, <a href="https://slate.com/news-and-politics/2026/11/stephen-miller-chief-of-staff-trump-midterms.html">Slate</a>, <a href="https://bsky.app/profile/jamellebouie.net/post/3mzo3ngqwis2q">Jamelle Bouie (Bluesky)</a>, <a href="https://www.nationalreview.com/news/trump-taps-stephen-miller-as-chief-of-staff-in-post-midterm-shakeup/">National Review (news)</a>, <a href="https://reason.com/2026/11/06/as-chief-of-staff-stephen-miller-will-reinforce-trumps-worst-instincts/">Reason, Nov 6</a> <em>(Read through search excerpts only, because direct page fetches were blocked. No Reuters text could be retrieved.)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Economy &middot; Jobs</span>
+          <h2 class="story-headline">Employers add 165,000 jobs in October, far above forecasts, and unemployment falls to 4.1%, raising expectations of a December rate hike</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The Labor Department reported on Friday that the economy added 165,000 jobs in October. Economists had expected about 60,000 to 65,000. The unemployment rate fell to 4.1% from 4.2%. August and September were revised up by a combined 84,000 jobs. Private employers added 159,000 and government 6,000. Labor-force participation rose to 61.9%. There were also weak spots. The broader U-6 underemployment rate rose to 7.9% from 7.6%, and the average spell of unemployment reached 27.1 weeks, the longest in a decade outside the pandemic.</p>
+          <p>NPR reports that inflation was 3.7% in September and that prices have outpaced wages for much of the year since the Iran war pushed up energy costs. Average hourly pay rose 0.4% in October. The Fed raised rates in September and held them last week. Moody&rsquo;s Mark Zandi said the report gives the Fed &ldquo;latitude&rdquo; to raise again in December, though he said noise in the data overstates its strength. Treasury yields rose after the release. The report came three days after an election in which Democrats campaigned mainly on affordability.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece on the jobs report from Mother Jones, Vox, Slate or Guardian opinion could be verified.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece on the jobs report from National Review, The Dispatch, the WSJ editorial page or Reason could be verified.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/11/06/nx-s1-6030867/jobs-labor-market-economy-wages-inflation">NPR, Nov 6</a>, <a href="https://www.cnbc.com/2026/11/06/jobs-report-october-2026.html">CNBC, Nov 6</a>, <a href="https://www.cnbc.com/2026/11/06/long-term-unemployment-october-jobs-report.html">CNBC (long-term unemployment), Nov 6</a>, <a href="https://abcnews.com/Business/jobs-report-provide-latest-snapshot-hiring-days-after/story?id=137874249">ABC News</a>, <a href="https://www.morningstar.com/economy/october-us-jobs-report-165000-rise-payrolls-beating-expectations">Morningstar</a>, <a href="https://benzinga.com/markets/macro-economic-events/26/11/63017434/mark-zandi-says-strong-jobs-report-gives-fed-latitude-to-raise-rates-as-he-sees-very-high-probability-of-december-hike">Benzinga</a> <em>(Read through search excerpts only. Forecasts differ by outlet, 59,000 to 65,000.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Paraguay &middot; Impeachment</span>
+          <h2 class="story-headline">Paraguay&rsquo;s Senate removes President Pe&ntilde;a over the Ueno Bank collapse, and he is placed under house arrest as Vice President Alliana is sworn in</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Friday, Paraguay&rsquo;s Senate convicted President Santiago Pe&ntilde;a of misconduct in office and removed him. All 44 senators present voted in favor. Vice President Pedro Alliana was sworn in to replace him. Pe&ntilde;a is the second Paraguayan president removed by impeachment since democracy returned in 1989. He was later placed under house arrest on suspicion of breach of trust and influence peddling, among other charges. The attorney general has opened three criminal investigations. Pe&ntilde;a denies wrongdoing. He had submitted his resignation on Thursday, but the Senate voted 24&ndash;20 against accepting it, and a joint session to process it collapsed for lack of a quorum. The removal also takes away the lifetime Senate seat Paraguay&rsquo;s constitution gives elected former presidents.</p>
+          <p>Analysis: The charges come from the central bank&rsquo;s closure of Ueno Bank, which froze accounts used by about three million people. They focus on Pe&ntilde;a&rsquo;s former stake in Ueno&rsquo;s holding company and his choice of a former Ueno executive to run the regulator. Because his own Colorado Party, including former president Horacio Cartes, turned against him, Alliana takes over a party that controls Congress. That makes an abrupt policy change less likely. Paraguay is one of the few countries that still recognizes Taiwan, so Taipei and Beijing will watch whether the new government keeps that position.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.adn.com/nation-world/2026/11/06/paraguay-senate-removes-president-santiago-pena-from-office-following-ueno-bank-collapse/">AP via Anchorage Daily News, Nov 6</a>, <a href="https://www.cbc.ca/news/world/paraguay-ousted-president-arrest-warrant-9.7413118">CBC News</a>, <a href="https://www.ms.now/news/ousted-paraguayan-president-placed-under-house-arrest-after-bank-collapse">MS NOW</a>, <a href="https://www.chinadaily.com.cn/a/202611/07/WS6aee60c7e4b03ebf8519af31.html">Xinhua via China Daily, Nov 7</a> <em>(Read through search excerpts only. Some outlets report a 44&ndash;1 vote; the AP reports all 44 senators present voted to remove him.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Ukraine &middot; War</span>
+          <h2 class="story-headline">Russian missiles hit Kyiv&rsquo;s Northern Bridge and the power lines from two nuclear plants, days before new three-way talks</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Reuters reports that Russian missiles and drones hit energy infrastructure in and around Kyiv overnight into Saturday, and damaged the Northern Bridge, one of the capital&rsquo;s main Dnipro crossings. Mayor Vitali Klitschko said several ballistic missiles hit the bridge, which was closed in both directions. Ukraine&rsquo;s energy ministry said the strikes targeted lines that carry electricity from two nuclear plants to Kyiv and central Ukraine. President Zelenskiy said the capital faces serious problems with power, water and heat. Officials reported one person killed and eight wounded, including a child. One account puts the attack at 172 drones and 36 ballistic missiles, with most of the drones but only four missiles intercepted. Russia&rsquo;s defence ministry said it was targeting military-industrial, energy and transport sites, and that the bridge was used to move weapons.</p>
+          <p>Analysis: The attack follows a week in which both sides struck each other&rsquo;s energy systems. On Friday, Russia said it intercepted 142 Ukrainian drones, and Ukrainian drones hit an industrial facility at Afipsky in Krasnodar. It also comes days before another round of U.S.-backed three-way talks among Ukrainian, Russian and American officials, reported for Abu Dhabi. With winter approaching, attacks on the lines that carry nuclear power to Kyiv put pressure on Ukraine at the negotiating table.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.brecorder.com/news/40447890/russian-strikes-hit-power-facilities-around-kyiv-damage-major-bridge">Reuters via Business Recorder, Nov 7</a>, <a href="https://www.rferl.org/a/russia-strikes-kyiv-ukraine-trilateral-talks/33892815.html">RFE/RL</a>, <a href="https://www.koreajoongangdaily.com/world/russian-strikes-batter-kyiv-power-bridge/12960951">Korea JoongAng Daily</a>, <a href="https://themoscowtimes.com/2026/11/06/ukraine-and-russia-trade-volley-of-strikes-against-each-others-energy-infrastructure-a94189">Moscow Times, Nov 6</a> <em>(Read through search excerpts only. Casualty counts vary: some outlets report at least two dead nationwide.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Iran &middot; Strait of Hormuz</span>
+          <h2 class="story-headline">Iran&rsquo;s navy says another tanker hit a mine and caught fire east of Hormuz, as Reuters sources still expect Trump to resume strikes</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Reuters, citing Iranian media, reports that Iran&rsquo;s navy said on Saturday that an oil tanker hit a naval mine east of the Strait of Hormuz and caught fire. An Iranian army spokesman said the fire was small and no one was hurt. The navy said the ship had turned off its identification systems and entered a restricted zone without permission, as it says other recently damaged tankers did. The Revolutionary Guards gave a different account: two tankers on fire after hitting mines, one of them south of the strait. Neither statement named the ships, and none of the claims has been independently confirmed. U.S. Central Command has rejected earlier Iranian mine claims as inaccurate.</p>
+          <p>Analysis: Tehran is keeping the strait effectively closed while talks continue through Qatar. Iranian officials say the strait will stay shut until Washington accepts Iran&rsquo;s conditions, and a senior official has said it could reopen within 48 hours if the U.S. lifts oil sanctions and releases frozen assets. Two sources told Reuters they still think Trump is likely to order renewed hostilities.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://english.alarabiya.net/News/middle-east/2026/11/07/iran-navy-says-tanker-hits-mine-catches-fire-in-hormuz">Reuters via Al Arabiya, Nov 7</a>, <a href="https://www.anews.com.tr/world/2026/11/07/iran-navy-says-tanker-hits-mine-catches-fire-in-hormuz">A News, Nov 7</a>, <a href="https://dawn.com/live/iran-israel-war">Dawn live</a>, <a href="https://www.aljazeera.com/news/2026/11/5/iran-says-tankers-struck-in-hormuz-amid-fears-of-new-us-attack">Al Jazeera, Nov 5</a> <em>(Read through search excerpts only. All Iranian claims are unverified.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE, TECH, ENERGY & CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Space &middot; Planetary Defense</span>
+          <h2 class="story-headline">ESA&rsquo;s Hera probe sends its first close-up of the Didymos asteroids, showing boulders, craters and grooves likely left by NASA&rsquo;s DART impact</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The European Space Agency&rsquo;s Hera spacecraft has sent its first close-up image of the Didymos binary asteroid system. It was taken with the Asteroid Framing Camera from about 60 km away. Didymos is the main subject because its small moon Dimorphos, which NASA&rsquo;s DART spacecraft hit in 2022, is mostly in shadow. Didymos still has the ridge around its equator that DART saw, but the image also shows boulders, craters and patterns of grooves or ridges. Scientists think some of these may come from impact debris. ESA mission scientist Michael K&uuml;ppers said a lot of material thrown off Dimorphos may have crossed the roughly 1 km gap and landed on Didymos.</p>
+          <p>This is the start of the main reason Hera was launched: to measure in detail what DART&rsquo;s collision did, including the crater, the mass of Dimorphos and how much its orbit changed. Those measurements are needed to turn a one-time test into a dependable way to deflect asteroids. ESA says detailed images of both bodies will be released on 25 November, and the close investigation of the crash site will run for at least six months.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.esa.int/articles/about-us/directorates/operations/space-safety/hera/hera-s-first-close-up-view-of-didymos-asteroids">ESA</a>, <a href="https://www.space.com/space-exploration/asteroid-comet-missions/hera-probe-gets-1st-good-luck-at-asteroid-system-clobbered-by-nasas-dart-mission-space-photo-of-the-day-for-nov-6-2026">Space.com, Nov 6</a>, <a href="https://www.techtimes.com/articles/330121/20261105/esa-hera-reaches-asteroid-didymos-first-close-image-shows-side-dart-never-photographed.htm">Tech Times, Nov 5</a> <em>(Read through search excerpts only. The ESA page could not be fetched to confirm its release time.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; Chips &amp; AI</span>
+          <h2 class="story-headline">Chip stocks rebound 4% on Friday, but the Nasdaq ends its worst week since April 2025 as the post-election backlash against data centers weighs on AI stocks</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Semiconductor stocks recovered part of Thursday&rsquo;s losses on Friday. The Philadelphia Semiconductor Index rose 4.2%, the Nasdaq Composite 1.1% and the S&amp;P 500 0.3%. The Dow fell 0.5% as Treasury yields rose after the strong jobs report. The Nasdaq still lost 3.4% for the week. On Thursday it had fallen about 5.5%, its worst day since 2020, and entered a correction, more than 10% below its October peak. Some $2 trillion in value was erased in that selloff, and data-center operators fell most: Hut 8 dropped 23%, and IREN and Core Scientific each fell 10% or more.</p>
+          <p>Investors attribute the selloff to the election. Democrats won Congress after campaigning partly on data-center costs, and Democrat Gina Hinojosa defeated Texas Gov. Greg Abbott after promising tighter limits on data centers. Dozens of towns also approved local restrictions. A Washington Post&ndash;ABC&ndash;Ipsos poll found that 72% of Americans oppose a data center in their own community. Separately, Reuters reports that about 600,000 Nvidia H200 chips are sitting in Hong Kong while Beijing withholds import approval. Capital Economics said on Friday that it expects AI to raise productivity but is &ldquo;less confident&rdquo; that AI revenue will grow fast enough to sustain current spending.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cbsnews.com/news/stocks-tech-sell-off-nasdaq-correction-dow/">CBS News</a>, <a href="https://www.npr.org/2026/11/05/nx-s1-6031987/stock-markets-ai-midterm-elections">NPR, Nov 5</a>, <a href="https://coincentral.com/nasdaq-ends-week-3-4-lower-despite-friday-tech-rebound-as-jobs-data-tops-forecasts">CoinCentral</a>, <a href="https://finance.yahoo.com/technology/ai/articles/nasdaq-plunges-correction-democrats-prepare-162542641.html">Yahoo Finance</a>, <a href="https://tribune.com.pk/story/2638831/nvidia-chips-pile-up-in-hong-kong-as-china-withholds-import-approval">Reuters via Express Tribune</a> <em>(Read through search excerpts only. Figures for Friday&rsquo;s intraday gains differ by source, so closing figures are used.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">EVs &middot; Tesla</span>
+          <h2 class="story-headline">Musk says Tesla will end Cybertruck production in Texas around mid-2027 to make room for the Cybercab</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Elon Musk said on Friday that Tesla will wind down Cybertruck production at Gigafactory Texas around mid-2027, freeing capacity for the Cybercab robotaxi. He called the truck the &ldquo;best vehicle Tesla has ever made&rdquo; and the decision the &ldquo;end of an era.&rdquo; Around the 2023 launch, Musk predicted annual sales of 250,000 trucks. Electrek estimates actual sales at about a tenth of that. It is not clear whether production will move or end completely. The Austin plant is the only known Tesla factory set up to make the truck&rsquo;s stainless-steel body parts.</p>
+          <p>Tesla is giving up a weak product while the wider EV market grows. BYD reported a record 305,743 battery-electric sales in October, more than U.S. EV sales for the whole third quarter. Germany&rsquo;s battery-EV share reached a record 37% last month, and in the UK EVs nearly matched petrol cars at 32% of sales. Tesla registered just 282 cars in the UK in October. The Cybercab, which has not yet been tested commercially, will now take the Cybertruck&rsquo;s place on the production line.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnn.com/2026/11/06/business/tesla-winding-down-production-of-cybertruck">CNN, Nov 6</a>, <a href="https://www.nbcnews.com/tech/tech-news/tesla-wind-cybertruck-production-years-poor-sales-markets-rcna607817">NBC News (Reuters)</a>, <a href="https://www.cbsnews.com/news/tesla-ending-cybertruck-production-next-year/">CBS News</a>, <a href="https://electrek.co/2026/11/06/tesla-ending-cybertruck-production-sales-10-percent-plan">Electrek, Nov 6</a>, <a href="https://electrek.co/2026/11/02/byd-sold-more-evs-last-month-than-the-us-did-all-quarter/">Electrek, Nov 2</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Energy &middot; Oil</span>
+          <h2 class="story-headline">Brent ends the week down about 16%, near $98, as hopes of a U.S.&ndash;Iran deal outweigh new tanker attacks</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Brent crude settled at $98.32 a barrel on Friday, up 3 cents on the day, after briefly trading above $100 on reports of new tanker attacks near Hormuz. For the week, Brent fell more than 16% and U.S. crude nearly 13%. Traders had bet that the end of the midterm campaign would make a U.S.&ndash;Iran deal possible. Friday&rsquo;s strong jobs report also raised expectations of a Fed rate hike. That strengthens the dollar and limits demand for commodities.</p>
+          <p>The weekly drop still leaves oil far above its prewar level. NPR reports that the energy-price shock from the Iran war is a main reason prices have outpaced wages this year. On Saturday Iran reported another tanker hitting a mine, so Monday&rsquo;s trading will show whether the market still expects a deal. The COP31 climate talks open the same day in Antalya, Turkey, without a U.S. delegation.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://benzinga.com/markets/commodities/26/11/63017449/oil-prices-weekly-losses-us-iran-tensions">Benzinga</a>, <a href="https://invezz.com/au/news/2026/11/06/oil-prices-today-brent-nears-dollar100-despite-12percent-weekly-slump/">Invezz, Nov 6</a>, <a href="https://www.npr.org/2026/11/06/nx-s1-6030867/jobs-labor-market-economy-wages-inflation">NPR, Nov 6</a>, <a href="https://www.climatechangenews.com/2026/11/05/cop31-briefing-what-to-expect-from-the-antalya-climate-summit/">Climate Home News, Nov 5</a> <em>(Read through search excerpts only. Weekly-loss figures range from 12% (intraday) to 16% (settlement).)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal &middot; Team News</span>
+          <h2 class="story-headline">Arteta says Saka will be out &ldquo;for a while&rdquo; and Konsa is fit, as the leaders host Hull before the international break</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Mikel Arteta&rsquo;s pre-Hull press conference brought a less positive update on Bukayo Saka. Arsenal.com&rsquo;s transcript has the manager saying he expects Saka to be out for a while, with more training to begin only after the international break. Ezri Konsa, substituted in Prague in midweek, came off as a precaution and is available. Arseblog News split the press conference into two parts. Arteta talked about the travel load and Declan Rice&rsquo;s minutes, and paid tribute to Sir Alex Ferguson on the 40th anniversary of his appointment at Manchester United. His main message, Arseblog reports, was that Arsenal should use their momentum to win before the break.</p>
+          <p>Arsenal kick off against Hull at 3pm today, top of the table with 24 points from nine games and four straight league wins. Hull are 11th with five draws from nine and have seven players injured. On arseblog.com, the pre-match column asks whether Viktor Gy&ouml;keres&rsquo;s recent form (&ldquo;Is the Gyokeres iron hot enough?&rdquo;) can carry the attack without Saka. <em>(The Athletic&rsquo;s Arsenal desk could not be reached for corroboration. This is a preview; no result yet.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.news/2026/11/arteta-on-travel-demands-sakas-recovery-the-interlull-and-more/">Arseblog News</a>, <a href="https://arseblog.news/2026/11/arteta-urges-arsenal-to-build-momentum-before-international-break/">Arseblog News</a>, <a href="https://arseblog.com/2026/11/is-the-gyokeres-iron-hot-enough-for-hull/">Arseblog</a>, <a href="https://www.arsenal.com/news/every-word-of-mikels-pre-hull-city-press-conference-a4vNQ7s9pw69">Arsenal.com</a>, <a href="https://dave.sport/news/mikel-arteta-press-conference-hull-november-2026/">Dave</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">English Football &middot; Premier League</span>
+          <h2 class="story-headline">Barry scores twice as Everton come from behind to beat Coventry 3&ndash;1 and move into the top five</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Everton opened the weekend on Friday night by beating Coventry City 3&ndash;1 at Hill Dickinson Stadium. Yann Gboho gave Coventry a first-half lead. Thierno Barry equalised in the 56th minute and scored again in the 61st, and Kiernan Dewsbury-Hall added a third in the 81st. ESPN reports that the win moves Everton into the top five, above Liverpool. Sky Sports reports that Coventry had three big VAR decisions go against them, including two penalty appeals, and that manager Frank Lampard was unhappy with the refereeing afterwards.</p>
+          <p>In the Championship on Friday, Derby beat Bolton at Pride Park. It was their first win in 11 games and first home win of the season, which eases pressure on manager John Eustace. Sky&rsquo;s headline and match text give different scores, 3&ndash;1 and 2&ndash;1. In the Premier League, Analyst data shows that no manager has been sacked yet this season, compared with four at this point last year. Michael Carrick, whose Manchester United side are 17th with seven points despite a midweek 3&ndash;2 win over Roma, is under the most pressure. <em>(BBC Sport&rsquo;s pages could not be retrieved; results are from dated match reports.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.espn.com/soccer/report/_/gameId/401879242">ESPN, Nov 6</a>, <a href="https://www.skysports.com/football/everton-vs-coventry/report/559537">Sky Sports</a>, <a href="https://www.skysports.com/football/news/13595375/derby-3-1-bolton-rams-hit-back-to-claim-a-vital-win-and-ease-pressure-on-john-eustace">Sky Sports (Derby)</a>, <a href="https://theanalyst.com/articles/premier-league-first-manager-sacking-of-season-2026-27-stats">The Analyst</a>, <a href="https://townpress.co.za/manchester-unitedfergusons-legacy-returns-to-spotlight-as-carrick-faces-growing-pressure/">Town Press</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">NBA &middot; Cup Night</span>
+          <h2 class="story-headline">Don&#269;i&#263; scores 53 as the Lakers erase a 16-point deficit to beat Portland, and Ajay Mitchell&rsquo;s career-high 35 leads OKC</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Luka Don&#269;i&#263; scored 53 points on 17-of-33 shooting on Friday as the Lakers came back from 16 down to beat the Trail Blazers 124&ndash;118 in an NBA Cup game. He scored 20 in the third quarter, when the Lakers went on a 17-point run, after banking in a shot from beyond half court to end the first half. It was the 11th 50-point game of his career and his fourth straight game with at least 40. Austin Reaves added 25 and Walker Kessler 16 points and 12 rebounds. Los Angeles has won four straight and is 8&ndash;2.</p>
+          <p>Elsewhere, Ajay Mitchell scored a career-high 35 and Shai Gilgeous-Alexander 28 as Oklahoma City beat Memphis 128&ndash;97. Victor Wembanyama had 30 points and 14 rebounds as the Spurs beat the Kings 124&ndash;109, and Jayson Tatum scored 34 as Boston routed Charlotte 119&ndash;80. LeBron James scored eight in his return to Cleveland, where Donovan Mitchell&rsquo;s 23 led the Cavaliers past the 76ers 119&ndash;95.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/sports/nba/2026/11/07/lakers-trail-blazers-score/9858f6b4-da72-11f1-930a-e08f8086f5ac_story.html">AP via Washington Post, Nov 7</a>, <a href="https://www.espn.com/nba/story/_/id/50406079/luka-doncic-stays-hot-scores-53-lead-lakers-blazers">ESPN</a>, <a href="https://www.wral.com/news/ap/e9159-ajay-mitchell-scores-a-career-high-35-points-as-thunder-rout-grizzlies-128-97/">AP via WRAL</a>, <a href="https://www.espn.com/nba/recap?gameId=401909295">ESPN (Spurs&ndash;Kings), Nov 6</a>, <a href="https://www.espn.com/nba/recap?gameId=401909288">ESPN (Celtics&ndash;Hornets), Nov 6</a>, <a href="https://www.espn.com/nba/recap/_/gameId/401909289">ESPN (Cavaliers&ndash;76ers), Nov 6</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
