@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>History &amp; Ideas — Tailored News</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — History & Ideas (weekly)
+     Shares the daily-brief design system verbatim.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;
+    --take-left:    #5a6b7a;
+    --take-right:   #8a7350;
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:        #17140f;
+      --paper-raised: #201c15;
+      --ink:          #ece5d6;
+      --ink-soft:     #b3aa96;
+      --ink-faint:    #7c7361;
+      --rule:         #3a3427;
+      --rule-soft:    #2c281f;
+      --accent:       #d68a5f;
+      --take-left:    #7f92a3;
+      --take-right:   #b39a6f;
+      --take-left-bg:  #1c1f22;
+      --take-right-bg: #221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:        #17140f;
+    --paper-raised: #201c15;
+    --ink:          #ece5d6;
+    --ink-soft:     #b3aa96;
+    --ink-faint:    #7c7361;
+    --rule:         #3a3427;
+    --rule-soft:    #2c281f;
+    --accent:       #d68a5f;
+    --take-left:    #7f92a3;
+    --take-right:   #b39a6f;
+    --take-left-bg:  #1c1f22;
+    --take-right-bg: #221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 1.125rem;
+    line-height: 1.62;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  .page {
+    max-width: calc(var(--measure) + var(--pad) * 2);
+    margin: 0 auto;
+    padding: 0 var(--pad) 5rem;
+  }
+
+  /* ---------- Masthead ---------- */
+  .masthead {
+    text-align: center;
+    padding: 2.75rem 0 1.5rem;
+  }
+  .masthead-title {
+    font-size: clamp(2.5rem, 11vw, 4rem);
+    line-height: 0.95;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    margin: 0;
+  }
+  .masthead-subtitle {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-top: 0.7rem;
+  }
+  .masthead-rule {
+    border: 0;
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    height: 4px;
+    margin: 1.25rem auto 0;
+  }
+  .masthead-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    white-space: nowrap;
+    transition: border-color 0.15s;
+  }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Standfirst ---------- */
+  .standfirst {
+    max-width: 30rem;
+    margin: 2.5rem auto 0;
+    text-align: center;
+    font-style: italic;
+    font-size: 1.2rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    text-wrap: pretty;
+  }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3rem; }
+
+  /* ---------- Essay (story) ---------- */
+  .story {
+    border-top: 1px solid var(--rule-soft);
+    padding: 0.35rem 0;
+  }
+  .story:first-of-type {
+    border-top: 4px double var(--rule);
+    margin-top: 2.5rem;
+  }
+
+  .story > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 1.4rem 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: 1rem;
+  }
+  .story > summary::-webkit-details-marker { display: none; }
+
+  .story-domain {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.55rem;
+  }
+  .story-headline {
+    font-size: clamp(1.5rem, 5.5vw, 1.95rem);
+    line-height: 1.16;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .story-toggle {
+    font-family: var(--mono);
+    font-size: 1.4rem;
+    line-height: 1;
+    color: var(--ink-faint);
+    margin-top: 0.15rem;
+    transition: transform 0.2s ease;
+    user-select: none;
+  }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+
+  .story-body { padding-bottom: 1.75rem; }
+  .story-body p { margin: 0 0 1.1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  /* essayistic drop-cap on the opening paragraph */
+  .story-body > p:first-child::first-letter {
+    font-size: 3.1rem;
+    line-height: 0.8;
+    float: left;
+    padding: 0.05em 0.12em 0 0;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .sources {
+    font-family: var(--mono);
+    font-size: 0.64rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-top: 1.4rem;
+    padding-top: 0.6rem;
+    border-top: 1px dashed var(--rule);
+  }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Footer ---------- */
+  .colophon {
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 4px double var(--rule);
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    text-align: center;
+    line-height: 1.8;
+  }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) {
+    body { font-size: 1.1875rem; }
+  }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle {
+    position: fixed;
+    top: 0.9rem;
+    right: 0.9rem;
+    z-index: 20;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.8rem;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%);
+  }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">History &amp; Ideas</h1>
+    <div class="masthead-subtitle">A weekly reading from Tailored News</div>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Week of November 2, 2026</span>
+      <!-- edition: Sunday, November 8, 2026 -->
+      <a class="masthead-link" href="index.html">&larr; Back to the daily brief</a>
+    </div>
+  </header>
+
+  <p class="standfirst">Three longer reads for the week &mdash; the kind of thing worth turning over slowly with a second cup of coffee.</p>
+
+  <section class="section">
+
+    <!-- ESSAY 1 -->
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-domain">Philosophy &middot; Religion</span>
+          <h2 class="story-headline">We choose what we believe but not what we think: two scholars argue that the separation of church and state rests on an unspoken psychological distinction</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <p>In an Aeon essay published Nov. 3, philosopher Neil Van Leeuwen of Florida State and legal scholar Jacob Eisler ask a question the constitutional debate usually skips: why should religious conviction get its own legal category at all? If religious belief is psychologically just like any other belief, a strong church-state wall looks arbitrary. But if no one can say how it differs, it is hard to explain why the separation was needed. Their answer builds on Van Leeuwen&rsquo;s earlier work on &ldquo;religious credence.&rdquo; They propose a distinction between <em>believing</em>, which works more like a chosen commitment tied to identity and community, and <em>thinking</em>, the involuntary, evidence-driven sense of what is true that we cannot simply decide to change.</p>
+        <p>The authors argue that liberal societies have long assumed this distinction without saying so. Religious belief is treated as something a person adopts and should be free to adopt, while the state works in the shared, unchosen register of ordinary fact. Separating the two then protects both the believer&rsquo;s freedom to choose and the public&rsquo;s factual common ground. The essay continues their earlier Aeon pieces on the history of American secularism and on whether religious identities deserve the same protections as race or sex. It is an unusual attempt to ground a legal principle in cognitive science, and readers can test it against current church-state cases. <em>(Read through excerpts and summaries only; the full text could not be retrieved.)</em></p>
+        <div class="sources">Sources: <a href="https://aeon.co/essays/the-psychology-of-separating-church-and-state">Aeon (Van Leeuwen &amp; Eisler), Nov 3</a>, <a href="https://aeon.co/philosophy/values-beliefs/feed.rss">Aeon feed (dated Nov 3)</a>, <a href="https://aeon.co/essays/why-religious-identities-are-not-immune-to-robust-criticism">Aeon (earlier essay)</a></div>
+      </div>
+    </details>
+
+    <!-- ESSAY 2 -->
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-domain">Social Science &middot; Civic Life</span>
+          <h2 class="story-headline">Voters live longer: a 15-year study of Wisconsin&rsquo;s class of 1957 finds lower mortality among people who voted in 2008, even after accounting for health and wealth</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <p>Published in the week of the midterms, a study in <em>The Journals of Gerontology: Series B</em>, written up for The Conversation by its authors Sara Konrath and Femida Handy, links voting to how long people live. The researchers matched the Wisconsin Longitudinal Study, which has followed people who graduated from Wisconsin high schools in 1957, with Catalist voter files and the National Death Index. People who voted in the 2008 election were 45% less likely to die within five years than those who did not, 37% less likely within 10 years, and 29% less likely within 15. The gap held after controlling for gender, marital status, income, volunteering and prior health. It did not depend on whether people voted in person or by mail, or on whether their candidate won.</p>
+        <p>The authors say plainly that the study cannot show voting causes longer life. They lacked data on disease, exercise, diet and sleep, and outside experts note that results from a single Wisconsin cohort may reflect local conditions and may not generalize. Their proposed explanation comes from research on volunteering: civic participation gives older adults a sense of purpose and social connection, both of which predict longevity. Whatever the mechanism, the study suggests voting may work as a marker of, and perhaps a contributor to, the social engagement that keeps people healthy.</p>
+        <div class="sources">Sources: <a href="https://cnn.com/2026/11/02/health/voting-live-longer-study-wellness">CNN, Nov 2</a>, <a href="https://www.wjhl.com/news/national/older-americans-who-vote-live-longer-than-those-who-dont/">The Conversation (Konrath &amp; Handy), syndicated via WJHL</a>, <a href="https://moneytalksnews.com/voters-live-longer-study-finds-the-reason-isnt-the-ballot">Money Talks News</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <!-- ESSAY 3 -->
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-domain">History &middot; Archaeology &amp; Geology</span>
+          <h2 class="story-headline">Stonehenge&rsquo;s Altar Stone is homeless again: a new study finds no site in Scotland&rsquo;s Orcadian Basin that matches the six-tonne slab</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <p>In 2024 a <em>Nature</em> paper led by Curtin University surprised archaeologists by tracing Stonehenge&rsquo;s Altar Stone, the large sandstone slab at the center of the monument, to the Orcadian Basin of northeast Scotland, more than 700 kilometers away. That implied Neolithic people moved a six-tonne block the length of Britain. A follow-up study later that year ruled out Mainland Orkney itself. Now a study in the <em>Journal of the Geological Society</em>, led by Duncan Pirrie, emeritus professor at the University of South Wales, offers what Nation.Cymru calls the most detailed geological analysis of the stone so far, and it finds no location in the basin that matches.</p>
+        <p>The new paper does not dispute the 2024 dating. Heavy mineral grains in the stone do have ages linked to ancient crust in the Scottish Highlands. Pirrie&rsquo;s argument is that mineral ages alone cannot identify a quarry, because sediments from the same old crust spread widely. Testing the full set of geological characteristics against candidate rocks, he says, &ldquo;none of the locations examined&rdquo; fit. The study excludes several proposed sources, including earlier Welsh candidates the same team had already rejected, and sets out what the true source must look like. Some outlets say Scotland has been &ldquo;ruled out,&rdquo; but the more accurate reading is that the stone&rsquo;s origin is unresolved. The case is also a useful reminder that a striking new result in archaeology can still be overturned.</p>
+        <div class="sources">Sources: <a href="https://nation.cymru/feature/mystery-origin-of-iconic-stonehenge-altar-stone-deepens-as-search-narrows/">Nation.Cymru, Nov 5</a>, <a href="https://journalarta.com/en/2026/11/07/stonehenge-altar-stone-source-geology/">JournalArta, Nov 7</a>, <a href="https://www.nature.com/articles/s41586-024-07652-1">Nature (2024 baseline)</a>, <a href="https://www.nessofbrodgar.co.uk/altar-stone-2024/">Ness of Brodgar Project (2024 follow-up)</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+  </section>
+
+  <footer class="colophon">
+    <div>Tailored News &middot; History &amp; Ideas &middot; Weekly</div>
+    <div><a href="index.html">&larr; Return to the daily brief</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+
+</body>
+</html>
