@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Monday, November 9, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+<!-- EVENING:SLOT:START -->
+<!-- EVENING:SLOT:END -->
+
+  <!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Congress &middot; Lame Duck</span>
+          <h2 class="story-headline">Congress returns today with a House vote on impeaching Hegseth expected this week, after Trump tells &ldquo;60 Minutes&rdquo; he still has confidence in him</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Lawmakers return to Washington on Monday for the first time since Democrats won control of both chambers. NPR&rsquo;s preview says the House is likely to vote this week on Rep. Thomas Massie&rsquo;s effort to impeach Defense Secretary Pete Hegseth over the Iran war. In theory Republicans still have enough votes to defeat it, but the vote could be hard for members in competitive districts. House Democratic leader Hakeem Jeffries said Sunday he is a &ldquo;hard yes.&rdquo; Hegseth has called the articles a &ldquo;sham.&rdquo; If the House does impeach him, removal would still require a two-thirds vote in the Senate.</p>
+          <p>In a &ldquo;60 Minutes&rdquo; interview that aired Sunday, President Trump said he had confidence in Hegseth and said he might make &ldquo;a few changes&rdquo; in his administration, without naming anyone. He also said the Iran war had hurt Republicans in the midterms. CNN describes the impeachment vote as an early test of how much control Trump still has over House Republicans. The lame-duck session also has to deal with government funding, which runs out after December 11, and with the annual defense policy bill, where disputes over funding for the Iran war could come to a head.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece on the impeachment vote from Mother Jones, Vox, Slate or Guardian opinion could be verified. Democrats&rsquo; own case, as Jeffries put it on Sunday, is that Hegseth has &ldquo;got to go&rdquo; over the conduct of the Iran war. MS NOW reports that some veterans want the inquiry to go further than the war, to the firing of senior officers and to conditions reported by families of sailors on the USS Abraham Lincoln.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>On the libertarian right, Ilya Somin, writing at Reason&rsquo;s Volokh Conspiracy, argues in a piece headlined &ldquo;Impeach Pete Hegseth&rdquo; that serious abuses of power are impeachable even when they are not crimes, under the history and original meaning of the Impeachment Clause. He also argues that because the Iran war is so unpopular, impeaching over it is unlikely to backfire. No in-window National Review, Dispatch or WSJ editorial piece on the vote could be verified. Hegseth&rsquo;s defenders, led by Trump, say he has done &ldquo;a fantastic job.&rdquo;</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/11/09/nx-s1-6030633/congress-is-coming-back-to-washington-heres-what-to-expect">NPR, Nov 9</a>, <a href="https://www.npr.org/2026/11/09/nx-s1-6034314/trumps-post-midterm-changes-lame-duck-congress-nvidia-huang-investigation">NPR Up First, Nov 9</a>, <a href="https://www.cnn.com/2026/11/09/politics/trump-midterms-hegseth-impeachment">CNN, Nov 9</a>, <a href="https://www.cbsnews.com/news/donald-trump-2026-post-midterm-elections-interview-60-minutes-transcript/">CBS &ldquo;60 Minutes&rdquo; transcript</a>, <a href="https://www.washingtonpost.com/politics/2026/11/08/pete-hegseth-impeachment-would-be-hard-yes-hakeem-jeffries/">Washington Post, Nov 8</a>, <a href="https://www.ms.now/news/hegseth-veterans-impeachment">MS NOW</a>, <a href="https://reason.com/volokh/2026/11/08/impeach-pete-hegseth/">Reason / Volokh Conspiracy, Nov 8</a> <em>(Read through search excerpts only, because direct page fetches were blocked.)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">White House &middot; Staff</span>
+          <h2 class="story-headline">Stephen Miller starts as chief of staff today, after an Indiana Republican says Trump needs to &ldquo;fire people,&rdquo; Miller included</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Stephen Miller takes over as White House chief of staff on Monday, replacing Susie Wiles. Trump announced the move after Republicans lost Congress. On CNN&rsquo;s &ldquo;Inside Politics&rdquo; on Sunday, Rep. Marlin Stutzman (R-Ind.) called the promotion a &ldquo;bad mistake.&rdquo; He said a leader whose team takes a beating like that has to &ldquo;fire people,&rdquo; and he criticized Miller&rsquo;s tone and his record on immigration, adding that Miller is not liked in the Midwest. The Washington Post called it a rare public rebuke from a House Republican. Stutzman is backing Rep. Jim Jordan for House GOP leader.</p>
+          <p>Other Republicans defended the choice. Rep. Jim Banks, also of Indiana, called Miller an &ldquo;excellent pick,&rdquo; and Sen. Lindsey Graham also backed him. Democrats said on Sunday that promoting Miller was &ldquo;really odd&rdquo; after an election in which voters rejected the administration&rsquo;s most divisive policies. NBC News reports that the move signals Trump intends to strengthen his ties to the MAGA base.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window Mother Jones, Vox, Slate or Guardian opinion piece on Miller&rsquo;s first day could be verified. The Democratic argument, as reported by the Post, is that elevating the architect of the administration&rsquo;s immigration agenda ignores what voters said last Tuesday.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>The right is split. A Reason column argues that Miller, with his hostility to judicial review and his position on birthright citizenship, will &ldquo;reinforce Trump&rsquo;s worst instincts&rdquo; rather than calm them. Banks and Graham describe him as a loyal, experienced aide with strong ties to Republicans on the Hill. <strong>Intra-right (anti-Trump):</strong> The Bulwark has called the appointment a declaration of war and has asked whether Miller could become the &ldquo;de facto president.&rdquo; No National Review, Dispatch or WSJ editorial piece on the appointment could be verified in the window.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/politics/2026/11/08/rare-gop-rebuke-congressman-says-trump-must-fire-people-including-miller/">Washington Post, Nov 8</a>, <a href="https://www.washingtonpost.com/politics/2026/11/08/democrats-blast-pick-stephen-miller-chief-staff-really-odd-after-midterms/">Washington Post, Nov 8</a>, <a href="https://www.cnn.com/2026/11/08/politics/video/republican-congressman-trump-should-fire-stephen-miller">CNN, Nov 8</a>, <a href="https://thehill.com/homenews/house/6206725-stutzman-decries-miller-promotion/">The Hill</a>, <a href="https://www.nbcnews.com/politics/donald-trump/trump-stephen-miller-susie-wiles-white-house-chief-of-staff-rcna607892">NBC News</a>, <a href="https://www.yahoo.com/news/politics/articles/chief-staff-stephen-miller-reinforce-215530006.html">Reason (via Yahoo)</a>, <a href="https://www.thebulwark.com/p/stephen-miller-may-now-be-the-de">The Bulwark</a> <em>(Read through search excerpts only. The Reason and Bulwark pieces could not be dated precisely.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Iran War &middot; Strait of Hormuz</span>
+          <h2 class="story-headline">Iran says U.S. strikes hit Qeshm Island overnight, which Trump calls &ldquo;minor,&rdquo; as Rubio says a breakthrough in talks is unlikely</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Iranian state media reported four explosions on Qeshm Island, in the Strait of Hormuz, late Sunday. A provincial official told the Fars news agency on Monday that no vital infrastructure or services were hit. A Revolutionary Guards Navy official said navigation aids in the south of the strait were destroyed. Trump confirmed a &ldquo;minor strike&rdquo; on the island over the weekend, and Secretary of State Marco Rubio called U.S. actions &ldquo;defensive.&rdquo; On Saturday, both sides said ships had been hit. The U.S. military said it fired on the stern of a commercial vessel in the Gulf of Oman and disabled it as it tried to get through the U.S. blockade. The Guards said two tankers caught fire after hitting mines on an &ldquo;unauthorized route,&rdquo; and Fars later reported a third. Reuters could not confirm any of these strikes, and Iranian media suggested some of the blasts came from Iran&rsquo;s own military activity.</p>
+          <p>The strikes were limited, and that matches Trump&rsquo;s recent signals. Before the midterms he had hinted at resuming major attacks, but there is no sign of a large-scale operation, and he has said new strikes are &ldquo;highly unlikely&rdquo; if negotiations make progress. Rubio said Monday that the talks are not close to a breakthrough and called some of Iran&rsquo;s demands &ldquo;outrageous.&rdquo; Qatar, a mediator, denied reports that the talks had failed. The Strait of Hormuz is still effectively closed: Iranian media said no ships crossed on Sunday.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.japantimes.co.jp/news/2026/11/09/world/iran-us-ship-attacks/">Reuters via Japan Times, Nov 9</a>, <a href="https://gcaptain.com/iran-suggests-blasts-are-not-us-attacks-as-both-sides-report-ships-hit/">Reuters via gCaptain</a>, <a href="https://www.cnbc.com/2026/11/09/us-iran-war-trump-hormuz.html">CNBC, Nov 9</a>, <a href="https://www.cnbc.com/2026/11/08/saudi-aramco-riyadh-building-attack.html">CNBC, Nov 8</a>, <a href="https://www.timesofisrael.com/liveblog_entry/iranian-official-says-us-attacked-qeshm-island-no-major-infrastructure-damaged/">Times of Israel</a>, <a href="https://tribune.com.pk/story/2639407/no-vital-infrastructure-damaged-in-us-attack-on-qeshm-island-iranian-official">Express Tribune</a> <em>(Read through search excerpts only. Damage claims come from Iranian officials and are unverified.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Israel &middot; Coalition Talks</span>
+          <h2 class="story-headline">Eisenkot formally receives the mandate to form Israel&rsquo;s next government and has 28 days to build a coalition that Liberman says must have 61 seats</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>At a ceremony at the President&rsquo;s Residence on Sunday, President Isaac Herzog formally gave Gadi Eisenkot, the former army chief who leads the Yashar party, the first chance to form a government. Herzog had announced the choice on Saturday. Factions with 67 of the Knesset&rsquo;s 120 seats recommended Eisenkot, against 46 for Benjamin Netanyahu, whose right-wing coalition lost its majority in October&rsquo;s election. Eisenkot has 28 days, and Herzog can extend that by up to 14 more. Netanyahu stays on as caretaker prime minister in the meantime.</p>
+          <p>The 67 recommendations do not add up to a coalition. Avigdor Liberman of Yisrael Beytenu has ruled out a minority government that depends on abstentions from Ra&rsquo;am and the Joint List, and he insists on at least 61 lawmakers. Neither Arab-led party has committed to joining Eisenkot&rsquo;s government or guaranteeing it support. Eisenkot was due to meet Naftali Bennett on Sunday and Liberman afterward. Reports differ on whether the Liberman meeting is set for Monday. If Eisenkot fails, Herzog can give another lawmaker the mandate.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/world/2026/11/07/israeli-president-taps-ex-general-eisenkot-opponent-netanyahu-form-government/">Washington Post, Nov 7</a>, <a href="https://www.npr.org/2026/11/07/g-s1-152536/netanyahu-israel-government-eisenkot-herzog">NPR, Nov 7</a>, <a href="https://www.timesofisrael.com/president-herzog-taps-eisenkot-to-form-coalition-but-path-remains-fraught/">Times of Israel</a>, <a href="https://www.tribuneindia.com/news/world/yashar-partys-eisenkot-officially-receives-mandate-from-president-herzog-to-form-israels-next-government/">The Tribune</a>, <a href="https://www.pbs.org/newshour/world/israels-president-formally-gives-eisenkot-the-first-chance-to-form-the-next-government">PBS NewsHour</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE, TECH, ENERGY & CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Climate &middot; COP31</span>
+          <h2 class="story-headline">COP31 opens in Antalya with an early fight over climate finance and no U.S. delegation</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The UN climate talks opened Monday in Antalya, Turkey, and run until November 20, with 196 parties and the EU taking part. The first dispute was over money. African negotiators want adaptation finance and trade added to the formal agenda, and the EU, the U.K. and Japan oppose adding them. Disputed agenda items like these are often moved into consultations run by the presidency. UN Secretary-General Ant&oacute;nio Guterres, who is leaving office, told leaders after a year of extreme weather that the time for deflecting responsibility is over. He is also calling for windfall taxes on fossil-fuel companies to help the countries hit hardest.</p>
+          <p>The State Department told NPR that the U.S. will not send a delegation. Washington is withdrawing from the UN climate convention itself, on top of leaving the Paris Agreement. Turkey&rsquo;s Murat Kurum is COP31 president, and Australia&rsquo;s Chris Bowen leads the negotiations. Leaders arrive for their summit on November 11&ndash;12. The AP reports that the U.S.-Iran war and the surge in electricity demand from AI are putting pressure on climate goals going into the talks.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/11/09/nx-s1-6026787/climate-talks-antalya-turkey-cop31">NPR, Nov 9</a>, <a href="https://www.usnews.com/news/world/articles/2026-11-08/cop31-to-open-in-turkey-with-climate-goals-under-pressure-from-war-and-ai">AP via U.S. News, Nov 8</a>, <a href="https://www.usnews.com/news/business/articles/2026-11-08/leaders-gather-in-turkey-for-un-climate-summit-after-a-disastrous-year-of-extreme-weather">AP via U.S. News, Nov 8</a>, <a href="https://www.turkishminute.com/2026/11/09/cop31-opens-in-antalya-with-early-dispute-over-climate-finance/">Turkish Minute, Nov 9</a>, <a href="https://www.malaymail.com/news/world/2026/11/09/get-serious-cop31-opens-in-antalya-with-leaders-under-pressure-to-tackle-climate-crisis/242615">AFP via Malay Mail, Nov 9</a>, <a href="https://www.climatechangenews.com/2026/10/28/africa-wants-adaptation-finance-on-cop31-agenda-raising-risk-of-a-fight/">Climate Home News (background)</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; Chips</span>
+          <h2 class="story-headline">Nvidia&rsquo;s board opens an investigation after Jensen Huang admits an affair with a woman intelligence officials call a Chinese spy, and the stock falls about 5% premarket</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>In a note to staff on Sunday, Nvidia CEO Jensen Huang acknowledged an extramarital relationship with a businesswoman whom intelligence agencies identify as a Chinese spy. He apologized and said he took full responsibility. Nvidia&rsquo;s board has opened an independent investigation, overseen by a committee of independent directors with outside counsel. The company says Huang will keep running Nvidia without interruption. Axios reports that Secretary of State Marco Rubio had earlier warned senior administration officials about the woman. The New York Times reported that she was recruited to seek information and to push for advanced chips to be made available in China. Trump has called Huang &ldquo;an honorable guy.&rdquo;</p>
+          <p>Nvidia shares fell about 5% in premarket trading Monday, according to CNBC. Futures were already fragile after last week&rsquo;s selloff in AI stocks. Analyst Dan Ives told clients that Huang&rsquo;s removal is a real possibility, depending on what the board finds. The case matters beyond Nvidia because the company makes the most advanced AI chips and has been at the center of the U.S. fight over chip exports to China.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/2026/11/09/nvidia-jensen-huang-chinese-spy-investigation.html">CNBC, Nov 9</a>, <a href="https://www.cnbc.com/2026/11/08/nvidia-jensen-huang-investigation-china-spy.html">CNBC, Nov 8</a>, <a href="https://www.washingtonpost.com/technology/2026/11/08/read-jensen-huangs-letter-nvidia-about-his-affair-with-suspected-chinese-spy/">Washington Post, Nov 8</a>, <a href="https://www.cnn.com/2026/11/08/business/nvidia-investigation-ceo-jensen-huang">CNN, Nov 8</a>, <a href="https://www.axios.com/2026/11/08/nvidia-ceo-jensen-huang-admits-affair-board-to-launch-investigation">Axios, Nov 8</a> <em>(Read through search excerpts only. The NYT report is cited as described by Axios.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Energy &middot; Oil Markets</span>
+          <h2 class="story-headline">Brent slips toward $97 after its steepest weekly drop since the pandemic began, as Trump says new Iran attacks are &ldquo;unlikely&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Brent crude fell about 0.85% early Monday, to roughly $97.48 a barrel, after Trump said new strikes on Iran are very unlikely while talks progress. CNBC reports that Brent fell about 17% last week. That was its steepest weekly drop since the COVID pandemic began and the largest in dollar terms in LSEG data going back to 1988. Traders had been weighing whether the war would restart now that the midterms are over. Even after the drop, prices are about 50% higher than a year ago, though well below the wartime peak near $120.</p>
+          <p>Analysts are not sure the decline will last. Shipping through Hormuz is still disrupted, and both sides reported attacks on ships over the weekend. Rubio says the talks are not close to a deal. One KCM Trade analyst said the market is waiting to see whether the election has really changed Trump&rsquo;s approach. Rapidan Energy Group&rsquo;s Bob McNally put the odds of fighting resuming at 80% and said prices could go back above $100.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/2026/11/09/oil-falls-as-trump-says-new-iran-attacks-unlikely.html">CNBC, Nov 9</a>, <a href="https://www.cnbc.com/2026/11/06/oil-price-today-brent-wti.html">CNBC, Nov 6</a>, <a href="https://www.offshore-technology.com/news/oil-prices-fall-trump-no-strikes-iran/">Offshore Technology</a> <em>(Read through search excerpts only. Early quotes varied between about $96.40 and $97.60 depending on the time.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal &middot; International Break</span>
+          <h2 class="story-headline">Arsenal stay top as Sunday&rsquo;s results lift Brighton to second, with Saka still out for &ldquo;weeks&rdquo; and Saliba resting through the break</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Sunday&rsquo;s games did not change the top of the table. Arsenal go into the last international break of the year still in first place after Saturday&rsquo;s 1&ndash;0 win over Hull. Sky Sports&rsquo; table from Sunday evening has Brighton second after their 2&ndash;0 win over Brentford, and Liverpool fourth. Arseblog News&rsquo; &ldquo;who is doing what this interlull&rdquo; roundup says most of the European players are on Nations League duty and that Gabriel is making the long trip with Brazil again. Ben White, Myles Lewis-Skelly, Eberechi Eze and Declan Rice are in Thomas Tuchel&rsquo;s England squad, and Max Dowman has been promoted to Lee Carsley&rsquo;s under-21s.</p>
+          <p>William Saliba was left out of Zinedine Zidane&rsquo;s France squad, which gives him two more weeks to recover after his three-month absence. Arteta had said Saliba was &ldquo;ready to go&rdquo; after 45 minutes in a behind-closed-doors game. Bukayo Saka is still out with the quad injury he picked up against Bayern, and Arteta has said he is &ldquo;weeks&rdquo; from returning. Arsenal&rsquo;s next game is at Newcastle on Saturday, November 21. <em>(The Athletic&rsquo;s Arsenal desk could not be reached. The Arseblog roundup is dated November 2026, but its exact day could not be verified.)</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.news/2026/11/who-is-doing-what-this-november-interlull/">Arseblog News (interlull)</a>, <a href="https://arseblog.news/2026/11/arteta-saliba-ready-to-go-after-three-month-absence/">Arseblog News (Saliba)</a>, <a href="https://www.france24.com/en/live-news/20261106-arteta-confirms-saka-out-for-weeks-konsa-fit">AFP via France 24, Nov 6</a>, <a href="https://www.skysports.com/premier-league">Sky Sports (table, Nov 8)</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Premier League &middot; Sunday</span>
+          <h2 class="story-headline">Le F&eacute;e&rsquo;s penalty gives Sunderland a 1&ndash;0 win over Chelsea, and Manchester United score twice in stoppage time to draw 4&ndash;4 with Villa</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Sunderland ended their winless run in the league at the Stadium of Light. Enzo Le F&eacute;e&rsquo;s first-half penalty was the only goal, and Chelsea had most of the ball after the break but could not turn it into chances. The defeat drops Chelsea out of the top four. Liverpool won 3&ndash;1 at Crystal Palace, Brighton beat Brentford 2&ndash;0, and Bournemouth won 2&ndash;1 at Ipswich.</p>
+          <p>The last game of the day was the wildest. Manchester United scored twice in stoppage time to draw 4&ndash;4 with Aston Villa at Old Trafford. It is the highest-scoring game of the season so far, and ESPN notes that United are still in the relegation zone. The league now pauses for the international break.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.espn.com/soccer/report/_/gameId/401879239">ESPN, Sunderland 1&ndash;0 Chelsea (Nov 8)</a>, <a href="https://espn.com/soccer/story/_/id/50391135/premier-league-live-updates-liverpool-chelsea-aston-villa-manchester-united">ESPN live recap</a>, <a href="https://www.cbssports.com/soccer/premier-league/schedule/">CBS Sports results</a>, <a href="https://www.skysports.com/premier-league">Sky Sports</a> <em>(BBC Sport could not be reached. Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">NFL &middot; Week 9</span>
+          <h2 class="story-headline">Santos&rsquo; late field goal lifts the Bears past the Buccaneers 27&ndash;24 on Sunday night despite Caleb Williams&rsquo; interceptions</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Tampa Bay tied the game with 2:51 left. Caleb Williams, who was sharp early and then threw a string of interceptions, drove Chicago back down the field, with a 38-yard completion to Colston Loveland as the key play. Cairo Santos kicked a 38-yard field goal to win it. It was the Bears&rsquo; fourth straight win, and they go into their bye at 7&ndash;2. Reports differ on whether Williams threw three or four interceptions.</p>
+          <p>Elsewhere on Sunday, the Bengals beat the Falcons 34&ndash;17 in Madrid, with three touchdown passes from Joe Burrow and 155 receiving yards for Ja&rsquo;Marr Chase. The Packers beat the Patriots 45&ndash;27, the Saints beat the Browns 23&ndash;22 in overtime, the Giants beat the Eagles 19&ndash;11 to keep first place in the NFC East, and the Texans beat the still-winless Chargers 44&ndash;22.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.nfl.com/news/2026-nfl-season-week-9-what-we-learned-from-sunday-s-games">NFL.com, Week 9</a>, <a href="https://www.espn.com/nfl/story/_/id/50369510/week-9-sunday-games-takeaways-questions-2026">ESPN, Week 9 takeaways</a>, <a href="https://sports.yahoo.com/nfl/live/nfl-scores-news-live-updates-week-9-schedule-inactives-highlights-stats-where-to-watch-140628566.html">Yahoo Sports</a>, <a href="https://www.neworleanssaints.com/game-day/2026/reg-week9/browns-at-saints/recap">Saints recap, Nov 8</a>, <a href="https://bvmsports.com/2026/11/09/2026-week-9-recap-of-every-game/">BVM Sports, Nov 9</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
