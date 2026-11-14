@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Friday, November 13, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+<!-- EVENING:SLOT:START -->
+  <div class="edition-band"><span class="kick">The Evening Edition</span><span class="big">Evening Briefing</span><span class="when">Updated Friday, November 13, 2026</span></div>
+
+  <section class="section" id="evening-politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Nvidia &middot; Export Controls &middot; Cabinet</span>
+          <h2 class="story-headline">Bessent publicly blames Lutnick&rsquo;s Commerce Department for failing to blacklist Megaspeed, the firm at the center of the Nvidia scandal</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Treasury Secretary Scott Bessent said on CNBC Friday that Treasury, State, Defense and the U.S. Trade Representative had for months favored adding Singapore-based Megaspeed International to an export-control list. He noted that the decision belongs to the Commerce Department, which did not act. AP called it an unusually public rebuke of a fellow Cabinet member. Megaspeed has reportedly bought more than $4 billion of advanced Nvidia chips. It has been accused of diverting them to China, and it has denied that. Bessent also asked, &ldquo;Did Nvidia know their client?&rdquo;</p>
+          <p>CNN reports that Bessent&rsquo;s remarks came while Trump advisers were discussing a possible ouster of Commerce Secretary Howard Lutnick, and that outside advisers have called Trump to raise concerns. Publicly, the White House still says it backs Lutnick. Lutnick has agreed to testify voluntarily before the Senate Banking Committee, but outlets have not settled on a date. Since this morning&rsquo;s brief, the story has moved from Congress investigating Commerce to the administration&rsquo;s own economic team publicly blaming it.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece from Mother Jones, Vox, Slate or Guardian opinion on Bessent&rsquo;s remarks could be verified. On the record, Democrats Ron Wyden and Richard Neal have told Lutnick to preserve all records on Nvidia export decisions while they investigate. Sen. Elizabeth Warren, who becomes Banking chair in January, faults Commerce for leaving export-control loopholes open.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece from National Review, The Dispatch, the WSJ editorial page or Reason could be verified. Pro-Trump outlets such as RedState, which falls outside this brief&rsquo;s right-leaning source list, have sided with Bessent. They frame the episode as an enforcement failure at Commerce, not a failure of the president&rsquo;s China policy.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnn.com/2026/11/13/politics/bessent-lutnick-nvidia-megaspeed-blame">CNN, Nov 13</a>, <a href="https://www.bnnbloomberg.ca/business/international/2026/11/13/bessent-blames-lutnicks-us-commerce-department-for-not-restricting-nvidia-chips-to-china/">AP via BNN Bloomberg, Nov 13</a>, <a href="https://www.whec.com/ap-top-news/bessent-blames-lutnicks-commerce-department-for-not-restricting-nvidia-chip-exports/">AP via WHEC</a>, <a href="https://www.irishtimes.com/world/us/2026/11/13/bessent-points-finger-at-lutnick-as-nvidia-row-ignites-washington-blame-game/">Irish Times, Nov 13</a>, <a href="https://www.nbcnews.com/politics/congress/commerce-secretary-howard-lutnick-testify-pressure-nvidia-scandal-rcna609093">NBC News</a>, <a href="https://redstate.com/jenvanlaar/2026/11/13/bessent-on-lutnick-n2209365">RedState, Nov 13</a> <em>(Read through search excerpts only, because direct page fetches were blocked.)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Supreme Court &middot; Immigration</span>
+          <h2 class="story-headline">The Supreme Court agrees to decide whether Trump can ban asylum claims at the southern border, and separately lets Big Bend border-wall construction resume</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Friday the justices agreed to review Trump&rsquo;s January 20, 2025 proclamation suspending asylum access for migrants who cross the southern border illegally. A lower court ruled that he exceeded his authority under the asylum statute Congress wrote. The ban has stayed in effect during the litigation. Arguments are expected in the coming months, with a decision by the end of June. The Justice Department argues that presidents have inherent authority to secure the border. The challengers, 13 people who say they were persecuted or tortured in their home countries and three immigration nonprofits, say the policy wipes out protections Congress created. In June the 6&ndash;3 Court backed the government&rsquo;s authority to turn away asylum seekers when ports of entry are overwhelmed. In 2018 it blocked Trump&rsquo;s first asylum ban 5&ndash;4.</p>
+          <p>Separately, according to SCOTUSblog, the Court granted the administration&rsquo;s request to resume border-wall construction in Texas&rsquo;s Big Bend region, apparently by an 8&ndash;1 vote.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece from Mother Jones, Vox, Slate or Guardian opinion could be verified. Immigrant-rights groups argue that the statute plainly lets anyone on U.S. soil apply for asylum, and that the Court&rsquo;s deference on immigration is the real question in this case.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece from National Review, The Dispatch, the WSJ editorial page or Reason could be verified. The administration&rsquo;s position is that border security is a core executive power, and DOJ says it looks forward to defending authority it has &ldquo;successfully preserv[ed]&rdquo; in the lower courts for two years.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/politics/2026/11/13/supreme-court-trump-asylum/070276aa-df94-11f1-912c-4fbb80d73f7f_story.html">AP via Washington Post, Nov 13</a>, <a href="https://www.spokesman.com/stories/2026/nov/13/supreme-court-will-weigh-trumps-asylum-restriction/">Spokesman-Review, Nov 13</a>, <a href="https://www.nbcnews.com/politics/supreme-court/supreme-court-takes-trumps-asylum-ban-case-rcna608564">NBC News</a>, <a href="https://www.scotusblog.com/2026/11/supreme-court-agrees-to-hear-case-on-trump-administrations-suspension-of-asylum/">SCOTUSblog</a>, <a href="https://www.scotusblog.com/2026/11/supreme-court-allows-trump-administration-to-continue-border-wall-construction/">SCOTUSblog (border wall)</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">White House &middot; Personnel</span>
+          <h2 class="story-headline">Semafor reports that top economic adviser Kevin Hassett will leave in the coming weeks, and Hassett and the White House call it &ldquo;not true&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Semafor reported Friday, citing three people familiar with his plans, that National Economic Council Director Kevin Hassett is expected to leave in the coming weeks and has been looking at jobs outside the administration. The report named Treasury Secretary Scott Bessent, who could hold both jobs, and his counselor David Zervos as possible successors. Hassett texted CNBC that the report was &ldquo;not true,&rdquo; and a White House official told Reuters there is &ldquo;no factual basis for this reporting.&rdquo; The report follows other post-midterm turnover: Stephen Miller succeeded Susie Wiles as chief of staff, and Hassett&rsquo;s deputy Ryan Baasch left at the end of September.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece from Mother Jones, Vox, Slate or Guardian opinion on the Hassett report could be verified.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece from National Review, The Dispatch, the WSJ editorial page or Reason on the Hassett report could be verified.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.semafor.com/article/11/13/2026/hassett-expected-to-depart-white-house">Semafor, Nov 13</a>, <a href="https://www.usnews.com/news/top-news/articles/2026-11-13/hassett-expected-to-leave-trump-administration-semafor-reports">Reuters via U.S. News, Nov 13</a>, <a href="https://1027wbow.com/2026/11/13/white-house-denies-hassett-departing-trump-administration/">Reuters via WBOW, Nov 13 (denial)</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <section class="section" id="evening-foreign">
+    <div class="section-header"><span class="section-label">Global Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Iran War &middot; Gulf</span>
+          <h2 class="story-headline">CENTCOM denies Iran hit a U.S. radar in Bahrain, saying both drones were shot down, as Israel&rsquo;s cabinet orders preparations for a possible strike</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>U.S. Central Command rejected the Revolutionary Guards&rsquo; claim that they struck an American early-warning radar in Bahrain. CENTCOM said U.S. forces shot down two one-way attack drones launched toward Bahrain, and that there were no injuries or damage. The IRGC called the attack retaliation for what it described as an air strike on a telecommunications tower in Sirik county, Hormozgan province. Reuters notes it was the first claimed attack on U.S. military assets in a Gulf state since early September. As of Friday evening, Bahrain had not confirmed any attack on a radar site, and the IRGC had released no imagery.</p>
+          <p><em>Analysis:</em> The dispute over facts matters less than the trend, which is toward escalation. Israeli media report that the security cabinet has ordered the military to step up preparations for a possible attack on Iran, although Netanyahu&rsquo;s caretaker government has not yet been replaced after the October 27 election, and Channel 12 reports he is again at odds with army chief Eyal Zamir. Trump has said he will return to war if Qatar&rsquo;s diplomatic track fails, and Tehran warns that any base used in an attack will be a target. If the IRGC is again willing to fire at U.S. assets in the Gulf, even with drones that are shot down, the rules both sides have followed since September are breaking down.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.aljazeera.com/news/2026/11/13/iran-says-it-struck-us-radar-site-in-bahrain">Al Jazeera, Nov 13</a>, <a href="https://www.investing.com/news/commodities-news/irans-guards-say-they-targeted-a-us-earlywarning-radar-in-bahrain-5024146">Reuters via Investing.com</a>, <a href="https://www.rferl.org/a/iran-us-sirik-bahrain-war-nuclear-talks/33897951.html">RFE/RL</a>, <a href="https://www.aljazeera.com/news/2026/11/13/can-netanyahu-launch-a-strike-on-iran-before-he-leaves">Al Jazeera analysis, Nov 13</a>, <a href="https://www.aljazeera.com/news/2026/11/12/iran-warns-of-expanded-retaliation-as-israel-reportedly-readies-to-attack">Al Jazeera, Nov 12</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">APEC &middot; Arms Control</span>
+          <h2 class="story-headline">The White House confirms Trump will meet Xi and Putin together in Shenzhen next week, the first three-way meeting of the three leaders, with nuclear arms control at the top of the agenda</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The New York Post reported Friday, and Reuters picked up, that Trump will hold a trilateral summit with Xi Jinping and Vladimir Putin on the sidelines of APEC in Shenzhen, reportedly on Thursday, November 19. Later Friday, CNN reported that the White House said the meeting will happen. Spokesperson Olivia Wales said Trump &ldquo;will discuss the reduction of nuclear weapons in the world.&rdquo; A senior U.S. official played down expectations: &ldquo;We do not expect to get to any kind of agreement.&rdquo; The official called it &ldquo;the entry point, the first conversation&rdquo; at leader level. Iran, North Korea and possibly Ukraine could also come up. These sources do not show any public confirmation yet from Beijing or the Kremlin.</p>
+          <p><em>Analysis:</em> This morning&rsquo;s brief called the meeting unconfirmed. On the U.S. side it now appears confirmed, which makes it the main event of the APEC week, set for November 18&ndash;19. The setting gives Xi the role of host and broker. The low expectations suggest Washington mainly wants to start a three-way arms-control channel. China has long refused to join one, so whether Beijing agrees to the format is the thing to watch.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://cnn.com/2026/11/13/politics/trump-putin-xi-meeting">CNN, Nov 13</a>, <a href="https://1027wbow.com/2026/11/13/trump-to-hold-summit-with-xi-putin-in-shenzhen-on-thursday-ny-post-reports/">Reuters via WBOW, Nov 13</a>, <a href="https://www.usnews.com/news/world/articles/2026-11-12/explainer-five-features-of-apec-to-know-about-with-trump-putin-and-xi-set-to-attend">Reuters explainer via U.S. News, Nov 12</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Turkey &middot; Qatar &middot; Gulf Security</span>
+          <h2 class="story-headline">Turkey and Qatar sign a mutual defence pact in Istanbul, pledging a joint stance against any armed attack on either country</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>President Erdogan and Emir Sheikh Tamim bin Hamad Al Thani signed the agreement in Istanbul on Friday. According to the Turkish presidency&rsquo;s joint statement, reported by Reuters, it commits the two countries to a unified stance against any external armed attack on either, along with consultations on security threats, more joint exercises, defence-industry cooperation and training. The full text has not been released, and it is unclear how the mutual-defence obligation would work in practice. Ankara framed the deal as part of efforts &ldquo;to prevent the resurgence of war in the Gulf region.&rdquo;</p>
+          <p><em>Analysis:</em> The pact adds to a growing set of regional security arrangements that do not go through Washington. It follows August&rsquo;s Mecca agreement among Turkey, Saudi Arabia and Pakistan, under which an attack on one is an attack on all, and October&rsquo;s four-nation Badr memorandum. France 24 reports that the pact could open the way for Turkish support to Saudi Arabia against Houthi attacks. It also gives Qatar, the mediator in the U.S.&ndash;Iran diplomatic track, a second security guarantor alongside the U.S. base at Al Udeid. Gulf News reports Hormuz shipping is still about 65% below pre-war levels.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/world/articles/2026-11-13/turkey-qatar-sign-mutual-defence-agreement-turkish-presidency-says">Reuters via U.S. News, Nov 13</a>, <a href="https://www.internazionale.it/ultime-notizie-reuters/2026/11/13/turkey-qatar-sign-mutual-defence-agreement-turkish-presidency-says">Reuters via Internazionale, Nov 13</a>, <a href="https://www.france24.com/en/middle-east/20261113-turkey-and-qatar-pledge-unified-stance-against-attacks-in-mutual-defence-pact">France 24, Nov 13</a>, <a href="https://gulfnews.com/world/mena/us-israel-iran-war-turkey-qatar-sign-defence-pact-as-trump-warns-tehran-hormuz-risks-persist-1.500745854">Gulf News</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <div class="edition-return">Earlier today &mdash; the Morning Brief &darr;</div>
+<!-- EVENING:SLOT:END -->
+
+  <!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Commerce &middot; Nvidia &middot; China</span>
+          <h2 class="story-headline">The Nvidia scandal reaches Howard Lutnick: aides weigh his future and Trump says he still has confidence in him, while Congress lines up December testimony from him and Huang</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Reuters reported Thursday that senior White House officials are discussing whether Commerce Secretary Howard Lutnick should be pushed out over the Jensen Huang scandal, citing two people familiar with the matter. A White House official answered on the record that Trump &ldquo;maintains complete confidence in the secretary and his ability to carry out the position,&rdquo; and Axios reported the same day that the president is not distancing himself from Lutnick. The case against Lutnick rests on two Axios reports. One says Commerce received a classified warning about Huang&rsquo;s relationship with Alice Huang, the former Megaspeed executive U.S. officials suspect of working for Chinese intelligence. The other says Trump approved action against suspected diversion of Nvidia chips to China three times this year, in May, August and November, and Lutnick stalled each one, warning it &ldquo;will start a trade war with China.&rdquo; Both reports rely on anonymous sources. Commerce has not said on the record whether Lutnick saw the memo.</p>
+          <p>Congress is setting dates. The chairs of the House Foreign Affairs and Intelligence committees and the Select Committee on China have summoned Huang to a closed-door, transcribed interview on December 1 and say they will subpoena him if needed. Senate Banking Chairman Tim Scott asked Huang to appear on December 3 and also called Lutnick. A Lutnick spokesperson said he has &ldquo;proactively agreed to appear voluntarily,&rdquo; and CNBC reports the date as December 10. Democrats Ron Wyden and Richard Neal sent Lutnick a letter Thursday expanding their inquiry into the H200 sales to China. Republican Sen. John Kennedy also criticized Lutnick, and a GOP senator separately urged banning Chinese memory maker CXMT from the U.S. market. Reports conflict on whether Huang has formally agreed to the House date. Separately, Reuters reported that Huang had a relationship with a second Nvidia employee.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece from Mother Jones, Vox, Slate or Guardian opinion could be verified. On the record, Democrats are moving the focus from Huang&rsquo;s private life to the administration&rsquo;s choices. Wyden and Neal call the revenue-share arrangement for H200 sales &ldquo;an unconstitutional export tax&rdquo; and question approvals for buyers with links to the Chinese military. Top House Democrats want Lutnick investigated as well.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece from National Review, The Dispatch, the WSJ editorial page or Reason could be verified. On the record, the GOP response is coming from China hawks who frame this as an enforcement failure at Commerce, not a failure of the president&rsquo;s. That fits the Axios account of Rubio, Bessent, Hegseth and Greer pushing for controls while Lutnick resisted. CFR&rsquo;s Chris McGuire, quoted by CBS, said the real scandal is the lack of enforcement of export controls.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.axios.com/2026/11/12/trump-lutnick-nvidia">Axios, Nov 12</a>, <a href="https://www.axios.com/2026/11/11/trump-lutnick-nvidia-china-chip-export-controls">Axios, Nov 11</a>, <a href="https://www.staradvertiser.com/2026/11/12/breaking-news/white-house-weighs-howard-lutnicks-future-as-commerce-secretary/">Reuters via Star-Advertiser, Nov 12</a>, <a href="https://www.usnews.com/news/politics/articles/2026-11-12/republican-senator-urges-ban-on-chinese-chipmaker-cxmt-from-us-market">Reuters via U.S. News, Nov 12</a>, <a href="https://www.cnbc.com/2026/11/13/nvidia-scandal-lutnick-chip-sales.html">CNBC, Nov 13</a>, <a href="https://www.rte.ie/news/us/2026/1113/1599069-nvidia-us/">RT&Eacute;, Nov 13</a>, <a href="https://www.cbsnews.com/news/lutnick-nvidia-ai-chips-china/">CBS News</a>, <a href="https://www.wyden.senate.gov/imo/media/doc/11122026wydenneallettertolutnickonnvidia.pdf">Wyden&ndash;Neal letter, Nov 12</a>, <a href="https://www.investing.com/news/stock-market-news/exclusiveformer-nvidia-ceo-huang-had-a-relationship-with-a-second-employee-sources-say-5023034">Reuters via Investing.com</a> <em>(Read through search excerpts only, because direct page fetches were blocked.)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Economy &middot; Federal Reserve</span>
+          <h2 class="story-headline">The Fed that expected rate cuts this year now looks set to hike again in December, with some officials openly discussing a half-point move</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>October&rsquo;s consumer price index rose 0.4% for the month against a 0.3% forecast, and core prices rose 0.3% for a third straight month. Since then, the Fed&rsquo;s debate has moved to how much to raise rates, not whether. The central bank already raised rates a quarter point in September, its first increase since 2023. Governor Christopher Waller said he would back another quarter-point hike at the December 8 meeting and might favor a half point if the data worsen. Chicago Fed President Austan Goolsbee said the Fed has &ldquo;a real inflation issue on our hands.&rdquo; Dallas Fed President Lorie Logan has argued for at least two more increases. According to CNBC, about 88% of traders expect a quarter-point move, and a Reuters poll found most economists expect a December hike.</p>
+          <p>There is no official 12-month inflation rate for October, because BLS did not collect October 2025 data during last year&rsquo;s shutdown. Axios puts its estimate at about 4%. Reuters and Axios both point to higher oil prices from the Iran war and to tariffs as drivers. The rate outlook matters for the lame-duck Congress, which faces a December 11 government-funding deadline with no agreed plan, according to the Washington Post.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece from Mother Jones, Vox, Slate or Guardian opinion on the rate outlook could be verified, so none is summarized here.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece from National Review, The Dispatch, the WSJ editorial page or Reason on the rate outlook could be verified, so none is summarized here.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/2026/11/13/us-inflation-outlook-federal-reserve-rate-hike.html">CNBC, Nov 13</a>, <a href="https://www.bls.gov/news.release/cpi.nr0.htm">BLS CPI release</a>, <a href="https://www.investing.com/news/economic-indicators/hot-october-inflation-report-rattles-markets-5015775">Reuters via Investing.com</a>, <a href="https://finance.yahoo.com/economy/policy/articles/fed-raise-rates-once-more-124512933.html">Reuters poll via Yahoo</a>, <a href="https://www.axios.com/2026/11/10/inflation-cpi-interest-rates">Axios, Nov 10 (background)</a>, <a href="https://www.washingtonpost.com/politics/2026/11/11/one-month-shutdown-congress-is-far-deal-fund-government/">Washington Post, Nov 11 (funding)</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Iran &middot; Gulf</span>
+          <h2 class="story-headline">Iran&rsquo;s Revolutionary Guards claim a strike on a U.S. early-warning radar in Bahrain, the first claimed attack on U.S. assets in a Gulf state since September</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The IRGC said Friday that its aerospace force had hit a U.S. early-warning radar in Bahrain. It called the strike retaliation for an air attack Thursday on a telecommunications tower in Sirik county, in Iran&rsquo;s Hormozgan province. State outlets IRNA and Tasnim first described that attack only as an &ldquo;enemy attack.&rdquo; Later IRGC statements blamed the U.S. military. Neither Washington nor Bahrain had confirmed either the Sirik strike or Iran&rsquo;s claim when this edition went out. Reuters-style wire copy notes that this is Iran&rsquo;s first claim of an attack on American military assets in a Gulf country since early September. The Guards also said another tanker hit a mine in the Strait of Hormuz, a claim that could not be independently verified.</p>
+          <p>The exchange tests what has been a fragile lull, in a war that began with U.S. and Israeli strikes on February 28 and has since settled into a U.S. naval blockade of Iranian ports and a contest over the strait. It follows Trump&rsquo;s statement Thursday that Washington no longer needs a deal with Tehran. Hegseth has declared U.S.-protected shipping lanes &ldquo;free and clear.&rdquo; Iran continues to claim near-daily mine and missile hits on vessels. If the U.S. confirms damage in Bahrain, pressure to resume combat operations will grow, and Rubio has said there is &ldquo;no need&rdquo; to restart them.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.iranintl.com/en/202611137770">Iran International, Nov 13</a>, <a href="https://www.business-standard.com/amp/world-news/iran-s-guards-say-they-targeted-a-us-early-warning-radar-in-bahrain-126111300602_1.html">Reuters via Business Standard, Nov 13</a>, <a href="https://abcnews.com/International/wireStory/irans-revolutionary-guard-destroyed-us-radar-bahrain-mideast-138102943">AP via ABC News</a>, <a href="https://www.jpost.com/middle-east/iran-news/article-914794">Jerusalem Post</a>, <a href="https://www.timesofisrael.com/liveblog_entry/irgc-says-it-targeted-us-early-warning-radar-in-bahrain-after-enemy-attack-on-telecom-tower/">Times of Israel</a>, <a href="https://www.cbsnews.com/live-updates/iran-war-us-trump-deal-negotiations/">CBS News live updates</a> <em>(Read through search excerpts only. Iranian claims are unverified.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">China &middot; APEC</span>
+          <h2 class="story-headline">Beijing confirms Xi will chair next week&rsquo;s APEC summit in Shenzhen and hold bilateral talks, while a Xi&ndash;Trump&ndash;Putin meeting remains unconfirmed</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>China&rsquo;s foreign ministry announced Friday that Xi Jinping will chair and address the 33rd APEC Economic Leaders&rsquo; Meeting in Shenzhen on November 18&ndash;19. Xi will also give a keynote at the APEC CEO Summit, host a welcome banquet, and hold bilateral meetings with visiting leaders. Trump has said he will attend and expects to see both Xi and Putin. Beijing&rsquo;s announcement did not list him, and China has said only that it is &ldquo;in communication with relevant parties&rdquo; about a three-leader meeting. The Kremlin has been more forward. Putin aide Yuri Ushakov has said preparations for a trilateral meeting have begun and that Putin expects to raise Ukraine with Trump there.</p>
+          <p>The agendas differ. Trump has said he wants nuclear arms control at the center of any three-way meeting, &ldquo;not so much for Ukraine.&rdquo; Analysts expect Xi and Trump to focus on tariffs, export quotas and investment. The summit also comes as the Nvidia scandal revives the question of U.S. AI-chip sales to China, an issue Beijing is likely to raise.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://iol.co.za/news/world/2026-11-13-president-xi-to-attend-apec-economic-leaders-meeting-in-shenzhen/">Xinhua via IOL, Nov 13</a>, <a href="https://www.aa.com.tr/en/asia-pacific/china-s-xi-to-address-apec-summit-hold-bilateral-meetings-in-shenzhen-next-week/4123661">Anadolu, Nov 13</a>, <a href="https://www.yahoo.com/news/world/articles/chinas-foreign-ministry-confirms-talks-111300432.html">Yahoo News (foreign ministry briefing)</a>, <a href="https://tass.com/world/2217549">TASS</a>, <a href="https://www.scmp.com/news/china/politics/article/3371206/chinas-shenzhen-ready-host-xi-trump-and-putin-during-apec-summit">SCMP</a> <em>(Read through search excerpts only. No Tier-1 desk article on the announcement was reachable, so state-media and wire copy were used.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE, TECH, ENERGY & CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Climate &middot; COP31</span>
+          <h2 class="story-headline">COP31&rsquo;s leaders&rsquo; summit ends with clashing demands, leaving negotiators in Antalya to choose between an electrification target and a renewed push against fossil fuels</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Two days of heads-of-state speeches at the UN climate talks in Antalya, Turkey, ended Thursday with the main blocs far apart, Reuters reported. Venezuela&rsquo;s acting president said his country has a sovereign right to expand oil production, and other producers argued that oil, gas and coal should stay in use. Small island states called for immediate emissions cuts. Saint Lucia&rsquo;s prime minister said &ldquo;major emitters must move beyond the usual promises.&rdquo; Developing countries pressed for more finance. UN Secretary-General Ant&oacute;nio Guterres called for credible national roadmaps away from fossil fuels, which he said &ldquo;must go the way of the dinosaurs.&rdquo; The United States is skipping the talks for a second year.</p>
+          <p>The clearest proposal on the table is the Turkish presidency&rsquo;s non-binding &ldquo;35-by-35&rdquo; pledge to raise electricity&rsquo;s share of final energy use to 35% by 2035. European leaders and the UK prime minister back it. Critics note that it does not require the new electricity to come from clean sources, and Turkey wants it written into the final decision. Australia&rsquo;s Chris Bowen, who is running the negotiations, said that is not settled. WWF called the leaders&rsquo; speeches underwhelming at the first COP since scientists said the world is set to breach 1.5&deg;C. The talks run to November 20.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/world/articles/2026-11-12/venezuela-tells-cop31-it-has-a-sovereign-right-to-pump-more-oil">Reuters via U.S. News, Nov 12</a>, <a href="https://www.rappler.com/world/global-affairs/leaders-clashing-priorities-cop31-negotiations-november-12-2026/">Reuters via Rappler, Nov 12</a>, <a href="https://www.wri.org/news/statement-cop31-leaders-summit-spotlights-electrification-and-transition-away-fossil-fuels">WRI statement</a>, <a href="https://unfccc.int/news/transcript-of-remarks-made-by-un-secretary-general-antonio-guterres-to-the-cop31-leaders-summit">UNFCCC (Guterres remarks)</a>, <a href="https://www.wsoctv.com/news/world/un-climate-summit/XDEU4MSOMA66VCBBCOVDRLQJ3Y/">AP via WSOC</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; Chips</span>
+          <h2 class="story-headline">With Huang gone, investors rotate out of Nvidia: AMD is up about 30% this week and Broadcom 24%, as Reuters reports a relationship with a second employee</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Nvidia shares are down about 11% this week since the scandal broke, CNBC reported Friday. Rival chipmakers have rallied: AMD is up about 30%, Broadcom about 24% and TSMC about 11% over the same period. AMD launched its sixth-generation EPYC &ldquo;Venice&rdquo; server processors and a rack-scale AI platform on Wednesday, which gave investors a product story to move toward. Nvidia is now run by interim CEO Colette Kress, who remains CFO, while the board considers internal and external candidates and runs an independent investigation. The FBI has also opened an inquiry.</p>
+          <p>On Thursday Reuters reported, citing two sources, that Huang had an intimate relationship with a second Nvidia employee. Reuters did not say when it occurred or whether it was disclosed. Huang, Nvidia&rsquo;s board and the person involved did not respond to requests for comment. The policy fallout covered under Politics, especially pressure on Lutnick and bipartisan calls for tighter export controls in the NDAA, raises a commercial question for Nvidia: whether its China sales channel survives.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/2026/11/13/nvidia-jensen-huang-affairs-amd-broadcom-tsmc.html">CNBC, Nov 13</a>, <a href="https://www.investing.com/news/stock-market-news/exclusiveformer-nvidia-ceo-huang-had-a-relationship-with-a-second-employee-sources-say-5023034">Reuters via Investing.com, Nov 12</a>, <a href="https://www.theglobeandmail.com/world/article-nvidia-ceo-jensen-huang-affair/">Reuters via Globe and Mail</a>, <a href="https://techcrunch.com/2026/11/12/nvidia-ceo-jensen-huangs-affair-with-alleged-chinese-spy-a-timeline/">TechCrunch, Nov 12</a>, <a href="https://www.digitimes.com/news/a20261111PD259/amd-2nm-tsmc-data-center-cpu.html">DigiTimes, Nov 11</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Biotech &middot; Regulation</span>
+          <h2 class="story-headline">Reuters: the FDA has quietly shelved Makary&rsquo;s fast-track &ldquo;national priority voucher&rdquo; program, which HHS says is ongoing</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Citing six people familiar with the matter and internal documents, Reuters reported Thursday that FDA leadership has told companies it is not moving forward with the Commissioner&rsquo;s National Priority Voucher pilot. Former commissioner Marty Makary launched the program in June 2025 to cut some drug reviews to one or two months. Applications are still being accepted but are not advancing. No new vouchers have been awarded since Makary left in May. Twenty-two drugs received vouchers and 12 have since been approved. For the nine still in the program, career reviewers have resumed control of timelines.</p>
+          <p>HHS and FDA spokespeople disputed the characterization, saying the pilot is ongoing and the agency is refining it after a June public hearing. The report comes as the FDA has been run by an acting commissioner since May. The Senate HELP Committee votes November 18 on nominee Heidi Overton, and Chairman Bill Cassidy has not said whether he will support her.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://1027wbow.com/2026/11/12/exclusive-us-fda-shelves-commissioners-voucher-program-for-speedy-drug-reviews-sources-say/">Reuters via WBOW, Nov 12</a>, <a href="https://www.biospace.com/fda/fdas-commissioner-voucher-program-reportedly-shuttered-ahead-of-senate-vote-on-overton">BioSpace</a>, <a href="https://www.statnews.com/2026/11/11/fda-commissioner-nominee-heidi-overton-senate-committee-vote/">STAT, Nov 11</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Science &middot; Biology</span>
+          <h2 class="story-headline">A Florida swamp mushroom is the first fungus known to make both psilocybin and the deadly amatoxins of the death cap</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Researchers at the University of Florida report in <em>Current Biology</em> that <em>Galerina indica</em>, a small brown mushroom from Florida swamps nicknamed the &ldquo;dark magic mushroom,&rdquo; produces both the psychedelic compound psilocybin and amatoxins, the toxins behind most fatal mushroom poisonings. No fungus was previously known to make both. The team suspects the genes arrived through horizontal gene transfer.</p>
+          <p>The authors propose that the combination may work as a defense: fungus-eating animals such as nematodes, which are affected by both classes of compound, would find it hard to evolve resistance to two at once. That idea has not been tested, and the study did not measure the mushroom&rsquo;s toxicity in animals. The finding is a reminder for foragers that a mushroom that bruises blue, a common sign of psilocybin, can also be lethal. <em>Nature</em>&rsquo;s news desk covered the study on November 12.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.nature.com/nature/volumes/659/issues/8140">Nature news, Nov 12</a>, <a href="https://phys.org/news/2026-11-dark-magic-mushroom-psychedelic-toxic.html">Phys.org (UF/IFAS)</a>, <a href="https://www.livescience.com/chemistry/floridas-dark-magic-mushrooms-have-a-deadly-combination-of-chemicals-never-seen-before">Live Science</a>, <a href="https://gizmodo.com/mushrooms-tend-to-be-deadly-or-trippy-this-one-is-both-2000838289">Gizmodo</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">English Football</span>
+          <h2 class="story-headline">Kane breaks England&rsquo;s caps record and scores the winner as England beat Croatia 2&ndash;1 to reach the Nations League quarter-finals, and Manchester United appoint Pochettino</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>At Wembley on Thursday, Morgan Rogers put England ahead in the 24th minute from Jude Bellingham&rsquo;s pass. Petar Su&ccaron;i&cacute; equalised on 59 minutes after a soft Jarell Quansah header fell to him. Five minutes later Harry Kane scored a penalty awarded after a VAR check. It was his 92nd England goal, scored on his 126th cap, which makes him the most-capped men&rsquo;s player in England&rsquo;s history. The win puts England into the Nations League quarter-finals, and they now go to Spain to decide who wins Group A3. Thomas Tuchel called it &ldquo;a good win&rdquo; but said his side were &ldquo;a little sloppy.&rdquo;</p>
+          <p>At club level, reports on Friday say Manchester United have appointed Mauricio Pochettino as head coach on a two-and-a-half-year deal, starting November 18, to replace the sacked Michael Carrick. United are in the relegation zone with one league win from ten. United must pay U.S. Soccer a release fee reported at about $10 million, plus more for his staff. Pochettino is expected to take the USMNT for its two Concacaf Nations League quarter-finals against Haiti, on November 14 in Miami and November 17 in Cincinnati, before his first United match at Anfield on November 22. U.S. Soccer has not named a successor.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.skysports.com/football/news/13611570/england-2-1-croatia-harry-kane-scores-winner-as-he-become-three-lions-record-appearance-maker-to-book-nations-league-quarter-final">Sky Sports</a>, <a href="https://www.englandfootball.com/england/mens-senior-team/fixtures-results/2026-27/nations-league/england-v-croatia-uefa-nations-league-thursday-12-november-2026-match-centre">England Football match centre, Nov 12</a>, <a href="https://www.vavel.com/en/football/2026/11/12/1278956-england-vs-croatia-live-updates-uefa-nations-league.html">VAVEL, Nov 12</a>, <a href="https://www.beinsports.com/en-us/soccer/uefa-nations-league/articles/tuchel-buoyant-on-england-chances-ahead-of-different-decider-in-spain-2026-11-13">beIN Sports, Nov 13</a>, <a href="https://www.goal.com/en-au/lists/mauricio-pochettino-officially-named-manchester-united-manager-ending-two-year-tenure-in-charge-of-usmnt/blt000aa8cd737e51c7">Goal</a>, <a href="https://tribuna.com/en/news/2026-11-13-manchester-united-officially-appoint-mauricio-pochettino-as-new-head-coach/">Tribuna, Nov 13</a>, <a href="https://www.espn.com/soccer/story/_/id/50454123/pochettino-due-coach-usmnt-games-haiti-man-united-source">ESPN</a> <em>(Read through search excerpts only. BBC Sport pages were not reachable this run.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal</span>
+          <h2 class="story-headline">Arsenal Women become the first side to take points off holders Barcelona this season, with Maanum scoring in a 1&ndash;1 draw at Camp Nou</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Arsenal rode their luck at times but left Barcelona with a point. Frida Maanum gave them a 22nd-minute lead. Her Norway teammate Caroline Graham Hansen equalised just before the hour, and Yahoo Sports named goalkeeper Misa Rodr&iacute;guez player of the match. Arseblog News carried Slegers&rsquo; reaction: she praised the performance and said Maanum&rsquo;s defensive work stood out alongside her goal. Slegers called her &ldquo;huge.&rdquo; Barcelona had won every league-phase game until Thursday. Arsenal move to eight points from four matches, fourth in the table, and are unbeaten in six in all competitions.</p>
+          <p>The men are on the international break. Arseblog News reports Bukayo Saka is still sidelined and William Saliba was left out of France&rsquo;s squad despite returning to full training. Arteta has flagged a hard restart at Newcastle on November 21, followed by nine straight games in London before the New Year.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.news/2026/11/renee-slegers-reacts-to-1-1-draw-with-barcelona/">Arseblog News</a>, <a href="https://arseblog.news/2026/11/who-is-doing-what-this-november-interlull/">Arseblog News (Interlull)</a>, <a href="https://www.espn.com/soccer/story/_/id/50462708/barcelona-arsenal-live-women-champions-league-score-commentary">ESPN</a>, <a href="https://www.cbssports.com/soccer/news/uwcl-arsenal-barcelona-2026-league-phase/">CBS Sports</a>, <a href="https://www.vavel.com/en/football/2026/11/12/1278973-barcelona-vs-arsenal-women-live-score-updates-womens-champions-league.html">VAVEL, Nov 12</a>, <a href="https://www.arsenal.com/news/report-barcelona-1-1-arsenal-women-aFvGh9O2iHDf">Arsenal.com</a> <em>(Read through search excerpts only. The Athletic&rsquo;s Arsenal desk was not reachable.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
