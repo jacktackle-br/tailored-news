@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Saturday, November 14, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+<!-- EVENING:SLOT:START -->
+<!-- EVENING:SLOT:END -->
+
+<!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Aviation &middot; FAA &middot; Infrastructure</span>
+          <h2 class="story-headline">A telecom failure halts all U.S. flights for four to five hours, the first nationwide ground stop since 2023, and the administration blames aging equipment</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The FAA ordered a nationwide ground stop at about 3:54 p.m. ET on Friday after a telecommunications outage hit air traffic control systems. It lifted the order that evening, after four to five hours, depending on the outlet. About 4,000 flights bound for U.S. airports were already in the air when the order went out, and they were reported to have landed safely. Thousands of flights were canceled, and the FAA warned that operations would take time to return to normal. It said it had &ldquo;thoroughly tested our systems&rdquo; before letting flights resume. This was the first nationwide ground stop since the NOTAM system failure in January 2023.</p>
+          <p>Accounts of the cause differ. Transportation Secretary Sean Duffy blamed aging analog telecom equipment, including switches and routers that became overloaded. CBS, citing sources, reported that an update to the network linking the air traffic control system triggered a reboot and crash. The White House said there was no sign of a &ldquo;nefarious act,&rdquo; and Homeland Security Secretary Markwayne Mullin said there was no cyberattack. Air Space Intelligence, a vendor building a new AI-enabled FAA system, said its software was not the cause.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece on the outage from Mother Jones, Vox, Slate or Guardian opinion could be verified, so none is summarized here.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece on the outage from National Review, The Dispatch, the WSJ editorial page or Reason could be verified, so none is summarized here.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cbsnews.com/news/faa-issues-nationwide-ground-stop/">CBS News, Nov 13</a>, <a href="https://abcnews.com/US/nationwide-ground-stop-ordered-airports-faa/story?id=138121848">ABC News, Nov 13</a>, <a href="https://www.nbcnews.com/news/us-news/live-blog/live-updates-flights-grounded-faa-communications-outage-rcna609268">NBC News live blog</a>, <a href="https://www.aljazeera.com/news/2026/11/14/faa-ground-stop-lifted-why-were-us-flights-grounded-and-whats-next">Al Jazeera, Nov 14</a>, <a href="https://www.flightradar24.com/blog/live/nationwide-ground-stop-issued-for-united-states/">Flightradar24</a> <em>(Read through search excerpts only, because direct page fetches were blocked.)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Supreme Court &middot; Immigration</span>
+          <h2 class="story-headline">The Supreme Court agrees to decide whether Trump can suspend asylum at the southern border, and the ban stays in force until then</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Friday the justices granted review in <em>Mullin v. Refugee and Immigrant Center for Education and Legal Services</em> (RAICES). They will decide two questions. The first is whether Proclamation 10888 and its implementing guidance are lawful. The proclamation is Trump&rsquo;s order barring migrants who cross the U.S.&ndash;Mexico border from seeking asylum. The second is whether 8 U.S.C. &sect;&nbsp;1252(f)(1) bars the class-wide relief a district court granted. The Court declined the government&rsquo;s separate challenge to how the class was defined. Arguments are expected in the spring, with a ruling by the end of June.</p>
+          <p>The case began with 13 individuals who say they were persecuted or tortured in their home countries, joined by three immigration nonprofits. A federal district court in Washington certified a class and held the proclamation&rsquo;s restrictions and removal procedures unlawful. In April, a divided D.C. Circuit panel affirmed, narrowing the class. It held that the statutory right to <em>apply</em> for asylum reaches even people the law makes ineligible to <em>receive</em> it, and that the proclamation replaced procedures set by Congress. Judge Walker dissented in part. The appeals court&rsquo;s mandate is stayed, so the restrictions remain in effect. The case follows June&rsquo;s <em>Mullin v. Al Otro Lado</em>, in which the Court held that a person &ldquo;arrives in the United States&rdquo; only on crossing the border.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece on the grant from Mother Jones, Vox, Slate or Guardian opinion could be verified. The ACLU, which represents the challengers, said it would defend the lower-court rulings, but it is an advocate, not an opinion outlet.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece on the grant from National Review, The Dispatch, the WSJ editorial page or Reason could be verified, so none is summarized here.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.scotusblog.com/2026/11/supreme-court-agrees-to-hear-case-on-trump-administrations-suspension-of-asylum/">SCOTUSblog, Nov 13</a>, <a href="https://www.pbs.org/newshour/politics/supreme-court-will-consider-trumps-executive-order-suspending-asylum-access-at-the-southern-border">AP via PBS NewsHour, Nov 13</a>, <a href="https://www.nbcnews.com/politics/supreme-court/supreme-court-takes-trumps-asylum-ban-case-rcna608564">NBC News</a>, <a href="https://www.jurist.org/news/2026/11/us-supreme-court-to-review-president-trumps-restrictions-on-asylum-at-southern-border/">JURIST</a>, <a href="https://law.justia.com/cases/federal/appellate-courts/cadc/25-5243/25-5243-2026-04-24.html">D.C. Circuit opinion, Apr 24 (background)</a>, <a href="https://www.aclu.org/press-releases/supreme-court-to-hear-challenge-to-trump-proclamation-eliminating-asylum">ACLU statement</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Commerce &middot; Nvidia &middot; Congress</span>
+          <h2 class="story-headline">Lutnick agrees to testify before Senate Banking on Dec. 10 as Bessent publicly says Commerce &ldquo;has the pen&rdquo; on blacklisting Megaspeed</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Commerce Secretary Howard Lutnick has agreed to appear before the Senate Banking Committee on December 10, CBS reported Friday, citing a U.S. official. Chairman Tim Scott had requested that date, and the committee separately asked former Nvidia CEO Jensen Huang to testify on December 3. A Commerce spokesperson said Lutnick &ldquo;has proactively agreed to appear voluntarily.&rdquo; The hearing is expected to cover chip export controls, the Megaspeed investigation and the national-security implications. Megaspeed is a Singapore-based Nvidia customer that U.S. intelligence suspects of diverting chips to China, which the company denies. No committee announcement confirming the date was found.</p>
+          <p>The same day, Treasury Secretary Scott Bessent publicly put the delay on Commerce. He said Treasury, State, the Pentagon and USTR had favored adding Megaspeed to the export blacklist and that it is Commerce that &ldquo;has the pen.&rdquo; Lutnick&rsquo;s side has not publicly answered him. Trump has said he still backs Lutnick, while CNN reports that advisers are discussing whether he should stay. The underlying claims, including that Lutnick feared a listing would disrupt trade talks with Beijing, rest on anonymous sourcing.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Slate argues that the scandal is a bigger problem for the Trump administration than for Huang. It singles out Lutnick, citing reports that he stonewalled efforts to cut off Megaspeed, and places that within what it calls a pattern of misrepresenting trade deals. Slate also raises, while calling the motive unclear, recent sales of Nvidia stock by a company linked to Lutnick&rsquo;s sons.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>In National Review, John R. Puri asks why Nvidia was allowed to sell advanced AI chips to China at all. He argues that scrutiny should not stop at Nvidia&rsquo;s boardroom and should extend to the president and the officials Huang worked with to expand sales. That makes the episode a test of whether accountability reaches into the administration itself.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cbsnews.com/news/howard-lutnick-scott-bessent-nvidia-megaspeed-testimony/">CBS News, Nov 13</a>, <a href="https://www.cnn.com/2026/11/13/politics/bessent-lutnick-nvidia-megaspeed-blame">CNN, Nov 13</a>, <a href="https://semafor.com/article/11/13/2026/bessent-knocks-lutnick-on-megaspeed">Semafor, Nov 13</a>, <a href="https://www.forbes.com/sites/saradorn/2026/11/13/lutnick-will-testify-before-congress-amid-allegations-he-resisted-megaspeed-crackdown/">Forbes, Nov 13</a>, <a href="https://www.usnews.com/news/politics/articles/2026-11-13/why-commerce-secretary-howard-lutnick-is-under-pressure-for-nvidia-ties">U.S. News, Nov 13</a>, <a href="https://slate.com/news-and-politics/2026/11/nvidia-jensen-huang-affair-scandal-trump-lutnick-bessent.html">Slate</a>, <a href="https://www.nationalreview.com/article/trump-s-people-may-have-to-answer-for-jensen-huang">National Review, Nov 13</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">U.S. &middot; China &middot; Russia</span>
+          <h2 class="story-headline">The White House confirms the first-ever Trump&ndash;Xi&ndash;Putin meeting, in Shenzhen next week, with nuclear arms reduction on the agenda and no agreement expected</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The White House said Friday that Trump, Xi Jinping and Vladimir Putin will hold their first three-way meeting on the sidelines of the APEC leaders&rsquo; meeting in Shenzhen, which runs November 18&ndash;19. Several outlets put the meeting on Thursday, November 19. Trump and Xi will meet first, over a bilateral working lunch. Officials said Trump and Putin will not hold a separate one-on-one. A White House spokeswoman said Trump would raise &ldquo;the reduction of nuclear weapons in the world.&rdquo; A senior U.S. official said Iran is on the agenda but Ukraine is not, because it runs on a separate U.S.&ndash;Russia track. Trump travels first to the Philippines for ASEAN.</p>
+          <p>Expectations are deliberately low. A senior official told Reuters that Washington does &ldquo;not expect to get to any kind of agreement&rdquo; and urged Beijing, whose arsenal is growing fastest, to join serious arms talks. China has long opposed trilateral nuclear negotiations. One report says Beijing wanted a tightly scripted meeting, while Washington wanted open discussion. Kremlin spokesman Dmitry Peskov called the meeting &ldquo;extremely significant&rdquo; but rejected comparisons to the 1945 Yalta Conference. Zelensky raised exactly that comparison in warning against a deal that carves up spheres of influence.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://abcnews.com/Politics/trump-meet-putin-xi-china-week-us-officials/story?id=138128914">ABC News</a>, <a href="https://www.nbcnews.com/world/china/trump-xi-putin-plan-unprecedented-joint-meeting-sidelines-apec-officia-rcna609275">NBC News</a>, <a href="https://www.aljazeera.com/news/2026/11/14/trump-xi-and-putin-to-hold-first-three-way-summit-in-china">Al Jazeera, Nov 14</a>, <a href="https://www.euronews.com/2026/11/14/trump-xi-and-putin-to-meet-in-china-white-house-says">Euronews, Nov 14</a>, <a href="https://aa.com.tr/en/asia-pacific/trump-to-hold-trilateral-talks-with-xi-putin-in-china-next-week-white-house/4124821">Anadolu</a>, <a href="https://www.business-standard.com/world-news/xi-trump-and-putin-to-hold-historic-trilateral-summit-at-apec-meet-126111400913_1.html">Business Standard, Nov 14</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Iran &middot; Gulf</span>
+          <h2 class="story-headline">CENTCOM rejects Iran&rsquo;s claim that it destroyed a U.S. radar in Bahrain, saying two Iranian drones were shot down without damage</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>U.S. Central Command said the Revolutionary Guards launched two one-way attack drones toward Bahrain and that U.S. forces shot both down: &ldquo;There were no injuries or damage.&rdquo; The IRGC had claimed it destroyed a U.S. early-warning radar there, about an hour after what Iranian media called an &ldquo;enemy&rdquo; strike on a telecom tower in Sirik, a Hormozgan port near the Strait of Hormuz. CENTCOM&rsquo;s statement did not mention Sirik. Bahrain, home to the U.S. Fifth Fleet, did not comment. No independent evidence of damage has emerged.</p>
+          <p>The episode shows how unstable things remain around Hormuz while diplomacy is frozen. The IRGC warned of an &ldquo;unrestricted response&rdquo; if attacks recur. Qatari and Pakistani mediation continues, but Tehran has made any return to formal talks conditional on its demands being met, and Washington is leaning on its naval blockade and economic pressure.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.rferl.org/a/iran-us-sirik-bahrain-war-nuclear-talks/33897951.html">RFE/RL</a>, <a href="https://www.middleeastmonitor.com/20261113-centcom-denies-iranian-claim-of-attack-on-us-radar-in-bahrain-says-2-drones-shot-down/">Middle East Monitor, Nov 13</a>, <a href="https://www.aninews.in/news/world/us/us-centcom-denies-irans-claim-of-destroying-us-radar-in-bahrain-says-two-drones-shot-down20261114033234/">ANI, Nov 14</a>, <a href="https://www.iranintl.com/en/202611137770">Iran International, Nov 13</a>, <a href="https://www.eurasiareview.com/13112026-centcom-denies-iranian-claim-it-struck-a-us-radar-in-bahrain/">Eurasia Review, Nov 13</a> <em>(Read through search excerpts only. No Tier-1 desk article was reachable, so wire pickups were used.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">International Law &middot; ICC</span>
+          <h2 class="story-headline">ICC judges close the original Afghanistan investigation, ending the court&rsquo;s inquiry into alleged crimes by U.S. personnel, and prosecutors appeal</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>In a decision dated November 12 and reported Saturday, an ICC pre-trial chamber formally closed the &ldquo;original&rdquo; Afghanistan investigation. That strand covered alleged crimes by U.S. forces and the CIA, as well as by Islamic State Khorasan. The judges said the prosecution had not shown it could &ldquo;effectively carry out any further investigative or prosecutorial activities&rdquo; within that scope, noting how few arrest warrants it had sought. The separate investigation into Taliban conduct since August 2021 continues, and the warrants already issued for four Taliban leaders remain in force. Prosecutors have appealed.</p>
+          <p>In practice, the U.S. strand had been dormant since 2021, when the then-prosecutor deprioritized it. Still, the ruling formally ends it while Washington sanctions court officials over investigations involving Americans and Israeli officials. The United States is not a party to the Rome Statute and rejects the court&rsquo;s jurisdiction over its personnel.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.pakistantoday.com.pk/2026/11/14/icc-judges-halt-afghanistan-war-crimes-inquiry-involving-us-troops">Pakistan Today, Nov 14</a>, <a href="https://www.newarab.com/news/icc-stops-probe-alleged-crimes-us-troops-afghanistan">The New Arab</a>, <a href="https://nst.com.my/world/world/2026/11/1577263/icc-closes-original-afghanistan-war-crimes-investigation">New Straits Times</a>, <a href="https://bernama.com/en/world/news.php?id=2634105">Bernama</a>, <a href="https://en.bd-pratidin.com/international/2026/11/14/73350">Bangladesh Pratidin, Nov 14</a> <em>(Read through search excerpts only. No Tier-1 or Lawfare piece was reachable.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE, TECH, ENERGY & CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Climate &middot; COP31</span>
+          <h2 class="story-headline">COP31 ends its first week with limited progress, as ministers arrive in Antalya and Australia aims for a fossil-fuel draft early next week</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Climate Home&rsquo;s day-six bulletin describes limited progress. Countries have not yet decided whether to adopt a cover decision as the summit&rsquo;s headline outcome, and most agenda items still need substantial work. Most negotiating tracks have produced drafts, but the new climate-finance work programme remains stalled. The draft on the global goal on adaptation has become a flashpoint: African countries want adaptation finance tripled to at least $120&nbsp;billion a year by 2035, while a rival option would reopen elements of the finance target. UN climate chief Simon Stiell called the talks constructive and said Saturday&rsquo;s plenary would show which fights ministers must settle.</p>
+          <p>On fossil fuels, Reuters reports that Australia, which is leading the negotiations, is taking submissions until Saturday night and aims to produce a draft early next week. Large producers and consumers are resisting firm transition targets. Australian minister Chris Bowen is pitching a &ldquo;pragmatic consensus&rdquo; on electrification and finance, while support for a 35%-by-2035 electrification goal is unclear. The U.S. government is not negotiating. The conference is scheduled to close on November 20.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.climatechangenews.com/2026/11/14/cop31-bulletin-day-6-limited-progress-as-ministers-arrive-in-antalya/">Climate Home News, Nov 14</a>, <a href="https://www.carbonbrief.org/debriefed-13-november-2026-make-or-bake-electrification-push-climate-finance-down-70">Carbon Brief, Nov 13</a>, <a href="https://whtc.com/2026/11/13/cop31-talks-face-early-friction-over-future-of-fossil-fuels/">Reuters via WHTC, Nov 13</a>, <a href="https://www.abc.net.au/news/2026-11-13/chris-bowen-seeks-pragmatic-consensus-nto-inal-cop31-talks/107380860">ABC (Australia), Nov 13</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Space &middot; SpaceX</span>
+          <h2 class="story-headline">Starship Flight 15 reaches orbit and deploys 26 Starlink V3 satellites, but the booster catch is called off, and SpaceX will try its first-ever ship catch today</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>SpaceX launched Starship&rsquo;s 15th test flight from Starbase, Texas, on Friday. The upper stage, Ship 42, reached orbit and deployed all 26 Starlink V3 satellites about 40 minutes in. It is the second Starship flight to carry operational Starlinks. Shortly after launch, controllers called off the planned chopstick catch of Super Heavy Booster 22 and diverted it offshore. SpaceX did not immediately say why. Reports differ on whether the booster splashed down intact or broke up just before reaching the water.</p>
+          <p>The mission runs about 22 hours. SpaceX still plans to attempt the first-ever tower catch of a Starship upper stage when the ship returns to Starbase on Saturday; Elon Musk put the odds at &ldquo;more likely than not.&rdquo; Because the booster was lost, full reuse of both stages, which the flight was meant to demonstrate, is no longer possible this time. The outcome of the ship catch was not known at publication.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cbsnews.com/news/spacex-launches-starship-flight-rocket/">CBS News, Nov 13</a>, <a href="https://www.nbcnews.com/science/space/spacex-launches-15th-starship-flight-aborts-booster-recovery-maneuver-rcna609274">NBC News, Nov 13</a>, <a href="https://www.spokesman.com/stories/2026/nov/13/spacex-launches-15th-starship-flight-with-hopes-of/">Spokesman-Review, Nov 13</a>, <a href="https://www.space.com/space-exploration/launches-spacecraft/spacex-starship-flight-15-chopsticks-double-catch-super-heavy-ship">Space.com</a>, <a href="https://keeptrack.space/x-report/spacex-brief-2026-11-14">KeepTrack, Nov 14</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; Chips</span>
+          <h2 class="story-headline">Nvidia&rsquo;s board says it has not yet hired a search firm or approached formal candidates to succeed Huang, as the FT reports an approach to Arm&rsquo;s Rene Haas</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>In a statement Friday, Nvidia&rsquo;s board said it was &ldquo;in the process of selecting a search firm&rdquo; for the CEO role and had &ldquo;not formally engaged any potential candidates.&rdquo; Hours earlier, the Financial Times reported that the board had approached Arm CEO Rene Haas. CFO Colette Kress is serving as interim CEO while keeping her finance role. Harvey Jones, a director since 1993, was named the company&rsquo;s first board chair on November 11.</p>
+          <p>The company&rsquo;s 8-K describes Huang&rsquo;s departure as a resignation, effective immediately, from his posts as president, CEO and director. CNBC, citing a person familiar with the matter, reported that the board decided to push him out. Because a permanent successor will have to manage the political fallout over China export controls as well as the AI-chip business, the search is being watched as closely in Washington as on Wall Street.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/2026/11/13/nvidia-huang-ceo-replacement-search.html">CNBC, Nov 13</a>, <a href="https://www.sec.gov/Archives/edgar/data/0001045810/000104581026000082/nvidiaannouncesceotransiti.htm">Nvidia 8-K (SEC)</a>, <a href="https://techcrunch.com/2026/11/12/jensen-huang-is-out-at-nvidia-who-is-colette-kress-his-interim-replacement/">TechCrunch, Nov 12 (background)</a>, <a href="https://www.axios.com/2026/11/12/nvidia-next-ceo-jensen-huang-predictions">Axios, Nov 12 (background)</a> <em>(Read through search excerpts only. The FT report was seen only as cited by CNBC.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">English Football</span>
+          <h2 class="story-headline">A tearful Pochettino says goodbye to the USMNT before taking over at Manchester United, and McGinn&rsquo;s double gives Scotland a 2&ndash;1 win over North Macedonia</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>At a press conference Friday, Mauricio Pochettino fought back tears as he discussed leaving the U.S. men&rsquo;s national team. He largely declined to talk about Manchester United, saying he wanted to stay committed to the U.S. until he formally leaves. His first proper United press conference will come at Carrington, two days before his debut at Anfield on Sunday, November 22. United sacked Michael Carrick after the club&rsquo;s worst start to a season since 1986. Reports say Pochettino was the only coach United spoke to directly.</p>
+          <p>North of the border on Friday, John McGinn scored both goals at Hampden as Scotland beat North Macedonia 2&ndash;1 in the Nations League. His winner was a 74th-minute penalty awarded after a VAR check. Sky Sports called it a ragged display. It was Sebastien Pocognoli&rsquo;s first home win as Scotland coach, and Andy Robertson matched Kenny Dalglish&rsquo;s record of 102 caps. Scotland must win in Switzerland on Monday to have a chance of second place. Elsewhere Friday, the Netherlands beat Greece 7&ndash;0, tying the competition&rsquo;s record margin, and Germany won 3&ndash;1 against nine-man Serbia behind closed doors in Belgrade. England, who reached the quarter-finals on Thursday, finish against Spain on Sunday.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.sportbible.com/football/football-news/mauricio-pochettino-press-conference-man-utd-usmnt-834950-20261113">SPORTbible, Nov 13</a>, <a href="https://sports.yahoo.com/articles/tearful-mauricio-pochettino-explains-why-151632797.html">Yahoo Sports</a>, <a href="https://www.skysports.com/football/news/13611417/scotland-2-1-north-macedonia-john-mcginn-scores-double-as-hosts-toil-in-nations-league-encounter">Sky Sports</a>, <a href="https://www.scottishfa.co.uk/en/news/match-report-scotland-v-north-macedonia">Scottish FA match report</a>, <a href="https://www.espn.com/soccer/report/_/gameId/401861159">ESPN (Netherlands 7&ndash;0 Greece)</a>, <a href="https://www.espn.com/soccer/report/_/gameId/401861158">ESPN (Serbia 1&ndash;3 Germany)</a> <em>(Read through search excerpts only. BBC Sport pages were not reachable this run.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal</span>
+          <h2 class="story-headline">Fresh from their draw at Barcelona, Arsenal Women host third-placed London City Lionesses at the Emirates on Sunday, without Blackstenius</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The men&rsquo;s side is idle until the trip to Newcastle on November 21, so the weekend&rsquo;s Arsenal football belongs to Ren&eacute;e Slegers&rsquo; women. They host London City Lionesses at the Emirates on Sunday at 4:30 p.m. UK time, six points behind the third-placed visitors. Thursday&rsquo;s 1&ndash;1 draw at Barcelona extended Arsenal&rsquo;s unbeaten run to six in all competitions. League form has been patchier, with just 10 goals in nine WSL games.  Arseblog News, which called it a game Arsenal &ldquo;just have to win,&rdquo; reports that Stina Blackstenius is out with an Achilles problem that needs further tests. Mariona Caldentey, Selina Cerci and Chloe Kelly also remain unavailable. Alessia Russo has scored in three straight WSL appearances.</p>
+          <p>On the men&rsquo;s side, the international break is mostly about fitness: Bukayo Saka is out with a quad injury that Arteta measures in &ldquo;weeks.&rdquo; Arsenal lead the Premier League by six points after the 1&ndash;0 win over Hull before the break. No new in-window Arsenal reporting from The Athletic could be reached.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.vavel.com/en/football/2026/11/13/womens-football/1279160-arsenal-vs-london-city-lionesses-women-s-super-league-preview-gameweek-10-2026.html">VAVEL, Nov 13</a>, <a href="https://sports.yahoo.com/articles/arsenal-vs-london-city-lionesses-050000333.html">Yahoo Sports preview</a>, <a href="https://theanalyst.com/articles/arsenal-vs-london-city-lionesses-prediction-wsl-preview-11-26">The Analyst</a>, <a href="https://arseblog.news/2026/11/who-is-doing-what-this-november-interlull/">Arseblog News (Interlull)</a>, <a href="https://arseblog.com/2026/11/building-in-barca-jim-reaper/">Arseblog</a> <em>(Read through search excerpts only. The Athletic&rsquo;s Arsenal desk was not reachable.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">NBA &middot; NBA Cup</span>
+          <h2 class="story-headline">The Spurs rout the Curry-less Warriors 123&ndash;85 for an 11th straight win, as Curry faces at least two weeks out with an oblique tear</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Stephon Castle scored a season-high 32 as San Antonio won its 11th straight game, beating Golden State 123&ndash;85 in Friday&rsquo;s NBA Cup action. The Warriors learned that Stephen Curry will miss at least two weeks with a torn oblique. In Miami, Bam Adebayo and Giannis Antetokounmpo scored 37 apiece as the Heat beat Cleveland 133&ndash;121, moving to 2&ndash;0 and the top of East Group B.</p>
+          <p>Elsewhere, Indiana held off the Knicks 106&ndash;104 behind 19 from Pascal Siakam. Chicago ended an eight-game skid by beating Atlanta 125&ndash;117 in overtime, with Norman Powell scoring 33, including nine in the extra period. Memphis put 10 players in double figures, tying an NBA record, in a 142&ndash;111 win at New Orleans. Franz Wagner&rsquo;s 35 points and 12 assists sank Milwaukee, which has now lost nine straight.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.espn.com/nba/recap/_/gameId/401909302">ESPN recap (Spurs&ndash;Warriors, Nov 13)</a>, <a href="https://www.espn.com/nba/recap?gameId=401909298">ESPN recap (Heat&ndash;Cavaliers, Nov 13)</a>, <a href="https://www.espn.com/nba/recap?gameId=401909296">ESPN recap (Pacers&ndash;Knicks, Nov 13)</a>, <a href="https://www.espn.com/nba/recap/_/gameId/401909299">ESPN recap (Bulls&ndash;Hawks, Nov 13)</a>, <a href="https://www.espn.com/nba/recap?gameId=401909300">ESPN recap (Grizzlies&ndash;Pelicans, Nov 13)</a>, <a href="https://www.espn.com/nba/recap?gameId=401909297">ESPN recap (Magic&ndash;Bucks, Nov 13)</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
