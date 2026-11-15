@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Sunday, November 15, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+<!-- EVENING:SLOT:START -->
+<!-- EVENING:SLOT:END -->
+
+<!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Courts &middot; Interior &middot; Washington</span>
+          <h2 class="story-headline">A federal judge temporarily blocks the administration from closing East Potomac Park, a day before Trump&rsquo;s golf-course redevelopment was set to begin</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Saturday, U.S. District Judge Ana Reyes issued a two-week temporary restraining order. It bars the federal government from closing East Potomac Park and its public golf links in Washington. The course had been due to close on Sunday for a planned 15-month rebuild into a championship venue designed by Tom Fazio. The order says the park &ldquo;shall remain open and accessible to the public,&rdquo; except for routine, temporary closures to deal with imminent safety threats. It does not require the government to keep running golf operations, but it says the administration &ldquo;cannot use the absence of golf operations as a reason to exclude the public.&rdquo; Outlets differ on how broadly to describe the order. AP called it a temporary halt to work at the course, while NBC and local outlets stressed that it covers the park&rsquo;s regular operating hours.</p>
+          <p>The DC Preservation League and two local golfers sued in February. They argue the plan violates the 1897 act of Congress that created the park, and they also allege that debris from the East Wing demolition was dumped on the course. Reyes again cited Trump&rsquo;s own social media posts as evidence that the plan was final, and she questioned the Justice Department&rsquo;s last-minute safety rationale for the closure. In late October she had issued a 70-page opinion requiring 10 days&rsquo; notice before any closure or &ldquo;irreversible&rdquo; design changes. The Justice Department said that &ldquo;nothing in the Court&rsquo;s order precludes planning&rdquo; for the course to continue. The Post reports that the government is also objecting to a special master reviewing its lawyers&rsquo; conduct in the case. Trump denies the plaintiffs&rsquo; claims.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece on the ruling from Mother Jones, Vox, Slate or Guardian opinion could be verified, so none is summarized here.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece on the ruling from National Review, The Dispatch, the WSJ editorial page or Reason could be verified, so none is summarized here.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://edition.cnn.com/2026/11/14/politics/judge-east-potomac-park-golf-course-block">CNN, Nov 14</a>, <a href="https://www.nbcnews.com/politics/trump-administration/judge-temporarily-blocks-trumps-plan-redevelop-east-potomac-golf-cours-rcna609366">NBC News, Nov 14</a>, <a href="https://www.huffpost.com/entry/trump-golf-course_n_6af91055e4b0e2644ec840ce">AP via HuffPost</a>, <a href="https://thehill.com/regulation/court-battles/6221069-judge-blocks-east-potomac-park-closure/">The Hill</a>, <a href="https://wjla.com/news/local/east-potomac-park-golf-links-hains-point-washington-dc-donald-trump-redevelopment-ana-reyes-federal-court-temporary-restraining-order-national-links-trust">WJLA</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Health &middot; Medicaid</span>
+          <h2 class="story-headline">CMS lets states hold off for six months on cutting anyone from Medicaid over the new work requirement, though the rule still formally starts Jan. 1</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The Centers for Medicare &amp; Medicaid Services announced Friday that states may opt into a &ldquo;hold harmless&rdquo; period running through June 30, 2027. During that period, states can check whether enrollees meet the new work-and-community-engagement requirement. However, they cannot deny applications or disenroll otherwise eligible people solely for failing to meet it. States that want the option must notify CMS by December 11. The statutory start date of January 1 cannot be moved by the agency, so what CMS has delayed is enforcement. It told states to keep working toward full implementation and to test their systems end to end.</p>
+          <p>The requirement comes from last year&rsquo;s Republican budget law. The Congressional Budget Office projects it will leave about 5 million fewer people enrolled in Medicaid over a decade. Nebraska, which started early in May, is the main test case: state figures show more than 1,000 people lost coverage or were denied it through August. A coalition of 26 states had sued over the rollout. Sarah Lueck of the Center on Budget and Policy Priorities said the move &ldquo;lets states delay the harm.&rdquo; Democrats, who will control both chambers in January, have said that repealing the law&rsquo;s Medicaid cuts, including the work rules, will be a priority.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window piece on the delay from Mother Jones, Vox, Slate or Guardian opinion could be verified. The objection in news coverage is from advocates, not opinion outlets: most people subject to the rule already work, and paperwork rather than idleness drives coverage losses.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece on the delay from National Review, The Dispatch, the WSJ editorial page or Reason could be verified, so none is summarized here.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/health/2026/11/13/states-can-delay-controversial-medicaid-work-requirement-six-months/">Washington Post, Nov 13</a>, <a href="https://www.kff.org/quick-insights/cms-announces-optional-6-month-delay-for-enforcing-medicaid-work-requirements/">KFF</a>, <a href="https://thehill.com/policy/healthcare/6220069-trump-delays-medicaid-work-requirements/">The Hill</a>, <a href="https://www.fiercehealthcare.com/regulatory/trump-administration-delays-enforcement-medicaid-work-requirements-six-months">Fierce Healthcare</a>, <a href="https://www.shawlocal.com/news/2026/11/14/trump-delays-changes-to-medicaid-policy-work-requirements-by-6-months/">Shaw Local, Nov 14</a>, <a href="https://www.forbes.com/sites/jessepines/2026/11/15/medicaid-work-requirements-are-delayed-heres-what-happens-next/">Forbes, Nov 15</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Iran war &middot; Strait of Hormuz</span>
+          <h2 class="story-headline">Since the midterms, Trump has backed away from both new strikes and new talks with Iran, AP reports, leaving the region unsure where the war is headed</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>An AP analysis published Saturday finds that Trump&rsquo;s statements since the November 3 elections point in several directions at once. Days after threatening to &ldquo;destroy&rdquo; Iran, he called further strikes &ldquo;quite unlikely.&rdquo; He then said &ldquo;we don&rsquo;t need a deal with Iran,&rdquo; while also stepping back from more rounds with Tehran&rsquo;s negotiators, as the conflict nears its eighth month. The Post reports that the White House is presenting the &ldquo;status quo&rdquo; of a naval blockade and economic pressure as a victory. Vice President JD Vance, the lead negotiator, has publicly tied the war and the resulting energy shock to Republican midterm losses.</p>
+          <p>On the water, the stalemate is not quiet. On Saturday Iran&rsquo;s Revolutionary Guards said two more oil tankers had exploded after hitting mines in the strait, and other Iranian reports put the total at three. They said the ships had switched off their transponders and were using an &ldquo;unauthorised&rdquo; route. The claims could not be independently verified. The U.S. military says it has cleared the main shipping lanes of mines, and a Guards spokesman challenged Washington to &ldquo;prove&rdquo; that with independent evidence. Tehran continues to require ships to obtain its permission to transit the strait.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/politics/articles/2026-11-14/with-shifting-iran-rhetoric-following-us-elections-trump-leaves-mideast-in-limbo-about-path-ahead">AP via U.S. News, Nov 14</a>, <a href="https://www.aljazeera.com/features/2026/11/13/why-is-trump-saying-no-deal-necessary-with-iran-as-he-sidelines-jd-vance">Al Jazeera, Nov 13</a>, <a href="https://www.nzherald.co.nz/world/iran-revolutionary-guards-say-2-oil-tankers-have-been-hit-by-mines-in-hormuz/NTDBFFDKYNCXTP2VY6YIAXXJ3E/">AFP via NZ Herald</a>, <a href="https://www.manilatimes.net/2026/11/15/world/americas-emea/iran-3-oil-tankers-hit-naval-mines-in-strait-of-hormuz/2470080">Manila Times, Nov 15</a>, <a href="https://www.washingtonpost.com/politics/">Washington Post politics</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Gaza &middot; EU &middot; Humanitarian</span>
+          <h2 class="story-headline">The EU demands that Israel let &ldquo;immediate, unimpeded&rdquo; aid into flood-hit Gaza, and Israel calls the statement &ldquo;completely unbalanced&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Saturday, the office of EU foreign policy chief Kaja Kallas called on Israel to reopen all Gaza crossings and let shelter materials, medical equipment and other aid flow without restriction after winter flooding. The statement said Israel &ldquo;must enable the work of the UN and its agencies, and humanitarian organisations including NGOs.&rdquo; It also called for Israel&rsquo;s full withdrawal and for full implementation of UN Security Council Resolution 2803, including the disarmament of Hamas. Aid groups say stocks of tents, tarpaulins and blankets inside Gaza are nearly exhausted. UNICEF says heavy rain has directly affected at least 106,000 people, and the WHO says close to a million displaced people live in flood-exposed areas.</p>
+          <p>Israel&rsquo;s Foreign Ministry said the statement &ldquo;rewards Hamas&rsquo;s refusal to disarm.&rdquo; COGAT, the military body that handles aid, said more than 93,000 tents and over 8,600 trucks of winter supplies had entered Gaza. It blamed UN agencies and NGOs for leaving about half of approved requests uncollected. Neither side&rsquo;s figures have been independently verified. The same day, Israel said a targeted strike had killed the commander of Hamas&rsquo;s Rafah Brigade. The episode shows how strained the U.S.-backed ceasefire arrangement remains as the reconstruction-versus-disarmament standoff drags on.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.aljazeera.com/news/2026/11/14/eu-calls-for-immediate-humanitarian-access-to-gaza">Al Jazeera, Nov 14</a>, <a href="https://www.timesofisrael.com/liveblog_entry/eu-demands-israel-grant-immediate-unimpeded-flood-aid-to-gaza/">Times of Israel</a>, <a href="http://www.jpost.com/israel-news/article-914889">Jerusalem Post (Israeli response)</a>, <a href="https://themedialine.org/headlines/eu-demands-more-gaza-aid-access-as-cogat-reports-thousands-of-winter-supply-deliveries/">The Media Line</a>, <a href="https://middleeastmonitor.com/20261114-eu-urges-israel-to-reopen-gaza-crossings-allow-unimpeded-humanitarian-aid">Middle East Monitor, Nov 14</a> <em>(Read through search excerpts only; no Tier-1 wire copy was retrievable.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">France &middot; Protest</span>
+          <h2 class="story-headline">France&rsquo;s protest movement marches for a fifth straight Saturday against living costs and a police-protection bill, with smaller but still six-figure crowds</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The Interior Ministry counted about 106,000 demonstrators nationwide on Saturday, 24,000 of them in Paris. That is down from 146,000 nationwide and 46,000 in Paris a week earlier. Unions put Saturday&rsquo;s turnout at 200,000. The rallies were largely peaceful, but police fired tear gas in Paris, Bordeaux and Nantes after some protesters set off fireworks. Authorities reported 219 arrests by early evening, including 45 in Paris, and a few officers were lightly injured.</p>
+          <p>The movement, which some outlets describe as a new &ldquo;Yellow Vest&rdquo; wave, has grown over more than a month of high-school blockades, strikes and marches. It combines anger over the cost of living and strained public services with opposition to a bill that would give police more legal protection. The bill has passed the National Assembly and awaits the Senate. Lawyers for protesters say police force at earlier marches caused serious injuries. Officials blame far-left radicals for the violence, and coverage divides along those lines. More protests are planned.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.aljazeera.com/news/2026/11/14/more-than-100000-rally-across-france-in-new-yellow-vest-protests">Al Jazeera, Nov 14</a>, <a href="https://euronews.com/2026/11/14/france-sees-fifth-consecutive-saturday-of-nationwide-protests">Euronews, Nov 14</a>, <a href="https://www.manilatimes.net/2026/11/15/world/americas-emea/french-protesters-chant-against-inflation-and-police/2470183">AFP via Manila Times, Nov 15</a>, <a href="https://www.cnbc.com/2026/11/08/france-protests-clashes-arrests.html">CNBC, Nov 8 (prior week&rsquo;s figures)</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE / TECH / ENERGY / CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Space &middot; SpaceX</span>
+          <h2 class="story-headline">SpaceX catches a returning Starship upper stage with the launch tower&rsquo;s arms for the first time, completing Flight 15 after the booster catch was aborted</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Saturday the Starship ship returned from orbit to Starbase in South Texas, and the tower&rsquo;s &ldquo;chopsticks&rdquo; arms caught it. It was the first time SpaceX had recovered the upper stage this way, after years of booster catches. Flight 15 had already reached orbit and deployed 26 Starlink V3 satellites, the heavier next-generation version that Starship was built to carry. The planned &ldquo;double catch&rdquo; fell short on the first stage. The Super Heavy booster hit a problem during descent, aborted its catch, diverted to the Gulf of Mexico and exploded before reaching the water. Space.com reports that SpaceX attributed the abort to a guidance issue and is still investigating.</p>
+          <p>Catching the ship is the key step toward the full and rapid reuse that Starship&rsquo;s economics depend on. Until now, every upper stage had been expended or lost, and recovering it is what would let SpaceX turn ships around like aircraft for Starlink launches, orbital refueling tests and NASA&rsquo;s Artemis lunar lander. Outlets differ on parts of the timeline because the launch came on Friday and the catch on Saturday.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnn.com/2026/11/13/science/live-news/spacex-starship-flight-15-ship-catch">CNN live coverage, Nov 13&ndash;14</a>, <a href="https://www.engadget.com/2316926/watch-spacex-attempt-to-catch-the-starship-upper-stage-for-the-first-time/">Engadget</a>, <a href="https://www.space.com/space-exploration/launches-spacecraft/spacex-says-starship-flight-15-booster-aborted-chopsticks-landing-catch-after-launch-due-to-guidance-issue-video">Space.com</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Climate &middot; COP31</span>
+          <h2 class="story-headline">As COP31 enters its final week, UN climate chief Simon Stiell urges negotiators to speed up while major producers resist firm fossil-fuel language</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Stiell told delegates in Antalya on Saturday to take on the hardest issues without delay. He called the talks constructive but acknowledged that significant differences remain. The central divide is over fossil fuels. According to Reuters, major oil, gas and coal producers and consumers are resisting firm new targets or a clearly mapped transition away from fossil fuels. That makes it harder for host T&uuml;rkiye and Australia, which leads the negotiations, to land an agreement that advocates would consider ambitious.</p>
+          <p>T&uuml;rkiye is promoting an electrification proposal, but it does not require the additional power to come from renewable sources, which has disappointed delegations that want a firmer transition roadmap. Australia&rsquo;s Chris Bowen, COP31&rsquo;s President of Negotiations, has said the first draft of the overall agreement should arrive early this week. That text will show whether fossil-fuel language survives into the endgame.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/world/articles/2026-11-14/un-climate-chief-urges-speed-as-cop31-confronts-fossil-fuel-divide">Reuters via U.S. News, Nov 14</a>, <a href="https://www.newarab.com/news/un-climate-chief-urges-speed-cop31-confronts-fossil-fuel-divide">The New Arab</a>, <a href="https://wmbdradio.com/2026/11/14/un-climate-chief-urges-speed-as-cop31-confronts-fossil-fuel-divide/">Reuters via WMBD, Nov 14</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; AI &middot; Markets</span>
+          <h2 class="story-headline">Investors flock to Anthropic&rsquo;s roughly $64 billion IPO but question how long its AI lead can last, Reuters reports, ahead of pricing on Wednesday</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Bankers and investors told Reuters that institutional demand for Anthropic&rsquo;s offering is running ahead of the early days of SpaceX&rsquo;s roadshow, which they called impressive for a deal this large. The roadshow runs until Wednesday, when the roughly $64 billion offering is expected to price. One aggregator, citing Reuters, says the order book was about six times oversubscribed by the end of Thursday. That figure was not confirmed in the syndicated copy, so treat it with caution. <em>(Disclosure: Anthropic makes the AI model that compiles this brief.)</em></p>
+          <p>The questions investors are asking concern durability. They want to know whether the company can stay ahead as Alphabet&rsquo;s Google and others catch up, whether Claude&rsquo;s lead in coding can extend into broader knowledge work, and whether premium pricing holds if rivals offer comparable models. Some are cautious about the valuation amid a wider shakeout in the AI sector, and they say limited disclosure leaves revenue forecasts spread widely. Bank models assume $270&ndash;280 billion in revenue in 2028, while one investor sitting out the deal forecasts about 30 percent less.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.thestar.com.my/tech/tech-news/2026/11/14/exclusive-investors-flock-to-anthropic-ipo-but-question-durability-of-ai-lead">Reuters via The Star, Nov 14</a>, <a href="https://kelo.com/2026/11/13/exclusive-investors-flock-to-anthropic-ipo-but-question-durability-of-ai-lead/">Reuters via KELO, Nov 13</a>, <a href="https://www.timeslive.co.za/news/sci-tech/2026-11-14-investors-flock-to-anthropic-ipo-but-question-durability-of-ai-lead/">TimesLIVE, Nov 14</a>, <a href="https://calcalistech.com/ctechnews/article/6reux2chn">Calcalist</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">English Football &middot; Home Nations</span>
+          <h2 class="story-headline">Haaland&rsquo;s goal and assist sink Wales 3&ndash;1 in Oslo, leaving them facing relegation, while Terry Devlin&rsquo;s stunner puts Northern Ireland one game from promotion</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>With the Premier League paused for the international break, Saturday&rsquo;s domestic football news came from the home nations. In Oslo, Antonio Nusa and Andreas Schjelderup scored for Norway and Erling Haaland added a late penalty, his 66th international goal and a record 23rd in the Nations League. Haaland also set up a goal. David Brooks pulled one back for Wales. Craig Bellamy&rsquo;s side are bottom of Group A4 on three points and almost certain to face a relegation play-off in March. Sky Sports notes that the result also costs them a top seeding for the Euro 2028 qualifying draw.</p>
+          <p>At Windsor Park, Michael O&rsquo;Neill&rsquo;s Northern Ireland beat Ukraine 1&ndash;0. Terry Devlin, scoring his first international goal, smashed in the winner in the 68th minute, after Jamie Donley had a goal ruled out for offside following a VAR review. Northern Ireland top League B Group 2 and are the only team in the competition yet to concede. A draw in Hungary on Tuesday would secure their first promotion to League A. Donley will miss that game through suspension. England, already through to the quarter-finals, finish their group against Spain in Madrid today.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.espn.com/soccer/report/_/gameId/401861165">ESPN report (Norway&ndash;Wales, Nov 14)</a>, <a href="https://www.skysports.com/football/news/13612155/norway-3-1-wales-craig-bellamys-side-suffer-defeat-in-oslo-with-threat-of-nations-league-relegation-now-looming">Sky Sports</a>, <a href="https://beinsports.com/en-us/soccer/uefa-nations-league/articles/norway-3-1-wales-haaland-keeps-quarter-final-hopes-alive-2026-11-14">beIN Sports, Nov 14</a>, <a href="https://www.nigfooty.com/2026/11/northern-ireland-beat-ukraine-as-terry.html">NI Football Blog</a>, <a href="https://www.newsletter.co.uk/sport/football/northern-ireland/how-they-rated-northern-ireland-player-scores-against-ukraine-with-one-9-on-another-big-nations-league-night-9351698">News Letter</a>, <a href="https://sports.yahoo.com/articles/managers-dream-put-ni-one-232403903.html">Yahoo Sports</a> <em>(Read through search excerpts only. BBC Sport pages were not reachable this run.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal</span>
+          <h2 class="story-headline">Declan Rice says a new long-term Arsenal contract is &ldquo;hopefully on the horizon,&rdquo; and Arsenal Women host London City Lionesses at the Emirates today</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Speaking at England&rsquo;s press conference before today&rsquo;s game against Spain, Rice said he hopes to agree a new deal soon and called himself &ldquo;extremely lucky&rdquo; to be at the club. Arseblog News led with the story, under the headline that Rice &ldquo;hopes to sign new Arsenal deal soon.&rdquo; His current contract, signed when he joined from West Ham for &pound;105m in 2023, runs to summer 2028 with a club option for a further year. ESPN&rsquo;s sources say talks have run for several months. Mikel Arteta has called it &ldquo;a matter of time,&rdquo; and reports say the new deal would put Rice level with Bukayo Saka as the club&rsquo;s top earner. Saka is still out with a quad injury. Arseblog News also has an exclusive saying Arsenal are considering a major redevelopment of the London Colney training ground.</p>
+          <p>On the pitch, the only Arsenal football this weekend is Ren&eacute;e Slegers&rsquo; women&rsquo;s side, who host third-placed London City Lionesses at the Emirates this afternoon (kick-off 4:30 p.m. UK) after Thursday&rsquo;s draw at Barcelona. The men lead the Premier League by six points and return at Newcastle on November 21. No new in-window Arsenal reporting from The Athletic could be reached.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.news/2026/11/rice-hopes-to-sign-new-arsenal-deal-soon/">Arseblog News</a>, <a href="https://www.espn.com/soccer/story/_/id/50483117/declan-rice-arsenal-new-contract-england">ESPN</a>, <a href="https://www.vavel.com/en/football/2026/11/14/arsenal/1279286-declan-rice-confirms-new-long-term-arsenal-contract-is-hopefully-on-the-horizon.html">VAVEL, Nov 14</a>, <a href="https://www.caughtoffside.com/2026/11/15/arsenal-handed-huge-declan-rice-boost-midfielder/">CaughtOffside, Nov 15</a> <em>(Read through search excerpts only; arseblog.news could not be fetched directly and The Athletic&rsquo;s Arsenal desk was not reachable.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">College Football &middot; Week 12</span>
+          <h2 class="story-headline">Arch Manning shakes off three interceptions to beat LSU 22&ndash;21 with three seconds left, and No. 2 Utah survives Arizona 40&ndash;39 to stay unbeaten</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>In Baton Rouge, Texas trailed 21&ndash;10 in the third quarter after Dilin Jones&rsquo;s 44-yard touchdown run for LSU. Down 21&ndash;16, Manning led a two-minute drive from his own 42 and threw a 4-yard touchdown to Raleek Brown with three seconds left. He finished 19 of 35 for 174 yards, one touchdown and three interceptions, and Texas was outgained 366&ndash;273. CBS Sports says the result ends LSU&rsquo;s playoff hopes under Lane Kiffin. Wire reports list Texas at No. 8 or No. 6 depending on the poll.</p>
+          <p>Later, in Tucson, Arizona&rsquo;s Noah Fifita threw for 356 yards and three touchdowns, and the Wildcats led 39&ndash;33 with just over three minutes left. Utah&rsquo;s Devon Dampier answered with a 70-yard touchdown pass to Creed Whittemore with 2:25 to go, and a fourth-down stop sealed it. Dampier accounted for four touchdowns, and the Utes moved to 10&ndash;0 overall and 7&ndash;0 in the Big 12. Elsewhere, Florida beat Kentucky 21&ndash;14 and Arkansas forced four turnovers in a 34&ndash;6 rout of No. 17 South Carolina.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.hawaiitribune-herald.com/2026/11/15/sports/arch-manning-redeems-himself-with-late-td-to-lift-texas-past-lsu/">AP via Hawaii Tribune-Herald, Nov 15</a>, <a href="https://www.cbssports.com/college-football/news/texas-lsu-live-updates-score-college-football-week-11/live/">CBS Sports</a>, <a href="https://www.espn.com/college-football/story/_/id/50488650/no-2-utah-survives-late-70-yard-td-thriller-vs-arizona">ESPN</a>, <a href="https://www.wsls.com/sports/2026/11/15/dampier-accounts-for-4-tds-no-2-utah-remains-undefeated-with-40-39-win-over-no-22-arizona/">AP via WSLS, Nov 15</a>, <a href="https://www.centralgasports.com/the-latest-coverage-1/2026/11/15/saturdays-college-football-report-roundups-by-conference-and-region-plus-top-25">Central Georgia Sports, Nov 15</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
