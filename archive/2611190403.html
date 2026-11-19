@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Thursday, November 19, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+<!-- EVENING:SLOT:START -->
+<!-- EVENING:SLOT:END -->
+
+<!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">House &middot; Oversight &middot; Investigations</span>
+          <h2 class="story-headline">Incoming Oversight chair Robert Garcia tells Vance, two Trump sons and top officials to preserve records for next year&rsquo;s investigations</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Rep. Robert Garcia of California, the top Democrat on the House Oversight Committee and its expected chairman when Democrats take the majority in January, sent document-preservation letters on Wednesday to people in President Trump&rsquo;s circle. Reported recipients include Vice President JD Vance, two of Trump&rsquo;s sons, Jared Kushner, Susie Wiles, Stephen Miller, Attorney General Todd Blanche and former Homeland Security Secretary Kristi Noem. Outlets differ on the count: CBS News reports 12 letters, NPR 13. Garcia called the letters &ldquo;just the beginning.&rdquo;</p>
+          <p>The letters cover the Trump family&rsquo;s business dealings, including the sons&rsquo; stakes in World Liberty Financial, as well as Homeland Security spending and the administration&rsquo;s handling of the Epstein files and of Ghislaine Maxwell&rsquo;s transfer to a Texas prison camp. They are not legally binding: they do not compel anyone to turn over documents, but they signal what Democrats intend to pursue once they hold the committee&rsquo;s subpoena power. White House counsel had earlier warned that such threats against the administration might themselves be criminal. Garcia replied that the probes will go ahead.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Search turned up no in-window piece on the letters from Mother Jones, Vox, Slate or Guardian opinion, so none is summarized here. Left-leaning outlets such as MS NOW and Common Dreams framed the letters as Democrats refusing to &ldquo;bend the knee&rdquo; to the White House warning, and as overdue accountability for conflicts of interest.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Search turned up no in-window piece on the letters from National Review, The Dispatch, the WSJ editorial page or Reason, so none is summarized here. Fox News coverage framed the letters as a &ldquo;sweeping&rdquo; push aimed at the president&rsquo;s family, which echoes the White House position that the planned probes are partisan.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/11/18/g-s1-154147/robert-garcia-house-democrats-investigations-trump-administration">NPR, Nov 18</a>, <a href="https://washingtonpost.com/politics/2026/11/18/leading-house-democrat-targets-trumps-inner-circle-first-investigations">Washington Post, Nov 18</a>, <a href="https://www.cbsnews.com/news/robert-garcia-letters-trump-house-oversight-and-government-reform-committee-investigations/">CBS News</a>, <a href="https://spectrumlocalnews.com/us/snplus/politics/2026/11/18/robert-garcia-letter-trump-family-top-officials-investigations">Spectrum News, Nov 18</a>, <a href="https://www.nbcnews.com/politics/congress/democrat-investigations-warn-trump-allies-vance-donald-jr-eric-rcna609904">NBC News</a>, <a href="https://www.npr.org/2026/11/12/nx-s1-6037540/trump-white-house-democrats-investigations-robert-garcia">NPR, Nov 12 (background)</a>, <a href="https://www.ms.now/news/democrats-house-oversight-robert-garcia-trump-corruption">MS NOW</a>, <a href="https://www.foxnews.com/politics/house-dems-target-trump-family-jd-vance-sweeping-new-investigation-push">Fox News</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Courts &middot; Washington &middot; Monuments</span>
+          <h2 class="story-headline">Judge Chutkan extends her block on Trump&rsquo;s 250-foot Memorial Circle arch by two weeks while she weighs an injunction</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>U.S. District Judge Tanya Chutkan on Wednesday extended for 14 days her order barring the administration from breaking ground on a planned 250-foot arch at Memorial Circle, the traffic circle by the Arlington Memorial Bridge near Arlington National Cemetery. The order had been due to lapse on Thursday and now runs until at least December 3 while she decides on requests for a preliminary injunction. She first halted construction on November 5, the day the Interior Department gave the project final approval. Chutkan said no material circumstance had changed since she found that the District of Columbia and Virginia were entitled to the temporary restraining order.</p>
+          <p>The challengers include D.C., Virginia, Vietnam War veterans and an architectural historian, who argue that the arch would harm both jurisdictions and needs congressional approval. The administration says Congress authorized a monument at Memorial Circle decades ago. A separate suit by the Arlington County Board goes to a federal judge in Virginia for arguments on Friday. Wednesday&rsquo;s order does not cancel the project or resolve the lawsuits.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Search turned up no in-window piece on the ruling from Mother Jones, Vox, Slate or Guardian opinion, so none is summarized here. Critics, including Washington Post architecture critic Philip Kennicott earlier this year, have called the arch&rsquo;s symbolism confused and an affront to the cemetery next door.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Search turned up no in-window piece on the ruling from National Review, The Dispatch, the WSJ editorial page or Reason, so none is summarized here. Right-leaning coverage such as RedState&rsquo;s has argued that the arch is authorized by a 1925 law and that the case shows judges stretching to stop a lawful presidential project. Conservative columnist George Will, by contrast, called the arch an incongruous knockoff of the Arc de Triomphe in January, so the right is not united behind it.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/politics/2026/11/18/judge-rules-trump-arch/">Washington Post, Nov 18</a>, <a href="https://www.wsls.com/news/politics/2026/11/18/judge-issues-14-day-extension-of-order-blocking-trumps-memorial-arch-in-dc/">AP via WSLS, Nov 18</a>, <a href="https://www.arlnow.com/2026/11/18/judge-extends-order-blocking-memorial-circle-arch-for-two-more-weeks/">ARLnow, Nov 18</a>, <a href="https://washingtontimes.com/news/2026/nov/18/trumps-triumphal-arch-blocked-another-two-weeks">Washington Times, Nov 18</a>, <a href="https://redstate.com/smoosieq/2026/11/06/chutkan-puts-the-brakes-on-trumps-triumphal-arch-and-a-century-old-law-takes-center-stage-n2209113">RedState, Nov 6</a>, <a href="https://www.washingtonpost.com/opinions/2026/01/09/donald-trump-arch-oval-office/">George F. Will, Washington Post, Jan 9</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">China &middot; Russia &middot; U.S. &middot; Nuclear arms</span>
+          <h2 class="story-headline">Trump, Xi and Putin sign a four-point Shenzhen declaration saying &ldquo;a nuclear war cannot be won,&rdquo; with nothing on Ukraine</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The first three-way summit of the American, Chinese and Russian leaders took place on Thursday on the sidelines of APEC in Shenzhen, and Trump has since left China. China and Russia published identical texts of a joint declaration with a preamble and four points, on UN reform, petroleum supplies, the International Criminal Court, and nuclear risk. The three reaffirmed that &ldquo;a nuclear war cannot be won and must never be fought&rdquo; and agreed to &ldquo;engage in dialogue on reducing nuclear risks and preventing nuclear proliferation.&rdquo; The ICC passage stresses state consent and the immunity of officials, and says such courts should not abuse their jurisdiction. Commentators linked it to the court&rsquo;s 2023 arrest warrant for Putin. Xi called the meeting &ldquo;positive, constructive, fruitful.&rdquo; Trump and Putin also met one-on-one for 42 minutes.</p>
+          <p>The declaration does not mention Ukraine, although Trump had said he wanted China and the U.S. to help end the war. On Iran, Trump said the U.S. and China share an interest in oil flowing through the Strait of Hormuz and that &ldquo;we&rsquo;re not going to let Iran have a nuclear weapon.&rdquo; He called for nuclear arms reductions and remarked that countries &ldquo;only need about 10&rdquo; nuclear weapons, while acknowledging that others would be hard to persuade. Before the meeting, analysts quoted by France 24 had expected more symbolism than breakthroughs, and nothing reported so far goes beyond shared principles and a promise of further talks.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.nbcnews.com/politics/trump-administration/live-blog/trump-xi-putin-china-apec-congress-2026-live-updates-rcna609888">NBC News live, Nov 19</a>, <a href="https://www.france24.com/en/asia-pacific/20261119-xi-trump-putin-talks-live-china-us-russia-leaders-hold-landmark-three-way-meeting">France 24 live, Nov 19</a>, <a href="https://www.npr.org/2026/11/18/nx-s1-6040432/trump-xi-and-putin-shenzhen-china-russia-usa">NPR, Nov 18&ndash;19</a>, <a href="https://www.aljazeera.com/news/2026/11/19/what-do-trump-putin-and-xi-want-from-their-shenzhen-meeting">Al Jazeera, Nov 19</a>, <a href="https://edition.cnn.com/2026/11/17/politics/live-news/trump-visit-china-philippines">CNN live</a>, <a href="https://tass.com/politics/2221489">TASS</a>, <a href="https://www.newsdrum.in/international/from-nuclear-weapons-to-icc-jurisdiction-what-trump-xi-putin-joint-declaration-says-and-omits-12823740">Newsdrum (PTI)</a> <em>(Read through search excerpts only; full declaration text not independently checked.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Israel &middot; Gaza &middot; Ceasefire</span>
+          <h2 class="story-headline">Israel says its raid beyond the Yellow Line in central Gaza is over after a day, as Hamas calls it a &ldquo;blatant&rdquo; truce violation</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The Israeli military said on Thursday that its ground operation near the Bureij and Nuseirat camps in central Gaza was &ldquo;completed.&rdquo; Tanks crossed the Yellow Line into Hamas-held territory on Wednesday in the first such ground raid since the U.S.-brokered ceasefire of October 2025. The army said it was destroying a tunnel west of the line that posed &ldquo;an immediate and direct threat&rdquo; to its troops, and described the raid as a response to Hamas violations. COGAT, the Israeli body that handles civilian affairs in the territories, said residents could move freely again and that the main Salah al-Din road had reopened. Hamas-run media said about 6,000 people fled during the raid, a figure that has not been independently confirmed.</p>
+          <p>The raid is over, but the conditions that led to it remain. By an AFP count based on Gaza health ministry figures, more than 1,600 Palestinians have been killed since the ceasefire began. The Israeli military says seven soldiers and a civilian contractor have been killed in the same period, a higher figure than the five soldiers in the Reuters account cited on Wednesday. Hamas accepted the Board of Peace disarmament roadmap in July and Israel rejected it, and the Board&rsquo;s latest report to the UN Security Council faults both sides.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://english.alarabiya.net/News/middle-east/2026/11/19/israel-army-says-completed-central-gaza-ground-operation">Al Arabiya (AFP), Nov 19</a>, <a href="https://www.arabnews.com/middle-east/israel-army-says-completed-central-gaza-ground-operation-3012886">Arab News (AFP)</a>, <a href="https://www.myjoyonline.com/israeli-military-completes-ground-operation-in-gaza-beyond-yellow-line/">MyJoyOnline</a>, <a href="https://www.ibtimes.com/israeli-tanks-advance-gaza-ceasefire-line-raid-3809908">IBTimes (Reuters)</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Saudi Arabia &middot; Yemen &middot; Iran war</span>
+          <h2 class="story-headline">Saudi-led coalition says it shot down Houthi cruise missiles fired toward Riyadh as a blast is heard over the capital</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>A loud blast was heard in Riyadh on Wednesday after the Saudi-led coalition said its air defences had intercepted and destroyed Houthi cruise missiles. Coalition spokesman Turki al-Maliki said two missiles were aimed at the capital. Other reports, citing the Saudi Press Agency, put the target in southern Saudi Arabia, and one account describes four ballistic missiles fired south on Thursday morning. The accounts have not been reconciled, and neither the Houthis nor other Saudi authorities had immediately confirmed details. The Houthis have stepped up attacks on Saudi airports, ports and oil sites during the U.S.-Israeli war with Iran, and Saudi Arabia has answered with airstrikes in Yemen.</p>
+          <p>This widens a week of escalation around the Gulf: Iranian drone attacks on Bahrain and on the Ali Al-Salem air base in Kuwait, the U.S. strike on Iran&rsquo;s Qeshm Island, and the attack on an ADNOC-operated ship in the Strait of Hormuz. The State Department has reissued security warnings for Americans in Bahrain and Saudi Arabia. Trump said the war would end &ldquo;one way or the other&rdquo; and that he wants a &ldquo;lasting&rdquo; deal. The Washington Post, reporting from Bahrain, wrote that he appears eager to put the unpopular war behind him even as the attacks continue.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.france24.com/en/middle-east/20261118-middle-east-live-kuwait-bahrain-report-drone-and-missile-attacks">France 24 live, Nov 18</a>, <a href="https://www.washingtonpost.com/world/2026/11/18/trump-is-trying-put-iran-war-behind-him-its-not-over/">Washington Post, Nov 18</a>, <a href="https://www.koreatimes.co.kr/world/20261119/iran-widens-gulf-attacks-by-targeting-a-us-air-base-in-kuwait-and-sites-in-bahrain">Korea Times (AP), Nov 19</a>, <a href="https://www.arabtimesonline.com/news/iran-backed-houthis-target-riyadh-as-saudi-coalition-intercepts-cruise-missile/">Arab Times</a>, <a href="https://gulfnews.com/world/mena/middle-east-war-houthi-missile-intercepted-over-saudi-arabia-tanker-hit-in-hormuz-iran-strikes-kuwait-and-bahrain-as-trump-demands-lasting-deal-1.500752996">Gulf News</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE / TECH / ENERGY / CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; AI safety &middot; Government audit</span>
+          <h2 class="story-headline">GAO investigators got ChatGPT, Claude, Gemini and Grok to produce &ldquo;viable&rdquo; terror attack plans in under 12 hours</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The Government Accountability Office on Wednesday released a 61-page covert-testing report (GAO-27-108814) in which investigators posing as would-be attackers got all four leading chatbots to produce attack plans in under 12 hours. Two of the systems produced plans for a mass-casualty improvised explosive device aimed at a hotel parking garage and a convention center, and others produced plans against the power grid. By &ldquo;viable,&rdquo; the GAO means a person &ldquo;would likely be able to carry out the actions.&rdquo; It did not test every step, made no recommendations, and concluded that no current generative AI system is completely immune to such misuse. The report does not say which platform produced which plan.</p>
+          <p>Google, OpenAI and SpaceXAI said the GAO tested earlier models that have since been improved. Anthropic said it does not dispute that a determined tester who lies about their purpose can extract harmful content and that it takes the finding seriously, but that it could not verify the report&rsquo;s findings. Sen. Maggie Hassan, who will chair the relevant committee in the new Congress, said AI risks will be the subject of one of her first hearings in January.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://fortune.com/2026/11/18/gao-ai-chatbots-attack-plans-hassan-patching-nsa-outages/">Fortune, Nov 18</a>, <a href="https://abcnews.com/Technology/ai-models-plan-viable-attack-plots-test-despite/story?id=138229892">ABC News</a>, <a href="https://www.wjcl.com/article/government-watchdogs-chatbots-terrorist-attack/74466494">WJCL (Hearst)</a>, <a href="https://www.unionleader.com/news/politics/hassan-gao-finds-major-chatbots-produced-terrorist-attack-plans-2ce38e7b">Union Leader</a>, <a href="https://www.ems1.com/terrorism/gao-ai-generated-attack-plans-raise-preparedness-questions-for-responders">EMS1</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Energy policy &middot; Permitting &middot; Senate</span>
+          <h2 class="story-headline">Bipartisan energy-permitting overhaul clears the Senate on a 65&ndash;31 vote, though outlets disagree on whether it was final passage</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The Senate voted 65&ndash;31 on Wednesday on the Bipartisan American Affordability and Jobs Act (S. 5653), a broad rewrite of permitting rules for energy, mining and infrastructure projects sponsored by Shelley Moore Capito, Mike Lee, Sheldon Whitehouse and Martin Heinrich. Reports disagree on what the vote was. The Center Square reports it as final passage that sends the bill to the House. Bloomberg Law and The Hill describe it as a cloture vote ending debate, with final passage expected as early as Friday. Earlier this week the bill cleared a 73&ndash;25 procedural vote.</p>
+          <p>Support thinned between votes. Heatmap notes that nearly every Republican voted yes, while some Democrats who backed the first cloture motion voted no later. Sen. Catherine Cortez Masto had said she would oppose final passage while Title III, which changes the National Historic Preservation Act, stays in the bill, and several tribal groups reaffirmed their opposition on Sunday. The House is expected to take the measure up before the lame-duck session ends next month. Utility Dive notes that Democrats&rsquo; midterm gains cast doubt on its prospects if it slips into the next Congress.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://yournews.com/2026/11/18/7273602/senate-passes-energy-permitting-overhaul-sends-to-house/">The Center Square via YourNews, Nov 18</a>, <a href="https://news.bloomberglaw.com/health-law-and-business/senate-permitting-legislation-advances-setting-up-final-push">Bloomberg Law</a>, <a href="https://thehill.com/newsletters/energy-environment/6229172-baaja-passes-another-procedural-vote">The Hill</a>, <a href="https://heatmap.news/daily/senate-vote-permitting-bil">Heatmap</a>, <a href="https://www.utilitydive.com/news/permitting-bill-advances-in-senate-but-its-future-is-uncertain-after-democ/874250/">Utility Dive</a>, <a href="https://www.cortezmasto.senate.gov/news/press-releases/cortez-masto-statement-on-permitting-reform-bill/">Sen. Cortez Masto statement</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Climate &middot; COP31 &middot; Antalya</span>
+          <h2 class="story-headline">COP31 enters its last day awaiting a new draft, with &ldquo;phase out fossil fuels&rdquo; facing rejection by the Arab Group and Russia</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Negotiators at the UN climate summit in Antalya, Turkey, were waiting on Thursday for a revised agreement text ahead of the scheduled close. Australia&rsquo;s Chris Bowen, who leads the negotiations, has said at least one more draft will come. The 18-page first draft from November 16 has two fossil-fuel passages: one calls for &ldquo;accelerated action to phase out fossil fuels, including through the immediate transition away from fossil fuels in energy systems,&rdquo; and the other restates the 2023 Dubai pledge to &ldquo;transition away.&rdquo; The Arab Group and Russia rejected the draft outright, and Saudi Arabia objected to any reference to Brazil&rsquo;s roadmap for moving away from fossil fuels. The EU&rsquo;s Wopke Hoekstra said the draft &ldquo;does not go in the right direction.&rdquo;</p>
+          <p>The talks will show whether last year&rsquo;s outcome repeats: the Bel&eacute;m summit ended with no mention of fossil fuels after producer countries blocked it. Other disputes still open include Turkey&rsquo;s proposal to raise electricity to 35% of energy use by 2035, which several governments oppose as a new sectoral target, and how much adaptation finance rich countries should provide. Bowen has called the text something to be &ldquo;whittled down,&rdquo; and the reports differ on whether the deadline falls on Thursday or Friday.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.rte.ie/news/world/2026/1119/1599773-cop31-thursday/">RT&Eacute;, Nov 19</a>, <a href="https://www.technology.org/2026/11/18/cop31-draft-fossil-fuel-phase-out-antalya-bowen/">Technology.org, Nov 18</a>, <a href="https://www.rnz.co.nz/news/environment_climate/2633254/cop31-draft-deal-calls-for-accelerated-action-to-exit-fossil-fuels">RNZ (Reuters)</a>, <a href="https://www.al-monitor.com/originals/2026/11/first-draft-cop31-deal-signals-tough-negotiations-come">Al-Monitor</a>, <a href="https://unfccc.int/news/transcript-of-cop31-press-conference-with-cop31-president-of-negotiations">UNFCCC transcript</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Astronomy &middot; Stellar evolution &middot; Andromeda</span>
+          <h2 class="story-headline">Astronomers report the first direct observation of a star spiralling to its death inside a giant companion&rsquo;s envelope</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>A paper in Nature this week describes AT 2025abao, a transient in the Andromeda Galaxy, as a &ldquo;common envelope&rdquo; event. In this stage of binary-star evolution, one star is swallowed by its swollen companion. Here a roughly 0.7-solar-mass star entered the outer layers of a roughly 7-solar-mass asymptotic-giant-branch star around 2018 and spiralled inward over seven years, which explains the system&rsquo;s steady brightening. A bright eruption in late 2025 is read as the companion merging with the giant&rsquo;s core, throwing off roughly the outer tenth of the envelope.</p>
+          <p>Common-envelope evolution is thought to produce many close binaries, including the progenitors of some gravitational-wave sources, but it has mostly been inferred from its aftermath rather than watched as it happens. The interpretation depends on modelling: a preprint version notes that the brightening could instead have been a brief pulse of nuclear energy. The authors expect new survey telescopes to find more such events.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.nature.com/articles/s41586-026-11221-z">Nature</a>, <a href="https://www.abc.net.au/news/science/2026-11-19/scientists-watch-red-giant-star-eat-another-the-size-of-our-sun/107394074">ABC News (Australia), Nov 19</a>, <a href="https://www.nanowerk.com/news2/space/newsid=70634.php">Nanowerk</a>, <a href="https://arxiv.org/abs/2611.23470">arXiv 2611.23470</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">English football &middot; Manchester United</span>
+          <h2 class="story-headline">Pochettino reports to Carrington, with a trip to Anfield first for a United side in the relegation zone</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Mauricio Pochettino arrived at Manchester United&rsquo;s Carrington training ground on Wednesday afternoon to start work as head coach, after flying overnight from the U.S. once his final U.S. national team matches were over. &ldquo;I&rsquo;m very excited to be here,&rdquo; he told club media, calling it a privilege. His first training session is scheduled for Thursday. United confirmed his appointment on November 13 on a deal reported to run to 2029, after sacking Michael Carrick following one win in 10 league games.</p>
+          <p>His first match is Sunday at Liverpool, with United in the relegation zone after their worst league start in 40 years. United are one of several clubs that changed managers over the international break: Crystal Palace also dismissed Pierre Sage. Club football resumes this weekend.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.lbc.co.uk/article/mauricio-pochettino-arrives-at-man-utd-5HjdnFq_2/">LBC, Nov 18</a>, <a href="https://sports.yahoo.com/articles/mauricio-pochettino-arrives-manchester-united-153021043.html">Yahoo Sports</a>, <a href="https://sports.yahoo.com/articles/mauricio-pochettino-delivers-first-address-210400195.html">Yahoo Sports</a>, <a href="https://www.aljazeera.com/sports/2026/11/13/manchester-united-new-manager-mauricio-pochettino-usa-soccer">Al Jazeera, Nov 13 (background)</a>, <a href="https://www.squawka.com/en/cult-corner/premier-league-international-break-managerial-changes/">Squawka</a> <em>(BBC Sport pages were not reachable this run; read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal</span>
+          <h2 class="story-headline">Arsenal mourn Double winner Peter Storey, as the Women host unbeaten Lyon tonight and Zubimendi is a doubt for Newcastle</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Peter Storey, the hard-tackling midfielder from the 1970&ndash;71 Double side, died on Tuesday at 81. Arseblog News and the obituaries note that he joined as an apprentice in 1961 and made 501 appearances, the eighth most in club history. He won the Fairs Cup in 1970, earned 19 England caps, and scored the half-volley that started the comeback against Stoke in the 1971 FA Cup semi-final at Hillsborough. The BBC&rsquo;s obituary also covers his later criminal convictions. The club will pay tribute before the Champions League match against Borussia Dortmund on November 24.</p>
+          <p>Arsenal Women play OL Lyonnes at Meadow Park on Thursday at 8pm GMT in the fifth round of the Women&rsquo;s Champions League league phase. Arsenal are fourth with eight points and Lyon are top and unbeaten with ten. For Saturday&rsquo;s match at Newcastle, Martin Zubimendi is a doubt after pulling up with a hamstring problem on Spain duty. William Saliba is in line to return after playing in a behind-closed-doors game, though Arteta&rsquo;s pre-match press conference is still to come.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.news/2026/11/peter-storey-arsenal-double-winner-dies-at-81/">Arseblog News</a>, <a href="https://footballbh.net/2026/11/18/peter-storey-obituary-arsenal-double-1971-england/">Football obituary, Nov 18</a>, <a href="https://sports.yahoo.com/articles/peter-storey-arsenal-double-winner-164600621.html">Yahoo Sports</a>, <a href="https://arseblog.news/2026/11/arsenal-v-ol-lyonnes-preview-3/">Arseblog News, Lyon preview</a>, <a href="https://www.uefa.com/womenschampionsleague/news/02a4-206f58425525-2754214ad6c3-1000--arsenal-vs-ol-lyonnes-women-s-champions-league-preview-wh/">UEFA</a>, <a href="https://dailycannon.com/arsenal-injury-updates/">Daily Cannon</a>, <a href="https://sports.yahoo.com/articles/william-saliba-steps-recovery-latest-213728191.html">Yahoo Sports (Saliba)</a> <em>(The Athletic was not reachable this run; read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">NBA &middot; Wednesday</span>
+          <h2 class="story-headline">Grizzlies win a franchise-record eighth straight road game in Cleveland, and Cooper Flagg scores 33 as Dallas routs Golden State</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Memphis won 124&ndash;121 at Cleveland on Wednesday for an eighth straight road win, a franchise record. Cam Spencer scored 26 and Taylor Hendricks made two free throws in the final seconds, offsetting 34 points from Donovan Mitchell. In Dallas, Cooper Flagg scored 33 in a 116&ndash;94 win over a Warriors team still without Stephen Curry, who is out with an oblique injury.</p>
+          <p>Elsewhere, Denver came back from 17 points down in the first half to beat Boston 105&ndash;101, led by Nikola Jokic&rsquo;s 24 points, nine assists and eight rebounds. Atlanta beat Oklahoma City 117&ndash;112 behind Onyeka Okongwu&rsquo;s 28 despite 34 from Shai Gilgeous-Alexander. Miami beat Milwaukee 137&ndash;130, extending the Bucks&rsquo; losing streak to 11, their longest since 2013. Houston beat Indiana 119&ndash;104 but lost Alperen Sengun to an eye injury.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.espn.com/nba/recap/_/gameId/401910007">ESPN recap, Grizzlies&ndash;Cavaliers</a>, <a href="https://www.espn.com/nba/recap?gameId=401910016">ESPN recap, Mavericks&ndash;Warriors</a>, <a href="https://www.espn.com/nba/recap?gameId=401910015">ESPN recap, Nuggets&ndash;Celtics</a>, <a href="https://www.espn.com/nba/recap?gameId=401910014">ESPN recap, Hawks&ndash;Thunder</a>, <a href="https://www.espn.com/nba/recap/_/gameId/401910009">ESPN recap, Heat&ndash;Bucks</a>, <a href="https://www.espn.com/nba/recap/_/gameId/401910008">ESPN recap, Rockets&ndash;Pacers</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
