@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Saturday, November 21, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+
+<!-- EVENING:SLOT:START -->
+<div class="edition-band"><span class="kick">The Evening Edition</span><span class="big">Evening Briefing</span><span class="when">Updated Saturday, November 21, 2026</span></div>
+
+  <section class="section" id="evening-politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">White House &middot; Divided Government &middot; Consumer Credit</span>
+          <h2 class="story-headline">Trump says he&rsquo;ll work with the incoming Democratic Congress on a 10% cap on credit card interest rates, and warns he may &ldquo;start with vetoes&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>In a phone interview Saturday with Fox News Channel&rsquo;s &ldquo;Saturday in America,&rdquo; President Trump said he would work with Democrats, who take control of both chambers in January, to cap credit card interest rates. &ldquo;I would do it. These credit card companies have made a lot,&rdquo; he said, according to the AP, and added that he was &ldquo;all into it.&rdquo; The AP described this as an attempt to keep a 2024 campaign promise that he couldn&rsquo;t deliver with a Republican Congress, because of industry pressure and little GOP interest. In January Trump called on Truth Social for a one-year 10% cap but gave no enforcement details, and no federal cap has taken effect. Sen. Elizabeth Warren, expected to chair the Senate Banking Committee, said Congress could pass a cap &ldquo;if he will actually fight for it.&rdquo; A banking coalition that includes the American Bankers Association said a 10% cap &ldquo;would reduce credit availability and be devastating for millions of American families and small business owners.&rdquo;</p>
+          <p>In the same interview Trump praised House Democratic leader Hakeem Jeffries as &ldquo;a reasonable guy&rdquo; and extended the compliment to Chuck Schumer. He also made clear that the veto would be his main tool. He said he &ldquo;could sit there for two years and one month and just veto everything,&rdquo; and that &ldquo;it probably will start with vetoes, just to set the stage.&rdquo; Axios noted it is unclear how high Democrats will rank the rate cap once they take power. Most Senate bills still need 60 votes to advance.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Search turned up no in-window piece on the interview from Mother Jones, Vox, Slate or Guardian opinion. The Democratic position comes from Warren, who welcomed the remarks (&ldquo;Let&rsquo;s cap credit card interest rates and save Americans money&rdquo;) and tied any deal to Trump actually pushing for it. Her framing puts the burden on him after the cap went nowhere under unified Republican control.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Search turned up no in-window piece from National Review, The Dispatch or the WSJ editorial page. For the libertarian view, Reason ran a piece on November 13, outside this window, calling a cap &ldquo;an idea so bad that both Democrats and Republicans support it.&rdquo; It argued that caps push higher-risk borrowers toward costlier credit, a point the banking industry repeated Saturday.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.wsls.com/news/politics/2026/11/21/trump-vows-to-work-with-democrats-to-cap-credit-card-interest-rates-at-10/">AP via WSLS, Nov 21</a>, <a href="https://axios.com/2026/11/21/trump-credit-cards-rates-warren">Axios, Nov 21</a>, <a href="https://yournews.com/2026/11/21/7277168/trump-signals-willingness-to-work-with-democratic-congress-on-health/">YourNews (citing Reuters), Nov 21</a>, <a href="https://reason.com/2026/11/13/capping-credit-card-interest-an-idea-so-bad-that-both-democrats-and-republicans-support-it/">Reason, Nov 13</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Courts &middot; Executive Power &middot; Arlington</span>
+          <h2 class="story-headline">A second federal judge blocks Trump&rsquo;s 250-foot triumphal arch near Arlington National Cemetery, saying Congress never authorized it</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Friday, U.S. District Judge Leonie Brinkema in Alexandria, Virginia, said she would issue a preliminary injunction halting construction of the proposed 250-foot arch at Memorial Circle while Arlington County&rsquo;s lawsuit goes forward. ARLnow reported the order has no end date. Brinkema rejected the administration&rsquo;s claim that a 1925 bridge statute amounted to congressional approval: &ldquo;There was no arch provided for in that statute.&rdquo; She called the project &ldquo;such a rushed job&rdquo; and questioned the government&rsquo;s environmental and economic reviews, especially the possible effects on flights at Reagan National. NPR reported she found the administration unlikely to succeed in court. Arlington argues the arch would worsen traffic and interfere with emergency services.</p>
+          <p>The ruling is the second setback for the arch in a week. In a separate case in Washington, Judge Tanya Chutkan has barred groundbreaking through December 3 while she considers a longer injunction, and members of the Kennedy family filed their own suit last month. Justice Department spokesperson Matthew Nies said the administration would appeal.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Search turned up no in-window piece on the ruling from Mother Jones, Vox, Slate or Guardian opinion. Critics, including the plaintiffs, frame the arch as a monument built by executive decree without the congressional approval memorials normally require, and Brinkema&rsquo;s reasoning tracks that argument.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Search turned up no in-window piece from National Review, The Dispatch, the WSJ editorial page or Reason. The administration&rsquo;s position, made in court, is that existing federal law already authorizes the project at Memorial Circle. It says it will appeal.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/11/20/nx-s1-6048675/trump-arch-blocked-arlington">NPR, Nov 20</a>, <a href="https://washingtonpost.com/politics/2026/11/20/another-judge-blocks-trumps-arch-construction-second-blow-project">Washington Post, Nov 20</a>, <a href="https://www.cnn.com/2026/11/20/politics/second-judge-blocks-trump-arch">CNN, Nov 20</a>, <a href="https://www.arlnow.com/2026/11/21/judge-blocks-memorial-circle-arch-in-arlington-countys-lawsuit-with-no-end-date-set/">ARLnow, Nov 21</a> <em>(Read through search excerpts only. WaPo is paywalled (partial). Lawfare had no in-window piece.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <section class="section" id="evening-foreign">
+    <div class="section-header"><span class="section-label">Global Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Baltic &middot; Russia &middot; Ukraine War</span>
+          <h2 class="story-headline">Drones set a sanctioned Russian military-linked cargo ship on fire in the Gulf of Finland, and Helsinki says Ukraine was probably responsible</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Saturday the Kaliningrad-bound cargo ship <em>Sparta II</em> was hit by drones in international waters west of Russia&rsquo;s Gogland island. It caught fire and drifted into Finnish territorial waters, according to Finland&rsquo;s Defence Forces and Russian officials, as reported by Reuters and CNN. Leningrad regional governor Aleksandr Drozdenko said two drones struck the ship. Its 16 crew members got into lifeboats and were transferred to a nearby Russian vessel. The ship is under U.S. sanctions and linked to Oboronlogistika, a logistics contractor for Russia&rsquo;s defence ministry. Finland&rsquo;s Border Guard said it had no confirmed information about the cargo but could not rule out military materiel.</p>
+          <p>Finnish military spokesperson Aki-Mauri Huhtinen said Ukraine was likely behind the attack, though Kyiv has not claimed it. Prime Minister Petteri Orpo said the war was spilling over into Finland&rsquo;s immediate vicinity and that Ukraine has the right to fight back against the aggressor. Finland reimposed temporary air and sea restrictions in the eastern Gulf and reported a suspected Russian helicopter airspace violation during the rescue. If Ukraine did carry out the strike, it would take Kyiv&rsquo;s campaign against Russian shipping into the Baltic, right on NATO&rsquo;s border. It comes a day after Russian missiles came down in Poland, as reported in the morning brief.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/world/articles/2026-11-21/russia-says-cargo-vessel-struck-by-drones-finland-says-it-is-on-fire-in-its-waters">Reuters via U.S. News, Nov 21</a>, <a href="https://www.cnn.com/2026/11/21/europe/russian-ship-fire-baltic-latam-intl">CNN, Nov 21</a>, <a href="https://www.aljazeera.com/news/2026/11/21/russia-says-kaliningrad-bound-ship-struck-by-drones-in-gulf-of-finland">Al Jazeera, Nov 21</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Climate &middot; COP31 &middot; Antalya</span>
+          <h2 class="story-headline">COP31&rsquo;s president tables a revised text he says &ldquo;all the parties can agree upon,&rdquo; with approval set for Sunday morning</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>After talks in Antalya ran past Friday&rsquo;s deadline and on through Saturday, COP31 President Murat Kurum presented a new draft at a late-night plenary. &ldquo;We believe that we have put forward a text which all the parties can agree upon,&rdquo; he said, according to Reuters, adding that concerns about fossil fuels and adaptation finance for developing countries had been addressed. Delegations had until 0300 GMT Sunday to object, and a session to begin approving the text was set for 0600 GMT.</p>
+          <p>The main dispute is still over fossil-fuel language. Thursday&rsquo;s draft dropped references to ending fossil fuel use after objections from Saudi Arabia and other producers, while the EU and small island states pushed to restore &ldquo;transition away from fossil fuels&rdquo; wording. A BBC report relayed by a secondary outlet said the package, called the &ldquo;Antalya Accords,&rdquo; acknowledges that the 1.5&deg;C goal has been missed and that an earlier $120 billion adaptation-finance target was cut. We could not verify those details at a primary outlet. As of this evening it was not confirmed whether anyone objected or whether the text was adopted.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.al-monitor.com/originals/2026/11/cop31-climate-talks-close-final-deal-says-summit-president">Reuters via Al-Monitor, Nov 21</a>, <a href="https://1027wbow.com/2026/11/21/cop31-climate-talks-close-to-final-deal-says-summit-president/">Reuters via WBOW, Nov 21</a>, <a href="https://www.rappler.com/world/global-affairs/cop31-overtime-nations-quarrel-fossil-fuels-november-20-2026/">Rappler, Nov 20</a> <em>(Read through search excerpts only. BBC was not reachable directly (partial).)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Iran &middot; United States &middot; Diplomacy</span>
+          <h2 class="story-headline">Iran&rsquo;s Araqchi says Tehran still wants diplomacy to end the war, as Trump calls its terms unacceptable and talks stall</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Iranian Foreign Minister Abbas Araqchi said Tehran still hopes diplomacy can end its war with the United States, but wants guarantees that Washington is serious before going further, Reuters reported. At his White House news conference Friday, the day after returning from his summit with Xi Jinping and Vladimir Putin, President Trump said Iran wants a deal &ldquo;but not one acceptable to him.&rdquo; He rejected the terms Tehran has reportedly offered and accused it of decades of bad-faith negotiating. People familiar with the talks told Reuters there has been no significant progress despite recent contacts between U.S. envoys and Qatari mediators.</p>
+          <p>The White House&rsquo;s message has shifted. A week ago Trump said the U.S. no longer needed a deal and told Vice President Vance to stop focusing on the talks. Now he talks of a &ldquo;permanent&rdquo; agreement while holding to his nonnegotiable demand that Iran never obtain a nuclear weapon. The result is a diplomatic track that is still open but going nowhere, as Houthi missiles keep hitting Saudi Arabia (see the morning brief).</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/world/articles/2026-11-20/araqchi-says-iran-wants-diplomacy-to-end-war-trump-says-terms-unacceptable">Reuters via U.S. News, Nov 20</a>, <a href="https://edition.cnn.com/2026/11/20/politics/live-news/trump-white-house-press-conference">CNN live, Nov 20</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <div class="edition-return">Earlier today &mdash; the Morning Brief &darr;</div>
+<!-- EVENING:SLOT:END -->
+
+<!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">White House &middot; Congress &middot; Oversight</span>
+          <h2 class="story-headline">Trump orders federal contractors to clear any information they give Congress with the White House first, weeks before Democrats take control</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On Friday President Trump signed an executive order requiring companies with federal contracts, and their subcontractors, to notify the White House and their contracting agency before responding to requests from Congress. They must also withhold material the administration considers confidential, Reuters reported. Material covered by executive privilege falls under separate withholding instructions, and the Office of Management and Budget is to issue guidance on how the order works in practice. One report says contractors that do not comply could lose their contracts or be suspended from future federal work. Reports do not agree on the order&rsquo;s exact signing date or number, and the text itself had not been widely published.</p>
+          <p>The White House said the order protects sensitive communications, including national-security material, and argued that contractors answering Congress on their own could expose privileged information and pull the administration into costly legal fights. It follows a White House Counsel directive requiring agencies to get White House approval before employees agree to testify to Congress. Democrats take control of both chambers in January and have promised investigations that reach into private companies and law firms. Rep. Jamie Raskin, the incoming House Judiciary chair, has said his inquiries will go beyond traditional oversight of the government. Reuters described the order as setting up a potentially significant fight over presidential power and Congress&rsquo;s authority to investigate.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Search turned up no in-window piece on the order from Mother Jones, Vox, Slate or Guardian opinion, so none is summarized here. The Democratic argument, already stated in their oversight plans, is that a president who lost the midterms is trying to cut off information about his administration&rsquo;s dealings with private companies before the new Congress can subpoena it. On Friday Democrats also separately warned the administration against destroying documents.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Search turned up no in-window piece on the order from National Review, The Dispatch, the WSJ editorial page or Reason, so none is summarized here. The administration&rsquo;s case, made by White House Counsel Will Scharf, is that many Democratic oversight letters are &ldquo;not legitimate oversight but to harass and aggrandize,&rdquo; and that the executive branch, not individual vendors, should decide what privileged material leaves it.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/2026/11/21/trump-orders-federal-contractors-to-notify-white-house-before-giving-congress-information.html">Reuters via CNBC, Nov 21</a>, <a href="https://www.anews.com.tr/world/2026/11/21/trump-orders-federal-contractors-to-notify-white-house-before-giving-congress-information">Reuters via A News, Nov 21</a>, <a href="https://www.huffpost.com/entry/trump-federal-contractors-congress_n_6b0120dee4b0db04454aca0a">HuffPost</a>, <a href="https://cnn.com/2026/11/20/politics/democrats-trump-administration-documents-destruction">CNN, Nov 20</a>, <a href="https://thehill.com/homenews/administration/6228627-white-house-will-scharf-democrats-oversight-trump-administration-probes">The Hill (Scharf)</a> <em>(Read through search excerpts only; Lawfare had no in-window piece on the order.)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">White House &middot; Cybersecurity &middot; Outages</span>
+          <h2 class="story-headline">Trump fires national cyber director Sean Cairncross after a week of outages at the FAA, banks and Microsoft, saying he &ldquo;wasn&rsquo;t good enough&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Sean Cairncross, the White House national cyber director, has been removed. Reuters, citing a person close to the White House, reported he was fired, and Trump confirmed the decision at Friday&rsquo;s news conference, saying he acted &ldquo;because I didn&rsquo;t think that person was good enough.&rdquo; NBC News described it as Cairncross leaving the administration. Kirsten Davies, the Pentagon&rsquo;s chief information officer, is taking over on an acting basis. In a statement, Cairncross called the job &ldquo;the honor of a lifetime.&rdquo;</p>
+          <p>The firing follows a run of technology failures that disrupted air traffic control and the FAA, major banks including JPMorgan Chase, and Microsoft services. Officials say they have found no evidence of a cyberattack. The explanations differ: Transportation Secretary Sean Duffy blamed a newly installed router for the FAA ground stop, Homeland Security chief Markwayne Mullin floated artificial intelligence as a cause, and Secretary of State Marco Rubio said officials had found no evidence linking the incidents. Sen. Mark Warner warned of more outages &ldquo;as companies try to patch quickly.&rdquo; Senate Minority Leader Chuck Schumer called Cairncross a political hack without cybersecurity experience.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Search turned up no in-window piece on the firing from Mother Jones, Vox, Slate or Guardian opinion, so none is summarized here. Democrats&rsquo; line, set by Schumer, is that the administration put an unqualified loyalist in charge of national cyber defense, and that replacing him does not explain why critical systems failed one after another.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Search turned up no in-window piece on the firing from National Review, The Dispatch, the WSJ editorial page or Reason, so none is summarized here. Administration allies, including Rubio and Defense Secretary Hegseth, praised Davies as the acting chief. Their position is that the president acted quickly to hold someone accountable once the outages exposed weak leadership.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.militarytimes.com/news/pentagon-congress/2026/11/20/pentagon-cio-replaces-white-house-national-cyber-director-after-tech-outages/">Reuters via Military Times, Nov 20</a>, <a href="https://www.nbcnews.com/politics/white-house/national-cyber-director-sean-cairncross-leaving-kirsten-davies-replaci-rcna610329">NBC News</a>, <a href="https://www.foxnews.com/live-news/tech-outages-trump-national-cyber-director-fired-11-20-26">Fox News live, Nov 20</a>, <a href="https://www.wsls.com/news/local/2026/11/20/major-tech-outages-disrupt-banks-airlines-federal-agencies-senator-warns-more-could-be-coming/">WSLS (Warner), Nov 20</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Courts &middot; Government ads &middot; SDNY</span>
+          <h2 class="story-headline">Judge declines to extend her block on taxpayer-funded pro-administration TV ads, saying the threat of harm faded once the midterms ended</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>U.S. District Judge Jennifer Rochon in Manhattan on Friday declined to impose a longer-term ban on the administration&rsquo;s taxpayer-funded television ads, Reuters reported. She found the challengers had not shown ongoing &ldquo;imminent and irreparable harm&rdquo; now that the November elections are over, and called their concerns &ldquo;too speculative and non-imminent&rdquo; to justify further emergency relief. She kept the lawsuit alive and noted the administration has not cancelled its ad contract or said it intends to stop running the spots. She said a full written opinion will follow.</p>
+          <p>In October, Rochon ordered the administration to pull three of the ads immediately. The plaintiffs had sought at least 13, and the administration ran two of them past her deadline before complying. A parallel challenge brought by the Democratic National Committee is pending in Washington, D.C., where a judge heard arguments on Thursday with no ruling yet.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Search turned up no in-window piece on the ruling from Mother Jones, Vox, Slate or Guardian opinion, so none is summarized here. The plaintiffs&rsquo; argument has been that public money was spent on campaign-style messaging in an election year. Critics point to the judge&rsquo;s own note that the contract is still live as the reason the fight is not over.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Search turned up no in-window piece on the ruling from National Review, The Dispatch, the WSJ editorial page or Reason, so none is summarized here. The administration, which called the October order lawless, can point to this ruling as support for its view that the case was an election-season effort to silence government communications.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.business-standard.com/amp/world-news/us-judge-declines-long-term-ban-on-trump-admin-s-taxpayer-funded-ads-126112100092_1.html">Reuters via Business Standard, Nov 21</a>, <a href="https://www.washingtonsun.com/legal/federal-judge-declines-extend-block-taxpayer-funded-trump-ads">Washington Sun</a>, <a href="https://www.cnbc.com/2026/10/11/trump-ads-dhs-judge-order.html">CNBC, Oct 11 (background)</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Ukraine &middot; Poland &middot; NATO</span>
+          <h2 class="story-headline">Russia hits three Kyiv bridges in a massive barrage, and two Russian cruise missiles and a drone come down in Poland, which Tusk calls an &ldquo;intentional provocation&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>In an overnight attack into Friday, Russia struck three bridges over the Dnipro in Kyiv, which Reuters called the largest such strikes of the war. Mayor Vitali Klitschko named the Podilsko-Voskresenskyi, Darnytskyi and Pivdennyi bridges. Ukraine&rsquo;s air force reported downing 380 drones, 79 cruise missiles and three ballistic missiles. Reuters counted eight killed nationwide; the AP reported three killed and nine injured in Kyiv, with power cuts. Moscow said it targeted road and rail bridges used to move weapons to the front. The attack followed Putin&rsquo;s vow to retaliate for Ukrainian strikes on the Kerch Bridge to Crimea.</p>
+          <p>During the same barrage, Poland said a Kh-101 cruise missile fell near Nowy Lipowiec, about 50&nbsp;km from the Ukrainian border. A second suspected missile landed at Rudnik nad Sanem and a jet-powered drone at M&#322;odych&oacute;w. No one was hurt. Prime Minister Donald Tusk called it &ldquo;an intentional provocation,&rdquo; noting the objects landed near where a &ldquo;coalition of the willing&rdquo; exercise was under way. NATO Secretary-General Mark Rutte called it a &ldquo;grave violation&rdquo; of Polish airspace. Analysis: whether the missiles strayed or were aimed is the open question, and Warsaw&rsquo;s answer will decide how hard it presses NATO for a response. It also lands a day after Trump, at his news conference, put equal blame for the war on Zelenskyy and Putin.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.investing.com/news/commodities-news/eight-killed-in-ukraine-as-russia-hits-back-after-crimea-bridge-attacks-5041652">Reuters via Investing.com</a>, <a href="https://thehill.com/homenews/ap/ap-international/ap-russian-attacks-on-kyiv-kill-3-cripple-bridges-and-cut-power/">AP via The Hill</a>, <a href="https://www.aljazeera.com/news/2026/11/20/russia-unleashes-retaliatory-barrage-on-kyiv-bridges">Al Jazeera, Nov 20</a>, <a href="https://www.upi.com/Top_News/World-News/2026/11/20/poland-russian-missiles-hit-poland/7571795188566/">UPI, Nov 20</a>, <a href="https://www.pbs.org/newshour/world/nato-calls-russian-missiles-landing-in-poland-a-grave-violation-of-airspace">AP via PBS NewsHour</a>, <a href="https://www.aljazeera.com/news/2026/11/21/russian-missiles-hit-poland-what-happened-and-could-nato-respond">Al Jazeera explainer, Nov 21</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Saudi Arabia &middot; Yemen &middot; Houthis</span>
+          <h2 class="story-headline">Saudi-led coalition says it shot down three Houthi ballistic missiles aimed at Riyadh early Saturday, the second attack on the capital in three days</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The Saudi-led coalition said its air defenses destroyed three ballistic missiles fired at Riyadh early Saturday. An AFP journalist in the city heard explosions, and a Reuters witness saw a projectile cross the sky before a loud bang. The coalition also said it downed a Houthi drone headed for southern Saudi Arabia, and that it had struck Hodeidah port and Houthi missile and drone sites in Sanaa on Friday. The Houthis said they were hitting targets across the kingdom. No casualty figures had been reported. The attack follows Thursday&rsquo;s strike that damaged the Public Investment Fund tower, Riyadh&rsquo;s tallest building.</p>
+          <p>Analysis: the Houthis are now firing at the Saudi capital repeatedly, and Riyadh is answering with strikes on the group&rsquo;s supply lines and launch sites. That makes the Saudi&ndash;Houthi conflict an active front alongside the U.S.&ndash;Iran war. The Houthis&rsquo; threats against Saudi Red Sea ports and airspace raise the stakes for shipping and aviation. The interception figures come from the coalition and have not been independently confirmed.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://gulfnews.com/world/gulf/saudi/saudi-led-coalition-says-downed-3-houthi-missiles-headed-for-riyadh-2-1.500755733">AFP via Gulf News</a>, <a href="https://www.jpost.com/middle-east/article-915616">Reuters via Jerusalem Post</a>, <a href="https://www.tbsnews.net/worldbiz/middle-east/saudi-led-coalition-intercepts-three-houthi-missiles-targeting-riyadh-1609256">TBS News</a>, <a href="https://www.nbcnews.com/world/saudi-arabia/riyadhs-tallest-skyscraper-hit-houthi-strike-saudi-wealth-fund-hq-rcna610352">NBC News (Thursday strike)</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE, TECH, ENERGY & CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Climate &middot; COP31 &middot; Antalya</span>
+          <h2 class="story-headline">COP31 goes into an extra day with no deal, as Panama demands a cap on oil production and co-chair Chris Bowen insists agreement is still possible</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The UN climate talks in Antalya continued into Saturday after nearly 200 countries failed to agree by Friday&rsquo;s deadline. The Turkish presidency was due to present a third draft of the text, called the &ldquo;Antalya Accords,&rdquo; on Saturday morning. Friday&rsquo;s late session approved only technical items. The main dispute is still the draft&rsquo;s removal of all references to moving away from oil, gas and coal after objections from Saudi Arabia and other producers. Panama has said it will formally object to any text that leaves this out, and it wants the deal to cap global oil production at current levels. Because COP decisions need consensus, one objection could block adoption. Australia&rsquo;s Chris Bowen, who chairs the negotiations, said he still believes a deal is possible. No outcome had been reported at the time of writing.</p>
+          <p>Several other issues remain open: a dropped $120 billion adaptation-finance target, language promoting carbon capture, and a target of 35% of final energy from electricity by 2035 that does not require the power to be clean. COP31 President Murat Kurum has argued that leaving fossil fuels out is not backsliding, because the issue was settled at earlier summits.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.euronews.com/2026/11/21/fossil-fuel-row-sees-cop31-talks-spill-into-overtime">Euronews, Nov 21</a>, <a href="https://www.rte.ie/news/environment/2026/1121/1600094-cop31-turkey/">RT&Eacute;, Nov 21</a>, <a href="https://www.aljazeera.com/news/2026/11/20/fossil-fuel-talks-deadlock-pushes-cop31-climate-summit-into-overtime">Al Jazeera, Nov 20</a>, <a href="https://premiumtimesng.com/news/headlines/926870-cop31-climate-talks-spill-into-overtime-as-nations-quarrel-over-fossil-fuels.html">Reuters via Premium Times</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Tech &middot; AI chips &middot; Nvidia</span>
+          <h2 class="story-headline">Trump says Jensen Huang should &ldquo;make a big apology&rdquo; and return as Nvidia&rsquo;s CEO, but the board says it has no plans to reinstate him</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>At his Friday news conference, Trump said Nvidia&rsquo;s board should bring back former CEO Jensen Huang &ldquo;if they were smart,&rdquo; calling him &ldquo;a brilliant person&rdquo; who should be allowed to apologize and return. Trump also said he raised Huang with Xi Jinping in Shenzhen, and repeated that he would like Apple&rsquo;s Tim Cook as Nvidia&rsquo;s chief if Huang does not return. Nvidia board chair Harvey Jones has said directors unanimously accepted Huang&rsquo;s resignation and do not plan to reinstate him. Colette Kress is interim CEO. Huang left after reports of an affair with a suspected Chinese spy who worked at a Singapore firm that obtained advanced Nvidia chips. Trump has dismissed concerns that this compromised U.S. security.</p>
+          <p>The same day, Trump said he still backs Commerce Secretary Howard Lutnick, calling him &ldquo;a very good businessman,&rdquo; even as Lutnick faces bipartisan criticism for not blacklisting Singapore-based Megaspeed, which is suspected of moving Nvidia AI chips into China. Treasury Secretary Scott Bessent has blamed Commerce for failing to stop China from obtaining the technology. Lutnick has agreed to testify to the Senate Banking Committee.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtontimes.com/news/2026/nov/20/donald-trump-let-jensen-huang-apologize-get-back-work-nvidia/">Washington Times, Nov 20</a>, <a href="https://www.investing.com/news/stock-market-news/trump-says-huang-should-apologize-and-return-to-nvidia-5042421">Investing.com</a>, <a href="https://www.c-span.org/clip/white-house-event/president-trump-says-former-nvidia-ceo-jensen-huang-deserves-a-second-chance/5211286">C-SPAN clip</a>, <a href="https://www.ntd.com/trump-says-he-still-backs-lutnick-urges-nvidias-huang-to-apologize_1186725.html">NTD (Reuters account of Lutnick remarks)</a>, <a href="https://www.cnbc.com/2026/11/13/nvidia-scandal-lutnick-chip-sales.html">CNBC, Nov 13 (background)</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Energy &middot; Offshore wind &middot; Scotland</span>
+          <h2 class="story-headline">Scotland approves the 1&nbsp;GW Muir Mh&ograve;r floating wind farm off Aberdeenshire, over objections from fishermen</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Scottish ministers have granted offshore consent for Muir Mh&ograve;r, a floating wind farm of up to 1 gigawatt and up to 67 turbines, about 63&nbsp;km off the Aberdeenshire coast. It is being developed by Fred. Olsen Seawind. The turbines will sit on floating foundations moored to the seabed, rather than the fixed foundations used in shallower water, which allows them to be placed farther out in deeper water. The consent comes with conditions on fisheries mitigation and seabird protection. Aberdeenshire Council approved the onshore cabling and substation in 2025.</p>
+          <p>The Scottish Fishermen&rsquo;s Federation objected, saying it is unclear whether fishing boats can work safely around the moorings and subsea cables, and compensation has not been settled. The project has not reached a final investment decision and is aiming to start generating in the early 2030s. That timeline depends on financing and grid connection, which have delayed other floating-wind projects in UK waters.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.energyglobal.com/wind/20112026/muir-mhr-floating-offshore-wind-farm-gets-green-light-from-ministers/">Energy Global, Nov 20</a>, <a href="https://www.maritimejournal.com/news/environment/scotland-approves-67-turbine-1gw-floating-wind-farm/">Maritime Journal</a>, <a href="https://offshoresource.com/news/renewables/muir-mhor-floating-wind-farm-clears-final-consent-hurdles-in-scotland">Offshore Source</a> <em>(Read through search excerpts only; no Tier-1 coverage found.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Premier League &middot; Manchester United</span>
+          <h2 class="story-headline">In his first United press conference, Pochettino keeps Bruno Fernandes as captain and refuses excuses before Sunday&rsquo;s trip to Anfield</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Mauricio Pochettino gave his first press conference as Manchester United head coach on Friday. He confirmed that Bruno Fernandes will stay as captain, calling him &ldquo;a very important player,&rdquo; and added that &ldquo;all the players have to feel important.&rdquo; He said the focus was entirely on Liverpool, describing the week as a race to get the squad competitive in time. He made no excuses about the size of the job and said he expects a significant say behind the scenes. Pochettino replaced Michael Carrick, who was sacked after a 4&ndash;4 draw with Aston Villa. His first match is Liverpool away on Sunday.</p>
+          <p>Saturday&rsquo;s Premier League schedule includes Manchester City v Fulham at lunchtime, Chelsea v Leeds and Tottenham v Ipswich at 3pm, and Newcastle v Arsenal in the 5:30pm kick-off.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.nbcsports.com/soccer/live/mauricio-pochettino-manchester-united-press-conference-today-quotes-reaction-news-2026-november-20">NBC Sports live, Nov 20</a>, <a href="https://www.tntsports.co.uk/football/premier-league/2026-2027/mauricio-pochettino-first-manchester-united-press-conference-live-preview-liverpool_sto23357014/story.shtml">TNT Sports</a>, <a href="https://www.si.com/soccer/mauricio-pochettino-man-utd-captain-decision">Sports Illustrated</a>, <a href="https://www.irishnews.com/sport/soccer/mauricio-pochettino-outlines-his-expectations-in-first-man-utd-press-conference-UFO5B23SEFO5TJ47W2MRO4Y7JE/">PA via Irish News</a> <em>(Read through search excerpts only; BBC Sport was not reachable.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal &middot; Newcastle away</span>
+          <h2 class="story-headline">Before the trip to Newcastle, Arteta says a new Rice deal is &ldquo;quite close&rdquo; and that he &ldquo;definitely&rdquo; wants Odegaard to stay long term</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>At his press conference before Saturday evening&rsquo;s match at St James&rsquo; Park, Mikel Arteta said Declan Rice&rsquo;s contract extension was close but not finished: &ldquo;I think we are quite close but the owner needs to confirm that.&rdquo; Arsenal&rsquo;s own transcript has him saying there is no deal for now. Rice&rsquo;s current contract runs to 2028, and a report citing The Athletic says the extension would run to 2031. Arseblog led with Arteta&rsquo;s answer on Martin Odegaard, whose contract also runs to 2028. Asked whether he wants the captain to stay long term, Arteta said &ldquo;Definitely, yes,&rdquo; called him &ldquo;instrumental,&rdquo; and, as usual, would not say whether talks had started.</p>
+          <p>Arteta also gave injury updates on Saka, Odegaard and Madueke before the trip. Arseblog has been tracking an injury list that includes Martin Zubimendi and a Saka still several weeks from returning. Accounts of the table before this weekend conflict, so no standing is given here. Arseblog News also reported the death of Peter Storey, a member of Arsenal&rsquo;s 1970&ndash;71 Double-winning side, at 81.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.news/2026/11/definitely-yes-arteta-keen-to-extend-odegaards-arsenal-stay/">Arseblog News</a>, <a href="https://arseblog.news/2026/11/rice-hopes-to-sign-new-arsenal-deal-soon/">Arseblog News (Rice)</a>, <a href="https://www.arsenal.com/news/every-word-from-mikel-artetas-pre-newcastle-presser-amNf96d48YCF">Arsenal.com transcript</a>, <a href="https://sports.yahoo.com/articles/arteta-confirms-arsenal-quite-close-101400731.html">Yahoo Sports</a>, <a href="https://www.flashscore.com/news/soccer-premier-league-arteta-provides-injury-updates-on-saka-odegaard-and-madueke-ahead-of-newcastle-visit/hdOtU9cT">Flashscore</a>, <a href="https://arseblog.news/2026/11/peter-storey-arsenal-double-winner-dies-at-81">Arseblog News (Storey)</a> <em>(Read through search excerpts only; The Athletic&rsquo;s report seen only as cited by others.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">NBA Cup &middot; Friday</span>
+          <h2 class="story-headline">James Harden scores 51 to beat the Pacers and passes Kobe Bryant for third-most 50-point games, while Gilgeous-Alexander&rsquo;s 40 rallies the Thunder</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>James Harden scored 51 points on 15-of-26 shooting, including 7 of 11 from three and 14 of 14 at the line, as Cleveland beat Indiana 128&ndash;119 in NBA Cup group play. It was the 26th 50-point game of his career, moving him past Kobe Bryant into third all-time behind Wilt Chamberlain and Michael Jordan, and his best game since joining the Cavaliers in February. Shai Gilgeous-Alexander scored 40 as Oklahoma City came back from 16 down in the third quarter to beat New Orleans 126&ndash;120.</p>
+          <p>Elsewhere on Friday, Franz Wagner&rsquo;s jumper with 2.4 seconds left gave Orlando a 113&ndash;111 win over Brooklyn, and he finished with 35. Quentin Grimes hit the go-ahead three with 57 seconds left in the Lakers&rsquo; 106&ndash;104 win over Sacramento, in which Luka Don&#269;i&#263; scored 25. Nikola Joki&#263; had 26 points and 11 assists as Denver beat Houston 133&ndash;124, and a short-handed Toronto beat Detroit 105&ndash;102 to end a six-game losing streak.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.espn.com/nba/story/_/id/50546191/james-harden-explodes-51-points-propels-cavs-pacers">ESPN</a>, <a href="https://www.espn.com/nba/recap?gameId=401909307">ESPN recap, Cavaliers&ndash;Pacers (Nov 20)</a>, <a href="https://www.espn.com/nba/recap/_/gameId/401909310">ESPN recap, Thunder&ndash;Pelicans (Nov 20)</a>, <a href="https://www.espn.com/nba/recap/_/gameId/401909306">ESPN recap, Magic&ndash;Nets (Nov 20)</a>, <a href="https://www.espn.com/nba/recap?gameId=401909313">ESPN recap, Lakers&ndash;Kings (Nov 20)</a>, <a href="https://www.cbssports.com/nba/gametracker/recap/NBA_20261120_HOU@DEN/">CBS Sports recap, Rockets&ndash;Nuggets</a>, <a href="https://sports.yahoo.com/nba/breaking-news/article/nba-cup-2026-james-harden-puts-up-51-in-cavs-win-over-pacers-shorthanded-raptors-fend-off-pistons-end-6-game-skid-040246744.html">Yahoo Sports</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
