@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>History &amp; Ideas — Tailored News</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — History & Ideas (weekly)
+     Shares the daily-brief design system verbatim.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;
+    --take-left:    #5a6b7a;
+    --take-right:   #8a7350;
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:        #17140f;
+      --paper-raised: #201c15;
+      --ink:          #ece5d6;
+      --ink-soft:     #b3aa96;
+      --ink-faint:    #7c7361;
+      --rule:         #3a3427;
+      --rule-soft:    #2c281f;
+      --accent:       #d68a5f;
+      --take-left:    #7f92a3;
+      --take-right:   #b39a6f;
+      --take-left-bg:  #1c1f22;
+      --take-right-bg: #221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:        #17140f;
+    --paper-raised: #201c15;
+    --ink:          #ece5d6;
+    --ink-soft:     #b3aa96;
+    --ink-faint:    #7c7361;
+    --rule:         #3a3427;
+    --rule-soft:    #2c281f;
+    --accent:       #d68a5f;
+    --take-left:    #7f92a3;
+    --take-right:   #b39a6f;
+    --take-left-bg:  #1c1f22;
+    --take-right-bg: #221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 1.125rem;
+    line-height: 1.62;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+
+  .page {
+    max-width: calc(var(--measure) + var(--pad) * 2);
+    margin: 0 auto;
+    padding: 0 var(--pad) 5rem;
+  }
+
+  /* ---------- Masthead ---------- */
+  .masthead {
+    text-align: center;
+    padding: 2.75rem 0 1.5rem;
+  }
+  .masthead-title {
+    font-size: clamp(2.5rem, 11vw, 4rem);
+    line-height: 0.95;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    margin: 0;
+  }
+  .masthead-subtitle {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-top: 0.7rem;
+  }
+  .masthead-rule {
+    border: 0;
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    height: 4px;
+    margin: 1.25rem auto 0;
+  }
+  .masthead-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    white-space: nowrap;
+    transition: border-color 0.15s;
+  }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Standfirst ---------- */
+  .standfirst {
+    max-width: 30rem;
+    margin: 2.5rem auto 0;
+    text-align: center;
+    font-style: italic;
+    font-size: 1.2rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    text-wrap: pretty;
+  }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3rem; }
+
+  /* ---------- Essay (story) ---------- */
+  .story {
+    border-top: 1px solid var(--rule-soft);
+    padding: 0.35rem 0;
+  }
+  .story:first-of-type {
+    border-top: 4px double var(--rule);
+    margin-top: 2.5rem;
+  }
+
+  .story > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 1.4rem 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: 1rem;
+  }
+  .story > summary::-webkit-details-marker { display: none; }
+
+  .story-domain {
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.55rem;
+  }
+  .story-headline {
+    font-size: clamp(1.5rem, 5.5vw, 1.95rem);
+    line-height: 1.16;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .story-toggle {
+    font-family: var(--mono);
+    font-size: 1.4rem;
+    line-height: 1;
+    color: var(--ink-faint);
+    margin-top: 0.15rem;
+    transition: transform 0.2s ease;
+    user-select: none;
+  }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+
+  .story-body { padding-bottom: 1.75rem; }
+  .story-body p { margin: 0 0 1.1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  /* essayistic drop-cap on the opening paragraph */
+  .story-body > p:first-child::first-letter {
+    font-size: 3.1rem;
+    line-height: 0.8;
+    float: left;
+    padding: 0.05em 0.12em 0 0;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .sources {
+    font-family: var(--mono);
+    font-size: 0.64rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-top: 1.4rem;
+    padding-top: 0.6rem;
+    border-top: 1px dashed var(--rule);
+  }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Footer ---------- */
+  .colophon {
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 4px double var(--rule);
+    font-family: var(--mono);
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    text-align: center;
+    line-height: 1.8;
+  }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) {
+    body { font-size: 1.1875rem; }
+  }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle {
+    position: fixed;
+    top: 0.9rem;
+    right: 0.9rem;
+    z-index: 20;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.8rem;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%);
+  }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">History &amp; Ideas</h1>
+    <div class="masthead-subtitle">A weekly reading from Tailored News</div>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Week of November 16, 2026</span>
+      <!-- edition: Sunday, November 22, 2026 -->
+      <a class="masthead-link" href="index.html">&larr; Back to the daily brief</a>
+    </div>
+  </header>
+
+  <p class="standfirst">Three stories about how belief and power really shift: through the quiet arithmetic of birth rates, in Bronze Age graves, and on the pavements of Tehran &mdash; not by decree but by accumulation.</p>
+
+  <section class="section">
+
+    <!-- ESSAY 1 -->
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-domain">Religion &middot; Demography</span>
+          <h2 class="story-headline">The shape of faith in 2070: Pew&rsquo;s new projections put Islam ahead of Christianity by the mid-2030s, and move Christianity&rsquo;s centre to sub-Saharan Africa</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <p>On Nov 18 the Pew Research Center released <em>The Future of World Religions: Population Growth Projections, 2020&ndash;2070</em>. It projects that Muslims will pass Christians as the world&rsquo;s largest religious group around 2035, both in number and as a share of humanity, reaching roughly 3.6 billion by 2070 against just under 3 billion Christians. Christianity&rsquo;s centre of gravity keeps moving south: by 2070, 54% of the world&rsquo;s Christians are projected to live in sub-Saharan Africa. Christian numbers there grow by about 896 million while falling by about 210 million everywhere else. The religiously unaffiliated, the &ldquo;nones,&rdquo; are projected to shrink from 24% to 17% of the world&rsquo;s population. That is not because people return to religion. Switching still runs against Christianity (about 199 million Christians becoming nones against 94 million moving the other way), but the unaffiliated have the lowest fertility of any group.</p>
+        <p>The report&rsquo;s main argument is that demography, meaning age structure and birth rates, shapes the global religious future far more than conversion does. That cuts against Western debates about secularization, which focus on individual choice, and it places the Christian future in Lagos and Kinshasa rather than Europe or America. The caveats are real. Fifty-year fertility assumptions are very uncertain. The switching figures assume recent disaffiliation trends simply continue. Religion News Service points out that Pew&rsquo;s earlier projections underestimated how fast the unaffiliated grew. Even in sub-Saharan Africa the Christian share is projected to dip slightly, from 62% to 59%, because Muslim populations there grow faster.</p>
+        <div class="sources">Sources: <a href="https://www.pewresearch.org/religion/2026/11/18/the-future-of-world-religions-population-growth-projections-2020-2070/">Pew Research Center, Nov 18</a>, <a href="https://www.pewresearch.org/religion/2026/11/18/the-future-of-the-global-christian-population/">Pew: global Christian population</a>, <a href="https://religionnews.com/2026/11/18/muslims-projected-to-become-worlds-largest-faith-group-by-2035-pew-says/">Religion News Service, Nov 18</a>, <a href="https://www.npr.org/2026/11/18/nx-s1-6043018/muslims-will-outnumber-christians-worldwide-by-2035-report-says">NPR, Nov 18</a>, <a href="https://www.christianitytoday.com/2026/11/pew-research-christians-minority-2070-africa-growth/">Christianity Today</a> <em>(Read through search excerpts only; the full pages could not be fetched from this environment.)</em></div>
+      </div>
+    </details>
+
+    <!-- ESSAY 2 -->
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-domain">History &middot; Archaeology</span>
+          <h2 class="story-headline">How inequality crept into Bronze Age Bohemia: 296 Corded Ware graves suggest inherited status arrived slowly, through one spreading male line</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <p>A study in the <em>Journal of Neolithic Archaeology</em> by Mikkel N&oslash;rtoft (University of Copenhagen) and Adam B. Rohrlach (Max Planck Institute for Evolutionary Anthropology) scores 296 Corded Ware burials from Bohemia, dated to roughly 2900&ndash;2300 BCE. It uses N&oslash;rtoft&rsquo;s &ldquo;QuantWealth&rdquo; method, which combines the variety and rarity of grave goods, the labour needed to make them, how far their materials travelled, evidence of feasting and meat offerings, and the effort of digging the grave. The scores are then set against ancient-DNA data on ancestry and Y-chromosome lineages. For roughly the first 400 years, wealth gaps were small, mostly tied to age and spread across several lineages, which suggests status came from what people did in life. Around 2700&ndash;2500 BCE one paternal lineage spread. Funerals became more competitive, with more prestige goods, wider exchange networks and more gender inequality, and young adult men had the richest graves. In the late phase, rich child burials point to inherited wealth. The single richest grave of all belonged to a girl at &#268;achovice, buried with a rare copper neck ring.</p>
+        <p>The study offers a careful, quantitative way into one of the oldest questions in social science: when and how inherited hierarchy began. Its answer fits arguments that inequality was contingent and built up over generations rather than arriving ready-made with migrating steppe herders. The authors are frank about the limits. It covers a single region, the lineage link is a correlation, and grave goods show how the living chose to present the dead, not necessarily what the dead owned. &ldquo;We need more DNA data to confirm this at the family level, and elsewhere,&rdquo; N&oslash;rtoft says. Press accounts differ slightly on the sample size (296 vs 317 graves). The paper itself appeared around Nov 10; the coverage and press release came this week.</p>
+        <div class="sources">Sources: <a href="https://archaeology.org/news/2026/11/18/wealth-and-status-of-early-herders-evaluated/">Archaeology (AIA), Nov 18</a>, <a href="https://www.ancientpages.com/2026/11/17/a-new-look-at-early-herders-wealth-in-europe/">Ancient Pages, Nov 17</a>, <a href="https://phys.org/news/2026-11-archaeologists-wealth-status-europe-early.html">Phys.org</a>, <a href="https://www.eurekalert.org/news-releases/1151640">EurekAlert! release</a>, <a href="https://nautil.us/how-wealth-inequality-emerged-in-this-prehistoric-culture-1286642">Nautilus</a> <em>(Read through search excerpts only; the full pages could not be fetched from this environment. Paper: doi:10.12766/jna.2026.7.)</em></div>
+      </div>
+    </details>
+
+    <!-- ESSAY 3 -->
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-domain">Sociology &middot; Politics of Religion</span>
+          <h2 class="story-headline">&ldquo;It&rsquo;s not political&rdquo;: how the young fashionistas of Tehran are wearing down the hijab law by sheer weight of numbers</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <p>An Aeon essay, &ldquo;It&rsquo;s not political: the young fashionistas of Tehran,&rdquo; follows young women on Iranshahr, a street that has become a Tehran fashion hub. They dress as they please, film one another for social media, and insist that what they are doing is a matter of taste, not protest. Its subtitle states the thesis: women in Tehran &ldquo;are changing society by dressing as they choose, in numbers too large to stop.&rdquo; According to a secondary summary, the author, Parisa Khoshnami, reads that disavowal through the sociologist Asef Bayat&rsquo;s idea of the &ldquo;art of presence.&rdquo; Ordinary people, without leaders or organizations, change the rules simply by living differently in large enough numbers that enforcement becomes impossible. The opening notes that Tehran&rsquo;s police chief has hinted at plainclothes officers working inside caf&eacute;s and concerts, so the stakes are not imaginary.</p>
+        <p>The essay is as much an argument about how social change happens as a report from Iran. It suggests that refusing to call something &ldquo;political&rdquo; can itself be a political strategy. Because the state cannot repeal the law without looking defeated, each quiet retreat in enforcement erodes its authority while it keeps up an appearance of control. It is a useful corrective to accounts of Iran that only see mass protest and crackdown. Readers should still keep in mind that it is one writer&rsquo;s reported analysis, not survey data, and that Tehran&rsquo;s fashionable districts may not represent the country.</p>
+        <div class="sources">Sources: <a href="https://aeon.co/essays/its-not-political-the-young-fashionistas-of-tehran">Aeon</a>, <a href="https://www.freethinkersinternational.net/how-tehrans-young-fashionistas-are-wearing-down-the-hijab-law/">Freethinkers International (summary)</a> <em>(Partial: aeon.co could not be fetched, and its URL is undated. The Nov 17 publication date and the author attribution come from search listings and a secondary summary, not from the page itself.)</em></div>
+      </div>
+    </details>
+
+  </section>
+
+  <footer class="colophon">
+    <div>Tailored News &middot; History &amp; Ideas &middot; Weekly</div>
+    <div><a href="index.html">&larr; Return to the daily brief</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+
+</body>
+</html>
