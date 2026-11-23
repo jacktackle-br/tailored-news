@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Sunday, November 22, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+<!-- EVENING:SLOT:START -->
+<div class="edition-band"><span class="kick">The Evening Edition</span><span class="big">Evening Briefing</span><span class="when">Updated Sunday, November 22, 2026</span></div>
+
+  <section class="section" id="evening-politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Senate &middot; Democrats &middot; White House</span>
+          <h2 class="story-headline">Trump says it would be &ldquo;very hard&rdquo; to work with Schumer as majority leader, nine days before Senate Democrats vote on Van Hollen&rsquo;s challenge</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>In a Truth Social post on Sunday, President Trump said it would be very hard to work with Chuck Schumer if Schumer stays leader of the Senate Democrats when they take the majority in January. Fox News reported that Trump also predicted Schumer would &ldquo;fail again.&rdquo; Trump did not endorse Schumer&rsquo;s challenger, Sen. Chris Van Hollen of Maryland. Van Hollen told NBC&rsquo;s &ldquo;Meet the Press&rdquo; that he did not read the post as an endorsement, the Washington Post reported.</p>
+          <p>Senate Democrats hold the secret-ballot vote on Dec 1. It is the caucus&rsquo;s first contested leadership election in more than three decades. The Post counts 16 senators publicly backing Schumer and six backing Van Hollen. Most incoming senators, and veterans such as Ron Wyden and Patty Murray, have not said how they will vote. Winning takes roughly 28 votes if every eligible Democrat votes. Schumer says he has them and points to the seats Democrats won under him. Van Hollen is running as the underdog on a message of change, with backing from Bernie Sanders and Michigan Senator-elect Abdul El-Sayed.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Writing in Slate, Jill Filipovic argues that a progressive challenge to Schumer shows a healthy party, not a party in disarray. She ties Van Hollen&rsquo;s support to the economic populism she says powered Democrats&rsquo; midterm wins. Mother Jones is more skeptical about the outcome. It calls Van Hollen the underdog and says the race will be settled inside the caucus, not by activists. Neither piece responds to Trump&rsquo;s post.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>National Review presents the race as Democratic leaders &ldquo;facing the left&rdquo; after the midterms. A post in its Corner calls Van Hollen&rsquo;s bid partly a proxy fight over Israel, the first of many such fights in the new majority. From the anti-Trump right (a dissent within the right, not the mainstream-right position), The Bulwark calls it &ldquo;the race everyone finds awkward&rdquo;: a proxy for a long-running Democratic rift that is happening right after a strong election.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/politics/2026/11/22/trump-weighs-senate-democrats-leadership-fight/">Washington Post, Nov 22</a>, <a href="https://washingtonpost.com/politics/2026/11/21/van-hollen-once-an-insider-has-started-democrats-first-big-fight">Washington Post, Nov 21</a>, <a href="https://www.aljazeera.com/news/2026/11/22/trump-criticises-schumer-amid-push-for-new-democrat-leadership-in-us-senate">Al Jazeera, Nov 22</a>, <a href="https://www.foxnews.com/politics/trump-says-hard-work-chuck-schumer-fail-again">Fox News</a>, <a href="https://slate.com/news-and-politics/2026/11/chuck-schumer-senate-leadership-fight-chris-van-hollen-democrats.html">Slate</a>, <a href="https://www.motherjones.com/politics/2026/11/chris-van-hollen-chuck-schumer-majority-leader-fight-democrats/">Mother Jones</a>, <a href="https://www.nationalreview.com/the-morning-jolt/democrats-cold-peace">National Review</a>, <a href="https://www.nationalreview.com/corner/chris-van-hollen-s-leadership-bid-is-a-proxy-fight-over-israel">NR Corner</a>, <a href="https://www.thebulwark.com/p/chuck-schumer-vs-chris-van-hollen-senate-leader-leadership-race-everyone-awkward-uncomfortable">The Bulwark</a> <em>(Read through search excerpts only; full pages could not be fetched from this environment. Commentary predates Trump&rsquo;s post.)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Intelligence &middot; Russia &middot; Ukraine</span>
+          <h2 class="story-headline">Intelligence chief Jay Clayton says Putin is &ldquo;not at all&rdquo; America&rsquo;s friend in Ukraine, but calls Trump&rsquo;s &ldquo;my friend&rdquo; greeting &ldquo;entirely appropriate&rdquo;</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>On ABC&rsquo;s &ldquo;This Week&rdquo; on Sunday, Director of National Intelligence Jay Clayton was asked about Trump&rsquo;s description of Vladimir Putin as a friend at last week&rsquo;s summit of the U.S., Chinese and Russian leaders in Shenzhen, on the sidelines of APEC. Clayton said the description was &ldquo;entirely appropriate&rdquo; at talks among the world&rsquo;s three largest nuclear powers. Pressed on whether Putin is America&rsquo;s friend, he said &ldquo;not at all&rdquo; when it comes to Ukraine, citing Russia&rsquo;s invasion. Asked separately, Trump would not say whether Putin is a friend to the United States as a whole: &ldquo;I can&rsquo;t speak to America.&rdquo;</p>
+          <p>At the summit, Trump greeted Putin with &ldquo;He&rsquo;s my friend&rdquo; and later posted a photo of their handshake captioned &ldquo;My Friend.&rdquo; Trump pressed for nuclear arms control, but the leaders&rsquo; joint statement does not mention inspections or reducing stockpiles. Polish Prime Minister Donald Tusk replied that Putin &ldquo;is not our friend and will never be.&rdquo; The exchange comes as Washington tries to arrange a new, multilateral round of Ukraine talks that would include European representatives.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Slate called the Shenzhen summit &ldquo;a joke.&rdquo; It argues that Trump arrived with no agenda and little leverage and ended up calling both dictators &ldquo;my friend,&rdquo; a scene the piece says dramatized the decline of American influence. No in-window left-leaning piece on Clayton&rsquo;s Sunday remarks surfaced.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>National Review&rsquo;s summit pieces are critical but measured. They say the meeting produced few results beyond symbolism, call the joint statement &ldquo;thin gruel,&rdquo; and say it handed Beijing a diplomatic showcase while neither Moscow nor Beijing had any reason to accept limits on its arsenal. From the anti-Trump right (a dissent within the right), The Bulwark called the three leaders &ldquo;the worst throuple on the planet&rdquo; and said Putin was the summit&rsquo;s &ldquo;unambiguously happy camper.&rdquo;</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/national-security/2026/11/22/putin-is-not-americas-friend-ukraine-dni-jay-clayton-says/">Washington Post, Nov 22</a>, <a href="https://www.pbs.org/newshour/world/u-s-intelligence-chief-says-trumps-description-of-putin-as-a-friend-is-entirely-appropriate">PBS NewsHour</a>, <a href="https://english.alarabiya.net/News/world/2026/11/23/us-intelligence-chief-says-putin-is-not-america-s-friend-in-ukraine-">Al Arabiya, Nov 23</a>, <a href="https://www.theglobeandmail.com/world/article-trump-xi-and-putin-meet-for-historic-trilateral-summit-in-china/">Globe and Mail</a>, <a href="https://slate.com/news-and-politics/2026/11/trump-putin-xi-summit-russia-china.html">Slate</a>, <a href="https://www.nationalreview.com/article/an-overhyped-trilateral-summit">National Review</a>, <a href="https://www.thebulwark.com/p/the-worst-throuple-on-the-planet-trump-xi-putin-trilateral-summit">The Bulwark</a> <em>(Read through search excerpts only. Commentary covers the summit, not Sunday&rsquo;s remarks.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <section class="section" id="evening-foreign">
+    <div class="section-header"><span class="section-label">Global Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Ukraine &middot; Russia</span>
+          <h2 class="story-headline">Russian drone collapses part of an apartment block in Dymer, near Kyiv, killing at least four, with more than a dozen people feared trapped</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Early Sunday, a Russian drone hit a five-story residential building in Dymer, north of Kyiv, and part of it collapsed. President Zelenskiy said at least 14 people were missing and nine had been evacuated. The AP reported at least four people killed in drone attacks on the Kyiv region. Radio Free Europe/Radio Liberty later put the Dymer toll at no fewer than five, including an 18-year-old. Ukraine&rsquo;s emergency service said about 11 people were believed trapped. Reuters footage showed rescuers stopping their search because of an incoming aerial threat, followed by three explosions in the town.</p>
+          <p>The strike comes as diplomacy moves toward a broader format. After a Coalition of the Willing meeting in Berlin last week, Zelenskiy said Europe would be represented in future talks with Russia, and U.S. envoy Jared Kushner said Moscow had accepted multilateral talks. No date has been set. Each new strike on civilian housing adds pressure on Kyiv&rsquo;s European backers for more air defense before those talks begin.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/world/articles/2026-11-22/at-least-14-people-missing-after-russian-drone-hit-building-in-kyiv-region-zelenskiy-says">Reuters via US News, Nov 22</a>, <a href="https://www.staradvertiser.com/2026/11/22/breaking-news/at-least-4-killed-in-russian-drone-attacks-on-kyiv-region-officials-say/">AP via Star-Advertiser, Nov 22</a>, <a href="https://www.rferl.org/a/ukraine-dymer-russian-strike-apartment-building/33903592.html">RFE/RL</a>, <a href="https://www.pbs.org/newshour/world/zelenskyy-says-ukraine-is-waiting-on-u-s-and-russia-to-set-the-next-round-of-peace-talks">PBS NewsHour</a> <em>(Toll still rising at publication.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Iran &middot; Gulf &middot; Hormuz</span>
+          <h2 class="story-headline">Three more tankers are hit near Hormuz and Iran holds talks with Qatari mediators, as Trump says he wants a &ldquo;permanent&rdquo; nuclear deal</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>At least three oil tankers were attacked in or near the Strait of Hormuz on Saturday, the AP reported. Britain&rsquo;s maritime security center said two were struck by projectiles while leaving the Gulf. Iran&rsquo;s navy said a third hit a mine east of the strait and caught fire. Iran&rsquo;s Revolutionary Guards said they had hit U.S. Patriot radar sites at the Riffa and Awali bases in Bahrain, in retaliation for a U.S. strike on Iran&rsquo;s Hengam Island. Bahrain rejected that account and said the target was a civilian industrial site. Neither Bahrain nor the U.S. military has confirmed any hit on the radars. Iran&rsquo;s deputy foreign minister said a Qatari delegation held about two hours of talks in Tehran but that these were not yet formal negotiations. Iran still demands an end to the U.S. blockade of its ports, the release of frozen assets and the lifting of oil sanctions before it reopens the strait.</p>
+          <p>In a Fox News interview on Saturday, Trump said he would make a &ldquo;permanent&rdquo; deal that would keep Iran from getting a nuclear weapon even under a future &ldquo;incompetent president.&rdquo; Days earlier he had written that &ldquo;we don&rsquo;t need a deal with Iran.&rdquo; CBS reported he may not decide on his next move until 2027. The pressure points are building at sea: reports say Iran has more than a dozen tankers ready near Kharg Island to test the blockade. Neither side has shown it can wait out the other, which leaves Qatar&rsquo;s shuttle diplomacy as the only active channel.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/world/articles/2026-11-21/iran-strikes-3-tankers-as-it-shows-off-missile-launchers-and-other-mideast-news">AP via US News, Nov 21</a>, <a href="https://www.wsls.com/news/world/2026/11/21/iran-strikes-3-tankers-as-it-shows-off-missile-launchers-and-other-mideast-news/">AP via WSLS, Nov 21</a>, <a href="https://www.aljazeera.com/news/2026/11/22/whats-behind-irans-escalation-of-attacks-in-the-gulf">Al Jazeera, Nov 22</a>, <a href="https://www.aljazeera.com/news/2026/11/21/iran-says-held-talks-with-qatari-mediators-urges-us-to-accept-conditions">Al Jazeera, Nov 21</a>, <a href="https://cbsnews.com/live-updates/iran-war-trump-tehran-denies-chemical-weapons">CBS News live updates</a>, <a href="https://www.npr.org/2026/11/13/g-s1-153578/whats-trumps-strategy-now-with-iran-to-keep-things-as-they-are">NPR, Nov 13 (background)</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <div class="edition-return">Earlier today &mdash; the Morning Brief &darr;</div>
+
+<!-- EVENING:SLOT:END -->
+
+<!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Cyber &middot; FBI &middot; White House</span>
+          <h2 class="story-headline">FBI investigates an apparent breach of its national crime database, and Trump says it is &ldquo;not good&rdquo; but might turn up secrets about the Russia probe</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The FBI is investigating an apparent intrusion into the National Crime Information Center (NCIC), the nationwide database federal, state and local police use to share information on warrants, stolen property and background checks. CNN reported the breach on Friday night, citing two people briefed on the inquiry, and the Associated Press confirmed it through an anonymous source. CNN said the intrusion was discovered &ldquo;in recent days.&rdquo; Neither outlet reported how the attackers got in, who they are, or whether any records were viewed or taken. The FBI declined to comment on Saturday. It is the bureau&rsquo;s second reported breach since September, when the group ShinyHunters claimed to have taken data on thousands of current and former employees from an FBI jobs portal; officials have not linked the two incidents.</p>
+          <p>In a phone interview with Fox News on Saturday, President Trump said he had only just learned of the breach: &ldquo;It&rsquo;s not good, I don&rsquo;t like that.&rdquo; He then said &ldquo;maybe we&rsquo;ll learn things that we would have never learned otherwise,&rdquo; mentioning the &ldquo;Russia, Russia, Russia hoax&rdquo; and voter fraud, without evidence. NCIC holds criminal-justice records, not investigative files, so it would not contain material from the Russia investigations. The breach follows a week of outages at the FAA, several banks and Microsoft services that officials have described as technical failures rather than attacks, and Trump&rsquo;s firing on Thursday of National Cyber Director Sean Cairncross. Pentagon chief information officer Kirsten Davies is serving as acting director.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Search turned up no in-window piece on the breach from Mother Jones, Vox, Slate or Guardian opinion, so none is summarized here. The likely line of criticism, already made by Democrats about the week&rsquo;s outages and the Cairncross firing, is that the administration is treating a security failure as a political opportunity while leaving the government&rsquo;s cyber leadership in flux.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Search turned up no in-window piece on the breach from National Review, The Dispatch, the WSJ editorial page, Reason or The Bulwark, so none is summarized here. Some Republicans have shown concern, not partisanship: Sen. Josh Hawley (R-Mo.) has asked for a briefing on the week&rsquo;s disruptions.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://edition.cnn.com/2026/11/20/politics/fbi-hacked-again-target-crime-database">CNN, Nov 20 (updated)</a>, <a href="https://abcnews.com/US/wireStory/fbi-investigating-apparent-hack-key-criminal-justice-information-138345950">AP via ABC News</a>, <a href="https://www.aljazeera.com/news/2026/11/21/fbi-national-crime-database-suffers-suspected-breach-reports">Al Jazeera, Nov 21</a>, <a href="https://www.euronews.com/2026/11/22/reported-fbi-hack-not-good-but-could-have-benefits-trump-says">Euronews, Nov 22</a>, <a href="https://www.abc.net.au/news/2026-11-22/fbi-database-hacked-according-to-media-outlets/107413682">ABC Australia, Nov 22</a> <em>(Read through search excerpts only; full pages could not be fetched from this environment. No Reuters, NYT or WaPo version surfaced, and Lawfare had no in-window piece.)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Senate &middot; Courts &middot; Pentagon</span>
+          <h2 class="story-headline">Trump says Cornyn is blocking his Dallas judicial pick because his &ldquo;feelings were hurt,&rdquo; as Senate Republicans also move to sink two of his Pentagon nominees</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>In a Fox News interview that aired Saturday, Trump attacked Sen. John Cornyn (R-Texas), who lost his primary to the Trump-endorsed Ken Paxton and leaves the Senate in January. Cornyn is refusing to return his &ldquo;blue slip&rdquo; for T. Elliot Gaiser, head of the Justice Department&rsquo;s Office of Legal Counsel, whom Trump nominated to a federal district judgeship in Dallas. Trump said Cornyn was doing a &ldquo;tremendous disservice&rdquo; out of hurt feelings and &ldquo;would have lost by a lot.&rdquo; Cornyn, whose block became public on Nov 18, says Gaiser is not a Texan, has no trial experience and skipped the state&rsquo;s bipartisan vetting process. Cornyn had recommended Dallas lawyer Steve Fahey and says &ldquo;I just refuse to be jammed.&rdquo; Sen. Ted Cruz backs Gaiser; on Saturday Cornyn called Cruz &ldquo;fragile.&rdquo; Judiciary Chairman Chuck Grassley has kept the blue-slip custom for district-court nominees despite White House pressure, so without Cornyn&rsquo;s consent the nomination stalls.</p>
+          <p>Separately, the Washington Post reported Saturday that Senate Republicans are poised to block at least two Trump Pentagon nominees who have waited more than a year: Austin Dahmer, for strategy, plans and capabilities, and Alex Velez-Green, both for senior posts in the Pentagon&rsquo;s policy office. Neither has the votes, and neither is expected in the Senate&rsquo;s final batch of confirmations this year. The resistance is aimed at Pentagon policy chief Elbridge Colby. Republican defense hawks object to the withdrawal of an Army brigade from Romania, and House Armed Services Chairman Mike Rogers accuses Colby of misleading him, which Colby denies. The White House urged confirmation &ldquo;without delay&rdquo;; a Pentagon official said the nominees could be put forward again next year.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Search turned up no in-window piece on either fight from Mother Jones, Vox, Slate or Guardian opinion, so none is summarized here.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window piece from The Dispatch, the WSJ editorial page, Reason or The Bulwark turned up. A National Review Bench Memos post, &ldquo;Texas and the Senate as an Institution&rdquo; (publication date not verified), treats the Gaiser standoff as a test of Senate custom. Read through a search summary only, it says the fight puts pressure on Grassley and Majority Leader John Thune and could put the Judiciary Committee&rsquo;s December hearing schedule in doubt. The intra-GOP split is itself the story: Cruz and Heritage&rsquo;s Kevin Roberts side with the White House, and Cornyn and the defense hawks side with Senate prerogative.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/politics/2026/11/21/trump-says-cornyn-blocked-judicial-pick-because-his-feelings-were-hurt/">Washington Post, Nov 21 (Cornyn)</a>, <a href="https://www.washingtonpost.com/national-security/2026/11/21/gop-set-block-trump-pentagon-picks-other-military-moves-face-headwinds/">Washington Post, Nov 21 (Pentagon picks)</a>, <a href="https://www.cnn.com/2026/11/18/politics/republican-cornyn-blocks-trump-judicial-nomination-gaiser-texas">CNN, Nov 18 (background)</a>, <a href="https://www.texastribune.org/2026/11/18/texas-john-cornyn-trump-judge-gaiser-blocked/">Texas Tribune, Nov 18 (background)</a>, <a href="https://politicalwire.com/2026/11/21/gop-set-to-block-trump-pentagon-picks/">Political Wire, Nov 21</a> <em>(Read through search excerpts only; full pages could not be fetched from this environment. The Pentagon-nominee half rests on a single Tier-1 outlet.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Mexico &middot; Cartels &middot; Security</span>
+          <h2 class="story-headline">Mexico captures FBI most-wanted cartel boss &ldquo;El Chapo Isidro&rdquo; in Sinaloa, in an overnight battle that left 11 dead</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Mexican forces arrested Fausto Isidro Meza Flores, known as &ldquo;El Chapo Isidro,&rdquo; late Friday in Guasave, Sinaloa. Mexican authorities say he leads the Beltr&aacute;n Leyva organization and is allied with the &ldquo;Mayos&rdquo; faction of the Sinaloa Cartel. He has been on the FBI&rsquo;s Ten Most Wanted list since February 2025, with a US reward of up to $5 million, and faces US drug-trafficking charges. Mexico&rsquo;s Defense Ministry said Saturday that seven alleged gunmen and four soldiers were killed. A federal official told the AP that gunmen threw up at least 10 roadblocks across Guasave, and troops could not get him out until about 4am. Video showed civilians running from gunfire at a baseball game. Security Secretary Omar Garc&iacute;a Harfuch said troops will stay in Sinaloa, and the government said US intelligence helped, without giving details.</p>
+          <p>The arrest gives President Claudia Sheinbaum a high-profile result as the Trump administration presses Mexico to do more against cartels. Analysts warn that removing a kingpin can inflame a state already torn by infighting between Sinaloa factions. Reports differ on who else was detained: Newsweek names an alleged second-in-command and a financial operator, while CBS reports two lieutenants and five other suspects.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.npr.org/2026/11/21/nx-s1-6049672/cartel-boss-el-chapo-isidro-detained">NPR, Nov 21</a>, <a href="https://www.aljazeera.com/news/2026/11/22/eleven-killed-in-burst-of-violence-during-mexican-cartel-leaders-capture">Al Jazeera, Nov 22 (AP detail)</a>, <a href="https://www.nbcnews.com/world/mexico/mexico-detains-top-cartel-boss-el-chapo-isidro-rcna610559">NBC News</a>, <a href="https://www.cbsnews.com/news/mexico-drug-kingpin-arrest-fausto-isidro-meza-flores-sinaloa/">CBS News</a>, <a href="https://www.rte.ie/news/2026/1122/1600173-mexico-drug-cartel/">RT&Eacute;, Nov 22</a> <em>(Read through search excerpts only; full pages could not be fetched from this environment.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Gaza &middot; Ceasefire</span>
+          <h2 class="story-headline">Hamas asks for an emergency meeting of truce mediators after an Israeli strike kills three in a food-aid vehicle; Israel says they were Islamic Jihad militants</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>An Israeli strike hit a vehicle in Tel al-Hawa, in southwestern Gaza City, around midday Saturday, killing three people, according to Gaza&rsquo;s Health Ministry. Witnesses quoted by Reuters said the car carried food and papers bearing the World Central Kitchen logo. The charity said the vehicle was not its own: the driver had previously worked for it, and the other two were not its workers. The Israeli military said it targeted three Palestinian Islamic Jihad operatives and rejected claims that they were aid workers. Hamas called the dead soup-kitchen workers and asked for an urgent meeting of the ceasefire&rsquo;s mediators and guarantors to press Israel to meet its commitments.</p>
+          <p>The strike caps a tense week for the October 2025 truce. On Nov 18 Israeli tanks pushed into central Gaza west of the &ldquo;Yellow Line&rdquo; in the first ground operation since the ceasefire, and the same day Trump&rsquo;s Board of Peace warned the deal faced &ldquo;imminent collapse,&rdquo; accusing both sides of failing their commitments. The Israeli and Palestinian accounts of who was killed conflict directly, and neither has been independently verified.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/world/articles/2026-11-21/israeli-strike-kills-three-in-vehicle-distributing-aid-in-gaza-witnesses-say">Reuters via US News, Nov 21</a>, <a href="https://www.nbcnews.com/world/gaza/israeli-strike-kills-three-aid-gaza-witnesses-rcna610569">NBC News</a>, <a href="https://www.timesofisrael.com/israeli-strike-in-gaza-city-kills-3-idf-says-it-hit-terrorists-masquerading-as-aid-workers/">Times of Israel</a>, <a href="https://www.middleeastmonitor.com/20261122-hamas-seeks-emergency-talks-after-israeli-strike-killed-3-gaza-aid-workers">Middle East Monitor/Anadolu, Nov 22</a>, <a href="https://www.irishtimes.com/world/middle-east/2026/11/18/trumps-board-of-peace-accuses-israel-and-hamas-of-failing-to-end-war-in-gaza/">Irish Times, Nov 18 (background)</a> <em>(Read through search excerpts only; full pages could not be fetched from this environment.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">UN &middot; AI &middot; Arms Control</span>
+          <h2 class="story-headline">UN talks on &ldquo;killer robots&rdquo; end with a two-year extension and no commitment to binding rules</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Talks in Geneva under the Convention on Certain Conventional Weapons ended Saturday with states agreeing to keep working on a possible instrument on lethal autonomous weapons through 2028. They set no date for formal treaty negotiations and did not say what an agreement would require. That misses UN Secretary-General Ant&oacute;nio Guterres&rsquo;s goal of launching negotiations in 2026. Reuters reported that about 100 countries favored moving quickly to binding rules. Under the convention&rsquo;s consensus rule, a few states can block progress, and campaigners blamed Russia and the United States for watering down the outcome.</p>
+          <p>Stop Killer Robots called the result a &ldquo;watered-down mandate,&rdquo; and Beatrice Fihn of Lex International called it &ldquo;pushing the can down the road for two more years.&rdquo; Existing international humanitarian law already applies to AI-enabled weapons. The missing piece is a dedicated treaty setting limits on systems that select and engage targets without meaningful human control, and drones in Ukraine and elsewhere are moving that way faster than the diplomacy.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.ksl.com/article/news/world/nations-agree-to-extend-talks-on-ai-killer-robots-but-no-firm-commitment-to-rein-them-in/51647299">AP via KSL</a>, <a href="https://www.npr.org/sections/world/">NPR World</a>, <a href="https://gizmodo.com/international-talks-on-autonomous-killer-robots-achieve-historic-deal-to-think-it-over-for-2-more-years-2000843554">Gizmodo</a> <em>(Read through search excerpts only; full pages could not be fetched from this environment. The Saturday date comes from NPR&rsquo;s listing of the AP story; the article URLs are undated.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE, TECH, ENERGY & CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Climate &middot; COP31 &middot; Diplomacy</span>
+          <h2 class="story-headline">COP31 breaks down without a deal in Antalya, as the EU and others reject a final text that left out fossil fuels</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The UN climate summit in Antalya, Turkey, ended Sunday without an agreement. COP31 President Murat Kurum told the closing plenary there was &ldquo;no consensus&rdquo; on the text, &ldquo;so the decisions were not adopted.&rdquo; Reuters said the talks &ldquo;fell into disarray&rdquo; after the European Union and others rejected the final draft. The summit was due to close Friday and ran two extra days. Reuters noted that the last comparable breakdown in UN climate talks was Copenhagen in 2009. According to the AP, the final draft did not mention fossil fuels. Its only nod was an indirect &ldquo;recall&rdquo; of the 2023 Dubai agreement to transition away from them, after Saudi Arabia and other oil producers objected to stronger language. Earlier drafts had already dropped a proposed $120 billion adaptation-finance target.</p>
+          <p>The text would have said for the first time that warming is on course to exceed 1.5&deg;C, and would have called for electrifying the global economy without requiring the power to be clean. EU climate commissioner Wopke Hoekstra had said beforehand that &ldquo;it is better to have no agreement than a bad agreement,&rdquo; and Panama had promised to formally object. Tuvalu&rsquo;s climate minister, Maina Talia, said &ldquo;it seems like we are negotiating with the Saudis.&rdquo; Australia&rsquo;s Chris Bowen, who chaired the negotiations, said the world would keep moving away from fossil fuels whatever the outcome. What happens next procedurally was not yet clear.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://cyprus-mail.com/2026/11/22/cop31-climate-talks-break-down-as-eu-others-reject-deal">Reuters via Cyprus Mail, Nov 22</a>, <a href="https://www.rappler.com/world/global-affairs/cop31-outcomes-november-22-2026/">Reuters via Rappler, Nov 22</a>, <a href="https://www.bostonglobe.com/2026/11/22/world/turkey-un-climate-fossil-fuels-global-warming/">AP via Boston Globe, Nov 22</a>, <a href="https://www.abc.net.au/news/2026-11-22/cop31-at-odds-over-fossil-fuels/107414330">ABC Australia, Nov 22</a>, <a href="https://www.cnbc.com/2026/11/21/cop31-climate-summit-risks-failure-as-talks-go-deep-into-overtime.html">Reuters via CNBC, Nov 21</a> <em>(Read through search excerpts only; full pages could not be fetched from this environment. Some syndicated copies of the Reuters story still carry an earlier &ldquo;close to final deal&rdquo; slug.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Mathematics &middot; AI</span>
+          <h2 class="story-headline">A claimed AI-assisted proof of the Riemann hypothesis passes independent machine checks, and mathematicians say they don&rsquo;t yet understand it</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Levent Alp&ouml;ge, a mathematician at Anthropic, posted a short note on Friday saying that, &ldquo;working with Claude,&rdquo; he believes he has found a proof of the Riemann hypothesis, the 166-year-old conjecture about the distribution of prime numbers, and of its generalized form. He released it as a machine-checkable formalization in the Lean proof assistant, reportedly more than 17 million lines long, but not the AI-written human-readable explanation, which he says runs past 250,000 pages. On Saturday MIT&rsquo;s Andrew Sutherland reported compiling the code independently and having Lean&rsquo;s kernel recheck it using only the standard axioms, calling it &ldquo;an historic moment.&rdquo; Lean and Mathlib community members then issued a statement expressing confidence in the formal proof.</p>
+          <p>Mathematicians are cautious. Imperial College&rsquo;s Kevin Buzzard said nobody yet understands what the proof shows. Others stress that experts still need to confirm that the formal Lean statement really matches the hypothesis as mathematicians mean it. Fields medalist James Maynard told Nature he suspects the proof will turn out to be correct. Princeton&rsquo;s Maksym Radziwi&#322;&#322; told Science that the approach pushes the work of understanding onto everyone else. There is no peer-reviewed paper, and Scientific American separately reports competing claims that a human-produced proof may have appeared months earlier. <em>Disclosure: this brief is compiled with Claude, the Anthropic model involved.</em></p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.bloomberg.com/news/articles/2026-11-21/anthropic-researcher-claims-to-solve-riemann-problem-with-claude">Bloomberg, Nov 21</a>, <a href="https://www.aljazeera.com/news/2026/11/21/riemann-hypothesis-has-the-worlds-most-famous-maths-problem-been-cracked">Al Jazeera, Nov 21</a>, <a href="https://www.scientificamerican.com/article/anthropic-mathematician-claims-to-prove-riemann-hypothesis-most-famous-problem-in-all-of-math/">Scientific American</a>, <a href="https://www.nature.com/articles/d41586-026-03812-7">Nature</a>, <a href="https://www.science.org/content/article/ai-may-have-solved-math-s-greatest-mystery-can-humans-understand-answer">Science</a>, <a href="https://www.scientificamerican.com/article/dueling-claims-of-riemann-hypothesis-proofs-emerge/">Scientific American (dueling claims)</a> <em>(Read through search excerpts only; full pages could not be fetched from this environment. The note was posted Friday; the independent checks and reactions are the in-window development.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Chips &middot; Nvidia &middot; Export Controls</span>
+          <h2 class="story-headline">California&rsquo;s Nvidia investigation covers possible state criminal violations over chip sales to China, Bloomberg reports</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Bloomberg reported on Saturday that California Attorney General Rob Bonta&rsquo;s investigation of Nvidia extends to possible violations of state criminal law, not just civil law. Bonta, who subpoenaed the company on Nov 19, is examining whether Nvidia or its former chief executive, Jensen Huang, helped China obtain advanced chips or confidential information, and whether the company misled investors about the risk. A state cannot enforce federal export controls, but it can use its own fraud and securities laws. Any charges would depend on what individuals knew and intended, and California could also seek disgorgement of proceeds.</p>
+          <p>The probe is preliminary, with no findings or charges, and Nvidia had not responded publicly. It adds legal pressure as the company&rsquo;s board searches for a new chief executive after Huang&rsquo;s departure. That departure is tied to his reported relationship with a former director of Singapore&rsquo;s Megaspeed, a firm investigated over export-control violations. Bonta said the relationship and the chip sales &ldquo;may or may not be connected.&rdquo;</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.bloomberg.com/news/articles/2026-11-21/california-nvidia-probe-covers-potential-criminal-law-violations">Bloomberg, Nov 21</a>, <a href="https://www.manilatimes.net/2026/11/21/business/foreign-business/california-probes-nvidia-over-china-chips-access/2475093">Manila Times (Bloomberg), Nov 21</a>, <a href="https://www.cnbc.com/2026/11/19/nvidia-california-bonta-subpoena-china-chips.html">CNBC, Nov 19 (background)</a> <em>(Read through search excerpts only; full pages could not be fetched from this environment.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal &middot; Premier League</span>
+          <h2 class="story-headline">Madueke rescues a 2&ndash;2 draw at Newcastle, but Raya&rsquo;s shoulder injury is the bigger worry</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Arsenal drew 2&ndash;2 at St James&rsquo; Park on Saturday evening. Eberechi Eze put them ahead on 33 minutes, but Newcastle came out after half-time with a triple substitution. Harvey Barnes equalised four minutes into the second half and Malick Thiaw headed the hosts in front on 62. Noni Madueke levelled on 78, running through the middle of the Newcastle defence. Arseblog called it &ldquo;a dramatic point.&rdquo; Its ratings piece flagged the real concern: David Raya went off around the 70th minute with an apparent left-shoulder injury and was replaced by Kepa Arrizabalaga. Mikel Arteta said he did not know what had happened, that an MRI was expected Sunday, and that Arsenal had &ldquo;lost two points&rdquo; by letting Newcastle back into the game.</p>
+          <p>The champions are on 28 points, six clear of Brighton, who have a game in hand at Hull on Sunday; a win would have put Arsenal eight clear. Newcastle, 12th on 13 points, took the draw as a lift for manager Matthias Jaissle, who is under pressure.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.news/2026/11/report-newcastle-2-2-arsenal-inc-goals/">Arseblog News: report</a>, <a href="https://arseblog.news/2026/11/newcastle-2-2-arsenal-player-ratings/">Arseblog News: ratings</a>, <a href="https://www.nbcsports.com/soccer/live/newcastle-vs-arsenal-live-updates-score-goals-highlights-stats-2026-november-21">NBC Sports, Nov 21</a>, <a href="https://www.espn.co.uk/football/match/_/gameId/401879232">ESPN match page</a>, <a href="https://sports.yahoo.com/articles/mikel-arteta-provides-david-raya-235710756.html">Yahoo Sports (Arteta on Raya)</a>, <a href="https://www.wam.ae/en/article/17jdspf-arsenal-draw-with-newcastle-united-retain-premier">WAM (table)</a> <em>(Read through search excerpts only; full pages could not be fetched from this environment. No in-window piece from The Athletic&rsquo;s Arsenal desk or BBC Sport surfaced.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Premier League &middot; Matchweek 11</span>
+          <h2 class="story-headline">Leeds win 4&ndash;1 at Stamford Bridge and City are held by Fulham; Pochettino&rsquo;s United era begins at Anfield on Sunday</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Saturday&rsquo;s biggest result was Leeds&rsquo; 4&ndash;1 win at Chelsea, the home side&rsquo;s second straight defeat, which drops them to eighth. Manchester City dropped points again in a 1&ndash;1 lunchtime draw with Fulham. Tottenham beat Ipswich 2&ndash;0, inspired by 18-year-old Luca Williams-Barnett. Bournemouth beat Nottingham Forest 2&ndash;0, Coventry edged Crystal Palace 3&ndash;2, and Aston Villa and Sunderland drew 0&ndash;0.</p>
+          <p>Sunday&rsquo;s headline fixture is Liverpool v Manchester United at Anfield (4:30pm GMT), Mauricio Pochettino&rsquo;s first match after replacing Michael Carrick, with only a few days&rsquo; training behind him. United arrive 18th with eight points from 10 games, eight league games without a win and 11 matches without a clean sheet. They are, however, unbeaten in their last three competitive meetings with Liverpool. Benjamin &Scaron;e&scaron;ko is out with a leg injury.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://sports.yahoo.com/articles/premier-league-chelsea-sink-tottenham-170400294.html">Yahoo Sports round-up</a>, <a href="https://onefootball.com/en/news/premier-league-chelsea-sink-tottenham-bounce-back-bournemouth-on-fire-43814326">OneFootball</a>, <a href="https://www.football365.com/match-preview/liverpool-vs-man-utd-prediction-preview">Football365 preview</a>, <a href="https://www.planetfootball.com/manchester-united/man-utd-predicted-xi-vs-liverpool-pochettino-first-game">Planet Football</a> <em>(Read through search excerpts only; full pages could not be fetched from this environment. BBC Sport was not reachable; results agree across several reports but their pages carry no visible dates.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">College Football &middot; Upset Saturday</span>
+          <h2 class="story-headline">Michigan stuns unbeaten No. 4 UCLA 18&ndash;16 in triple overtime, and Utah is now the last unbeaten team in the FBS</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Michigan beat No. 4 UCLA 18&ndash;16 in three overtimes on Senior Day in Ann Arbor, ending the Bruins&rsquo; unbeaten season and a 10-game winning streak and making the Wolverines (6&ndash;5) bowl-eligible. The winner came on the final play: a 3-yard two-point pass from Bryce Underwood, benched earlier in the season, to Jalen Hoffman. Regulation ended 3&ndash;3 and the teams traded field goals in the first two overtimes. UCLA quarterback Ty Dieffenbach turned the ball over three times and was taken off on a stretcher on the first play of overtime. The 10&ndash;1 Bruins&rsquo; College Football Playoff hopes took a serious hit.</p>
+          <p>Elsewhere, Washington beat No. 6 Indiana 27&ndash;24 in overtime after deflecting a 37-yard field-goal try, and fans stormed the field. No. 2 Utah came back from a blown 17-point lead to beat TCU 38&ndash;17 with three touchdowns in the final 5:46, staying the FBS&rsquo;s only unbeaten team and clinching a Big 12 title-game spot. No. 3 Notre Dame beat SMU 24&ndash;3 to improve to 10&ndash;1.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/sports/colleges/2026/11/21/ucla-michigan-score/a753e92a-e60d-11f1-a99e-b3e3805c6b8b_story.html">AP via Washington Post, Nov 21</a>, <a href="https://www.espn.com/college-football/story/_/id/50556702/bryce-underwood-michigan-outlast-ucla-triple-over">ESPN</a>, <a href="https://dailybruin.com/2026/11/21/ucla-football-falls-to-18-16-michigan-in-triple-overtime-ending-undefeated-run">Daily Bruin, Nov 21</a>, <a href="https://www.espn.com/college-football/recap?gameId=401858535">ESPN recap: Washington&ndash;Indiana</a>, <a href="https://www.espn.com/college-football/recap?gameId=401856872">ESPN recap: Utah&ndash;TCU</a>, <a href="https://www.espn.com/college-football/recap/_/gameId/401858307">ESPN recap: Notre Dame&ndash;SMU</a> <em>(Read through search excerpts only; full pages could not be fetched from this environment.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
