@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Tuesday, November 24, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+<!-- EVENING:SLOT:START -->
+<!-- EVENING:SLOT:END -->
+
+<!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">White House &middot; Nvidia &middot; National Security</span>
+          <h2 class="story-headline">Nvidia&rsquo;s board reinstates Jensen Huang after Trump says &ldquo;I made the deal,&rdquo; and lawmakers in both parties demand answers</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Nvidia&rsquo;s board voted unanimously on Monday to reinstate Jensen Huang as president, chief executive and a board member, effective immediately. Huang had resigned on Nov 12 after reports of an affair with a woman U.S. officials suspect of working for Chinese intelligence; that suspicion has not been proven, and Huang has not been accused of a crime. In its filing, the board said it acted after receiving &ldquo;input from senior levels of the United States government&rdquo; that his return &ldquo;poses no national security risk,&rdquo; and said its internal committee&rsquo;s investigation will continue. The board&rsquo;s chair had said on last week&rsquo;s earnings call that it had no intention of bringing Huang back. President Trump told CNBC on Monday that he had spoken to the board &ldquo;directly and indirectly&rdquo; and &ldquo;convinced them,&rdquo; adding, &ldquo;I made the deal.&rdquo; CNBC, citing people familiar with the board&rsquo;s thinking, reported that the decision was sealed by Trump&rsquo;s personal assurance on Sunday that Huang had not broken national security laws. Nvidia shares closed up about 31% and the Nasdaq rose about 6.5%, its best day since April 2025.</p>
+          <p>Criticism came from both parties. Senate Democratic leader Chuck Schumer said Democrats would use &ldquo;full power&rdquo; to investigate any wrongdoing by the administration, Huang or other Nvidia executives, and on the Republican side Sen. Scott said the government owes the public answers about what happened. The Senate Banking Committee said Huang will testify at a public hearing in December, and he is also reported to be scheduled for a closed-door session with three House committees. On the same day, the Commerce Department added Megaspeed, the Singapore chip firm linked to the woman at the center of the case, to its trade blacklist (see Science &amp; Tech).</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Search turned up no in-window piece on the reinstatement from Mother Jones, Vox, Slate or Guardian opinion, so none is summarized here. The critique on the left, as voiced by Democratic lawmakers in news coverage, is that a president who holds sway over export licenses and investigations should not be steering a private company&rsquo;s personnel decisions, and that his assurance cuts short the investigations that could settle the security question.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>The Wall Street Journal editorial board, in &ldquo;Nvidia and Trump&rsquo;s State Capitalism&rdquo; (Nov 23, read through secondary summaries), called the intervention a political bailout. It mocked Trump&rsquo;s claim that the Justice Department had run a &ldquo;very thorough investigation&rdquo; (&ldquo;the quickest very thorough investigation in history&rdquo;) and warned it &ldquo;will have major national security and political costs,&rdquo; signalling that export controls bend to the president&rsquo;s wishes. From the anti-Trump right, The Bulwark went further, arguing that the government dictating a company&rsquo;s CEO is a form of central planning; that is an intra-right dissent, not the mainstream conservative position. Search turned up no in-window piece from National Review, The Dispatch or Reason.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/technology/2026/11/23/nvidia-board-reinstates-jensen-huang-after-us-government-input/">Washington Post, Nov 23</a>, <a href="https://www.sec.gov/Archives/edgar/data/0001045810/000104581026000090/nov23pressrelease.htm">Nvidia 8-K, Nov 23</a>, <a href="https://www.cnbc.com/2026/11/23/trump-nvidia-jensen-huang.html">CNBC, Nov 23</a>, <a href="https://www.cnbc.com/2026/11/23/nvidia-jensen-huang-congress-trump.html">CNBC (Congress), Nov 23</a>, <a href="https://thehill.com/homenews/house/6237899-huang-testifies-capitol-hill-december/">The Hill</a>, <a href="https://www.pbs.org/newshour/nation/nvidia-board-unanimously-reinstates-jensen-huang-as-ceo-and-chairman">PBS NewsHour</a>, <a href="https://www.thedailybeast.com/murdoch-paper-wall-street-journal-shreds-trump-for-defense-of-fallen-tech-boss-jensen-huang">Daily Beast (on WSJ editorial)</a>, <a href="https://www.thebulwark.com/p/trump-jensen-huang-and-american-communism">The Bulwark</a> <em>(Read through search excerpts only; full pages could not be fetched from this environment.)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Justice Department &middot; Death Penalty &middot; California</span>
+          <h2 class="story-headline">At the Justice Department, Trump attacks Newsom over 548 death-row commutations and says he will order prosecutors to seek death for child murderers</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>President Trump spoke at Justice Department headquarters on Monday at an event billed as &ldquo;protecting American families.&rdquo; Most of the speech was aimed at California Gov. Gavin Newsom, a likely 2028 Democratic candidate, who commuted the death sentences of 548 prisoners. Trump called the commutations &ldquo;one of the most shocking acts of injustice our country has ever seen&rdquo; and handed the microphone to relatives of murder victims, who challenged Newsom to defend the decision to them. He said he would sign a directive telling the department to seek the death penalty &ldquo;for child murderers, as well as rapists and human traffickers who kill their victims.&rdquo; Attorney General Todd Blanche told the families that the department is &ldquo;seeking the death penalty whenever appropriate.&rdquo; CNN and other outlets noted that it is unusual for a president to use the department&rsquo;s platform to go after a political opponent.</p>
+          <p>Newsom said &ldquo;to the families standing with him today, your grief is real,&rdquo; and that everyone on California&rsquo;s former death row will die in prison. He called the Justice Department &ldquo;not Donald Trump&rsquo;s law firm.&rdquo; Most of the commutations still need approval from the California Supreme Court, and the Criminal Justice Legal Foundation has said it will challenge them there.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Search turned up no in-window piece on the speech from Mother Jones, Vox, Slate or Guardian opinion, so none is summarized here. The case made by Newsom and his allies in news coverage is that the event turned the Justice Department into a campaign stage against a likely rival, and that clearing death row responds to a system they see as error-prone and unequal.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Search turned up no in-window piece from National Review, The Dispatch, the WSJ editorial page, Reason or The Bulwark, so none is summarized here. The conservative objection that surfaced in news coverage, from prosecutors and victims&rsquo; families, is that a governor erased sentences that juries imposed and that California voters chose to keep at the ballot box.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnn.com/2026/11/23/politics/trump-newsom-death-penalty-commutations-2028">CNN, Nov 23</a>, <a href="https://abcnews.com/US/wireStory/trump-targets-newsom-democrats-justice-department-speech-focused-138377257">AP via ABC News</a>, <a href="https://www.usnews.com/news/world/articles/2026-11-23/trump-to-target-gavin-newsom-in-speech-at-justice-department">Reuters via US News, Nov 23</a>, <a href="https://www.ms.now/news/trump-speech-justice-department-gavin-newsom">MS NOW</a>, <a href="https://calmatters.org/justice/2026/11/gavin-newsom-death-penalty-commutation/">CalMatters (background)</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">House &middot; Ethics</span>
+          <h2 class="story-headline">Rep. Jimmy Gomez resigns after the House Ethics Committee finds substantial evidence of sexual misconduct toward a staffer</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Rep. Jimmy Gomez, a California Democrat, announced on Monday that he will resign, after the House Ethics Committee released a report finding substantial evidence of sexual misconduct toward a House staffer. Reports say he will leave on Dec 1. Gomez disputes the findings and says the committee left out parts of his testimony. He had already lost his re-election bid in the Nov 3 midterms. House Democratic leaders, including Hakeem Jeffries, called the resignation appropriate.</p>
+          <p>The committee also released findings on two Republicans who are leaving Congress: it found that Rep. Troy Nehls mishandled campaign funds and closed that matter with a formal reprimand, and it faulted Rep. Mike Collins for insufficient oversight of a former chief of staff who hired and paid a romantic partner as an intern.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>Search turned up no in-window piece from Mother Jones, Vox, Slate or Guardian opinion, so none is summarized here.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>Search turned up no in-window piece from National Review, The Dispatch, the WSJ editorial page, Reason or The Bulwark, so none is summarized here.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnn.com/2026/11/23/politics/house-ethics-committee-reports-jimmy-gomez">CNN, Nov 23</a>, <a href="https://www.wamc.org/2026-11-23/california-democrat-rep-gomez-resigns-following-ethics-report-on-sexual-misconduct-allegations">WAMC/NPR, Nov 23</a>, <a href="https://abc17news.com/politics/national-politics/cnn-us-politics/2026/11/23/democratic-congressman-resigns-after-damning-house-ethics-report/">ABC17 (CNN), Nov 23</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Iran &middot; Hormuz &middot; Sanctions</span>
+          <h2 class="story-headline">Iran&rsquo;s Guards claim three tankers hit mines in Hormuz despite a U.S. escort, as Treasury hits Iran&rsquo;s shadow-banking network</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Iran&rsquo;s Revolutionary Guards said on Monday that three oil tankers they called &ldquo;violating&rdquo; caught fire after hitting naval mines in the Strait of Hormuz, one near the southern coast and two in the eastern part of the strait. They said the ships were under U.S. air cover and escort, which &ldquo;failed to prevent&rdquo; the blasts, and warned that U.S. escorts do not exempt shipowners from Iran&rsquo;s rules for the strait. There was no independent confirmation of the fires or the mines, and U.S. Central Command had not responded. The U.S. has disputed earlier IRGC mine claims. Reported attacks in and around the strait were higher in October and November than in any month since the U.S. and Israel attacked Iran in late February.</p>
+          <p>The same day, the Treasury Department sanctioned 22 entities and eight people it described as part of Iran&rsquo;s shadow-banking network, including exchange houses, front companies and the Iran Center for Exchange of Currency and Gold, which Treasury says handles tens of billions of dollars in trade a year. The action falls under &ldquo;Operation Economic Outcast,&rdquo; the pressure campaign Treasury Secretary Scott Bessent began in August, and Treasury said it will widen secondary-sanctions exposure for firms that keep dealing with Iran. Despite the threats, oil fell (see Science &amp; Tech): rising supply elsewhere is outweighing the risk in the Gulf.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/2026/11/24/iran-trump-hormuz-crude-.html">CNBC, Nov 24</a>, <a href="https://gulfnews.com/world/mena/buried-the-head-of-the-snake-us-hits-irans-shadow-banks-as-bessent-says-tehran-is-panicking-1.500758633">Gulf News</a>, <a href="https://www.benzinga.com/news/politics/26/11/63568282/scott-bessent-unleashes-fresh-iran-sanctions-as-tehran-warns-tankers-against-using-strait-of-hormuz-crude-oil-prices-continue-to-cool">Benzinga</a>, <a href="https://mlq.ai/news/irans-revolutionary-guards-say-three-tankers-hit-mines-in-hormuz-despite-a-us-escort/">Reuters via MLQ</a> <em>(Read through search excerpts only. The mine claim comes from the IRGC and is unverified.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">EU &middot; Russia &middot; Sanctions</span>
+          <h2 class="story-headline">Brussels proposes a 22nd Russia sanctions package: about 60 more banks off SWIFT, 70-plus shadow-fleet ships, and a ban on Russian teams competing under their flag</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The European Commission on Monday proposed its 22nd package of sanctions on Russia. It would extend the transaction ban to about 60 more Russian banks, cutting them off from the SWIFT payments messaging system, and target crypto and payment networks used to get around sanctions. More than 70 shadow-fleet tankers would be added to the list, and the Commission wants to ban all tankers insured in Russia. EU companies would be barred from helping Russia build, operate or repair energy infrastructure, including refineries. Former Russian combatants in Ukraine would be banned from entering the EU, and EU citizens would no longer be allowed to sit on the governing bodies of companies in Russia.</p>
+          <p>The most unusual measure would bar Russian teams and athletes from competing under the Russian flag at events in EU countries, and ban official Russian symbols there. This comes after the International Olympic Committee lifted its suspension of Russian athletes in July, ahead of the 2028 Los Angeles Games. All 27 member states must approve the package. Past packages have been held up by single governments, and China&rsquo;s role as the main route around sanctions is again a sticking point. Euronews reports that Ukrainian President Volodymyr Zelensky is due at a special EU summit in Brussels later this week.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://aljazeera.com/news/2026/11/23/eu-plans-sports-ban-in-sweeping-new-russia-sanctions-proposal">Al Jazeera, Nov 23</a>, <a href="https://www.euronews.com/2026/11/23/eu-goes-after-russias-banks-soldiers-and-athletes-in-new-sanctions-package">Euronews, Nov 23</a>, <a href="https://en.lb.ua/news/2026/11/23/51158_eu_commission_unveils_new_russia.html">LB.ua, Nov 23</a>, <a href="https://euperspectives.eu/2026/11/russia-eu-22nd-sanctions-package-ukraine-war-peace/">EU Perspectives</a> <em>(Read through search excerpts only. No AP, Reuters or BBC version surfaced.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE, TECH, ENERGY & CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Chips &middot; Export Controls</span>
+          <h2 class="story-headline">Commerce blacklists Megaspeed and six affiliates over suspected Nvidia chip diversion, as the intelligence chief says China appears to have gotten the chips</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The Commerce Department on Monday added Singapore-based Megaspeed International and six affiliates in Singapore, Malaysia and Thailand to its Entity List. It cited a significant risk that they could divert advanced computing products to unauthorized users. Megaspeed is the company formerly linked to Alice Huang, the woman at the center of the Nvidia scandal. Commerce investigators had asked Nvidia for Megaspeed sales records in May 2025, and Nvidia put the firm on its internal no-sell list the following month, but the government had not blacklisted it until now. The Financial Times reported this month that Commerce had postponed new Entity List additions. Bessent has said other agencies backed listing Megaspeed for months, but that &ldquo;Commerce has the pen.&rdquo;</p>
+          <p>Reports disagree on how much the listing restricts. Semafor quotes Commerce saying it is now unlawful to export advanced chips to Megaspeed &ldquo;even if the chips are produced outside the United States.&rdquo; Wccftech reports that the rule leaves out the foreign direct product rule, which would matter because Nvidia&rsquo;s chips are made in Taiwan. Director of National Intelligence Jay Clayton told CNN that &ldquo;it appears &hellip; that there was access to those chips, yes,&rdquo; but did not say which chips or how many. He confirmed that investigations into Alice Huang and Megaspeed are active, and the Justice Department is examining whether Megaspeed broke export controls.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.semafor.com/article/11/23/2026/commerce-to-add-megaspeed-to-trade-blacklist">Semafor, Nov 23</a>, <a href="https://www.foxbusiness.com/politics/trump-admin-adds-megaspeed-commerce-department-trade-blacklist-after-nvidia-scandal">Fox Business</a>, <a href="https://thenextweb.com/news/us-blacklists-megaspeed-nvidia-scandal">The Next Web</a>, <a href="https://wccftech.com/a-hollow-gesture-the-u-s-blacklists-alice-huang-linked-megaspeed-but-skips-a-key-rule-that-theoretically-keeps-nvidia-chips-flowing/">Wccftech</a>, <a href="https://cybernews.com/news/china-nvidia-chips/">Cybernews (Clayton)</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Biomedicine &middot; Cancer</span>
+          <h2 class="story-headline">FDA approves Roche&rsquo;s giredestrant after surgery for early breast cancer, the first new endocrine therapy in that setting in more than 20 years</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The FDA on Monday approved Roche&rsquo;s Wilserdly (giredestrant), a daily pill, to be taken after surgery by adults with estrogen receptor-positive, HER2-negative stage I&ndash;III breast cancer at intermediate to high risk of recurrence. This is the most common form of the disease. The approval rests on the phase III lidERA trial of more than 4,100 patients. Giredestrant cut the risk of invasive recurrence or death by 30% compared with standard endocrine therapy (tamoxifen or an aromatase inhibitor): 140 patients on giredestrant and 196 on standard therapy had such an event. Fewer patients stopped treatment because of side effects (5.3% vs 8.2%).</p>
+          <p>Giredestrant is an oral SERD, a class of drugs that degrades the estrogen receptor instead of only blocking it. It was first approved a week earlier, on Nov 16, in combination with everolimus for advanced breast cancer with ESR1 mutations. Roche says it is now the only SERD approved for both early and advanced disease. Adjuvant endocrine therapy is usually taken for five years or more, so the early-stage approval opens a much larger market than the advanced-disease approval.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.globenewswire.com/news-release/2026/11/23/3408771/0/en/fda-approves-roche-s-wilserdly-giredestrant-for-early-stage-er-positive-breast-cancer-making-it-the-first-new-endocrine-therapy-in-this-setting-in-over-20-years.html">Roche via GlobeNewswire, Nov 23</a>, <a href="https://www.roche.com/media/releases/med-cor-2026-11-23">Roche</a>, <a href="https://endpoints.news/roche-wins-second-fda-approval-for-breast-cancer-pill-opening-up-bigger-market">Endpoints News</a>, <a href="https://www.pharmacytimes.com/view/fda-approves-giredestrant-for-early-stage-er-positive-breast-cancer">Pharmacy Times</a>, <a href="https://www.statnews.com/2026/11/16/fda-approves-new-roche-breast-cancer-drug/">STAT, Nov 16 (first approval)</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Energy &middot; Oil Markets</span>
+          <h2 class="story-headline">Oil drops to a three-month low as returning supply outweighs the threat in Hormuz</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Brent crude fell about 3.5% on Monday to settle a little above $89 a barrel, its lowest close since Aug 31, and slipped further below $89 in Asian trading on Tuesday. U.S. crude fell to about $80. The drop came even as Iran&rsquo;s Guards claimed three tankers had hit mines in the Strait of Hormuz. Traders are focused on supply: Libya&rsquo;s Sharara pipeline has reopened, and waivers on Russian oil sanctions, meant to keep markets supplied during the Gulf crisis, have widened the pool of ships and suppliers available to India and China. Reported settlement prices differ slightly between outlets.</p>
+          <p>Flows through Hormuz have still fallen, to an average of about 9.5 million barrels a day in the 10 days to Nov 19, from 12.2 million in October. Before the war, the strait carried about 20 million barrels a day. JPMorgan expects persistent oversupply to keep Brent in the high $70s in the first half of 2027. That is a sign the market now sees the disruption as something it can work around, not a shock that will push prices up again.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.cnbc.com/amp/2026/11/24/oil-wti-brent-hormuz-supply.html">CNBC (Reuters), Nov 24</a>, <a href="https://www.theglobeandmail.com/investing/article-oil-touches-three-month-lows-as-rising-supply-offsets-hormuz-threat/">Globe and Mail (Reuters)</a>, <a href="https://oilprice.com/Latest-Energy-News/World-News/Oil-Slides-Nearly-4-as-Returning-Supply-Outweighs-Gulf-Attacks.html">OilPrice.com</a>, <a href="https://www.business-standard.com/markets/commodities/oil-prices-extend-losses-hover-near-three-month-lows-on-supply-concerns-126112400254_1.html">Business Standard, Nov 24</a> <em>(Read through search excerpts only. No new in-window climate development was verified for this edition; the COP31 talks ended on Nov 22, outside the window.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal &middot; Champions League</span>
+          <h2 class="story-headline">Arteta rules Raya out of Tuesday&rsquo;s Dortmund game but says the shoulder injury &ldquo;doesn&rsquo;t look too serious&rdquo;, and Kepa is set to start</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Mikel Arteta confirmed at his pre-match press conference that David Raya will miss Tuesday night&rsquo;s Champions League game against Borussia Dortmund at the Emirates (8pm UK). Raya hurt his shoulder in a collision with Will Osula in Saturday&rsquo;s 2&ndash;2 draw at Newcastle. Arteta said it &ldquo;doesn&rsquo;t look too serious&rdquo; and won&rsquo;t need an operation, but he could not say whether Raya will be fit for Sunday&rsquo;s game against Manchester City. Arseblog News reads that as better news than first feared. Kepa Arrizabalaga is expected to start, with Illan Meslier on the bench; Arteta said the club wants to show &ldquo;how well we are protected&rdquo; in goal. Arseblog&rsquo;s preview calls Dortmund, who lead the Bundesliga unbeaten, a tricky test, and includes Guimar&atilde;es on settling into Arteta&rsquo;s midfield. Arteta also praised Noni Madueke&rsquo;s growth and backed Viktor Gy&ouml;keres.</p>
+          <p>Arsenal have 10 points from four games in the league phase and are unbeaten, with Dortmund a point behind. Ethan Nwaneri, on loan at Dortmund, could face his parent club. Asked about him, Arteta said that coming from Arsenal &ldquo;doesn&rsquo;t give you any advantage.&rdquo; After City, the run continues with Brentford, Tottenham and Real Madrid. No Athletic piece surfaced to corroborate the team news; the facts above are backed by Arsenal&rsquo;s official press-conference transcript.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://arseblog.news/2026/11/arteta-raya-out-of-dortmund-game-but-injury-doesnt-look-too-serious/">Arseblog News</a>, <a href="https://arseblog.com/2026/11/dortmund-a-tricky-test-guimaraes-on-getting-to-grips-with-artetas-midfield/">Arseblog</a>, <a href="https://www.arsenal.com/news/every-word-from-mikel-artetas-pre-dortmund-presser-aYVTD2t14G6R">Arsenal.com transcript</a>, <a href="https://sports.yahoo.com/articles/raya-miss-dortmund-game-injury-152313712.html">Yahoo Sports</a>, <a href="https://www.espn.com/soccer/match/_/gameId/401915295/borussia-dortmund-arsenal">ESPN match page</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">English Football</span>
+          <h2 class="story-headline">Brentford thrash ten-man Everton 4&ndash;0 to climb to sixth, and Swindon sack Ian Holloway</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Brentford beat Everton 4&ndash;0 in Monday night&rsquo;s game, the last of the Premier League weekend. Keane Lewis-Potter scored twice in two minutes (23&prime;, 25&prime;). James Tarkowski was then sent off in the 40th minute: referee Craig Pawson first showed him a yellow for a follow-through on Yehor Yarmoliuk, then upgraded it to red for serious foul play after a VAR review. Vitaly Janelt (67&prime;) and substitute F&aacute;bio Carvalho (90&prime;) completed the win, which lifts Keith Andrews&rsquo;s side to sixth on 17 points. Everton dropped to ninth. David Moyes said his first instinct was that Tarkowski won the ball, but he later accepted the decision. Tarkowski now faces a three-match ban that rules him out of Sunday&rsquo;s Merseyside derby. The BBC&rsquo;s rules expert Dale Johnson questioned whether the VAR intervention was justified.</p>
+          <p>Further down the pyramid, League Two Swindon Town sacked Ian Holloway on Monday after four straight defeats left them 17th. The last of those defeats was Saturday&rsquo;s 2&ndash;0 loss at Newport, after which stewards had to stop Holloway approaching away fans. He was appointed in October 2024 and won 49 of his 113 games in charge. Gavin Gunning and Steve Mildenhall take temporary charge.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://africa.espn.com/football/match/_/gameId/401879237">ESPN (23 Nov 2026)</a>, <a href="https://www.skysports.com/football/brentford-vs-everton/report/559546">Sky Sports report</a>, <a href="https://www.espn.com/soccer/story/_/id/50577324/david-moyes-james-tarkowski-everton-brentford">ESPN (Moyes)</a>, <a href="https://www.the42.ie/ian-holloway-7234975-Nov2026/">The42 (Holloway)</a>, <a href="https://sports.yahoo.com/articles/swindon-town-sack-manager-ian-091300167.html">Yahoo Sports (Holloway)</a> <em>(Read through search excerpts only; no BBC Sport page surfaced.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">NFL &middot; Monday Night Football</span>
+          <h2 class="story-headline">Jayden Daniels needs two throws in 34 seconds to set up Drew Stevens&rsquo;s walk-off kick as Washington edge Cincinnati 22&ndash;20</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>The Commanders beat the Bengals 22&ndash;20 on Monday night. Cincinnati took a 20&ndash;19 lead on Evan McPherson&rsquo;s 56-yard field goal with 46 seconds left. Jayden Daniels then hit rookie receiver Antonio Williams for gains of 22 and 42 yards, covering 64 yards in 34 seconds, and Drew Stevens kicked a 26-yard field goal as time expired. Stevens went five for five, all in the second half.</p>
+          <p>Joe Burrow threw for about 300 yards and two touchdowns, including a 4-yard score to Colbie Young that put Cincinnati up 17&ndash;10. Washington&rsquo;s defense mostly held him to check-downs. Daniels was sacked several times, with Boye Mafe getting to him on three occasions.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/sports/nfl/2026/11/23/bengals-commanders-score/476ee8b6-e7c0-11f1-8db0-6f1e3c389e7c_story.html">Washington Post (AP), Nov 23</a>, <a href="https://www.espn.com/nfl/recap/_/gameId/401873078">ESPN recap</a>, <a href="https://www.cbssports.com/nfl/news/commanders-vs-bengals-live-updates-score-highlights/live/">CBS Sports</a>, <a href="https://sports.yahoo.com/articles/washington-commanders-clinch-22-20-053333518.html">Yahoo Sports</a> <em>(Read through search excerpts only.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
