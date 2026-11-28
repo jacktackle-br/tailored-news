@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tailored News — Daily Brief</title>
+<script>
+  /* Set the reader's saved theme before first paint (no flash). */
+  try { var t = localStorage.getItem('brief-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<style>
+  /* ============================================================
+     TAILORED NEWS — canonical template (design handoff v1)
+     Self-contained: system fonts, inline CSS, no dependencies.
+     ============================================================ */
+  :root {
+    --paper:        #f4efe4;
+    --paper-raised: #faf6ec;
+    --ink:          #211c15;
+    --ink-soft:     #57503f;
+    --ink-faint:    #8a8272;
+    --rule:         #ddd4c0;
+    --rule-soft:    #e7dfce;
+    --accent:       #9a4a2f;   /* muted sienna — links, dividers */
+    --take-left:    #5a6b7a;   /* cool slate edge */
+    --take-right:   #8a7350;   /* warm stone edge */
+    --take-left-bg:  #eef0ef;
+    --take-right-bg: #f3ede1;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, Cambria, "Times New Roman", Times, serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas,
+             "Liberation Mono", monospace;
+
+    --measure: 34rem;
+    --pad: clamp(1.25rem, 5vw, 2.5rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+      --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+      --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:#17140f; --paper-raised:#201c15; --ink:#ece5d6; --ink-soft:#b3aa96;
+    --ink-faint:#7c7361; --rule:#3a3427; --rule-soft:#2c281f; --accent:#d68a5f;
+    --take-left:#7f92a3; --take-right:#b39a6f; --take-left-bg:#1c1f22; --take-right-bg:#221d13;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--serif); font-size: 1.125rem; line-height: 1.62;
+    text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+  }
+  .page { max-width: calc(var(--measure) + var(--pad) * 2); margin: 0 auto; padding: 0 var(--pad) 5rem; }
+
+  /* ---------- Masthead ---------- */
+  .masthead { text-align: center; padding: 2.75rem 0 1.5rem; }
+  .masthead-title { font-size: clamp(2.5rem, 11vw, 4rem); line-height: 0.95; font-weight: 700; letter-spacing: 0.01em; margin: 0; }
+  .masthead-rule { border: 0; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); height: 4px; margin: 1.25rem auto 0; }
+  .masthead-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .masthead-date { white-space: nowrap; }
+  .masthead-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; white-space: nowrap; transition: border-color 0.15s; }
+  .masthead-link:hover { border-bottom-color: var(--accent); }
+
+  /* ---------- Edition band (Evening / Morning dividers) ---------- */
+  .edition-band { text-align: center; margin: 1.25rem 0 2.5rem; }
+  .edition-band .kick { display: block; font-family: var(--mono); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+  .edition-band .big { display: block; font-size: 1.7rem; font-weight: 700; letter-spacing: -0.01em; margin-top: 0.3rem; }
+  .edition-band .when { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-top: 0.4rem; }
+  .edition-band .barred { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .edition-band .barred::before, .edition-band .barred::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .edition-return { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 4px double var(--rule); text-align: center; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+
+  /* ---------- Section ---------- */
+  .section { margin-top: 3.25rem; }
+  .section-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .section-label { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+  .section-header::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+
+  /* ---------- Story ---------- */
+  .story { border-top: 1px solid var(--rule-soft); padding: 0.35rem 0; }
+  .story:first-of-type { border-top: 0; }
+  .story > summary { list-style: none; cursor: pointer; padding: 0.9rem 0; display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 1rem; }
+  .story > summary::-webkit-details-marker { display: none; }
+  .story-headline { font-size: clamp(1.4rem, 5vw, 1.7rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  .story-kicker { display: block; font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.45rem; }
+  .story-toggle { font-family: var(--mono); font-size: 1.4rem; line-height: 1; color: var(--ink-faint); margin-top: 0.15rem; transition: transform 0.2s ease; user-select: none; }
+  .story[open] .story-toggle { transform: rotate(45deg); }
+  .story-body { padding-bottom: 1.5rem; }
+  .story-body p { margin: 0 0 1rem; }
+  .story-body p:last-child { margin-bottom: 0; }
+  .facts { color: var(--ink); }
+  .sources { font-family: var(--mono); font-size: 0.64rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-faint); margin-top: 1.1rem; padding-top: 0.6rem; border-top: 1px dashed var(--rule); }
+  .sources a { color: var(--accent); text-decoration: none; }
+
+  /* ---------- Takes ---------- */
+  .takes { margin-top: 1.4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+  @media (max-width: 33rem) { .takes { grid-template-columns: 1fr; } }
+  .take { padding: 0.9rem 1.1rem; border-radius: 2px; font-size: 1rem; line-height: 1.55; }
+  .take p { margin: 0 0 0.7rem; }
+  .take p:last-child { margin-bottom: 0; }
+  .take-label { display: block; font-family: var(--mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 0.5rem; color: var(--ink-soft); }
+  .take--left { background: var(--take-left-bg); border-left: 2px solid var(--take-left); }
+  .take--left .take-label { color: var(--take-left); }
+  .take--right { background: var(--take-right-bg); border-left: 2px solid var(--take-right); }
+  .take--right .take-label { color: var(--take-right); }
+
+  /* ---------- Columnist aside ---------- */
+  .columnist { margin-top: 1.4rem; padding-left: 1.1rem; border-left: 1px solid var(--rule); font-style: italic; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .columnist p { margin: 0; }
+  .columnist-byline { display: block; font-family: var(--mono); font-style: normal; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 0.4rem; }
+
+  /* ---------- Footer ---------- */
+  .colophon { margin-top: 4rem; padding-top: 1.5rem; border-top: 4px double var(--rule); font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); text-align: center; line-height: 1.8; }
+  .colophon a { color: var(--accent); text-decoration: none; }
+
+  @media (min-width: 720px) { body { font-size: 1.1875rem; } }
+
+  /* ---------- Theme toggle ---------- */
+  .theme-toggle { position: fixed; top: 0.9rem; right: 0.9rem; z-index: 20; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.8rem; font-family: var(--mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); background: var(--paper-raised); border: 1px solid var(--rule); border-radius: 999px; line-height: 1; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: color 0.15s, border-color 0.15s; }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+  .theme-toggle-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 1px solid currentColor; background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%); }
+</style>
+</head>
+<body>
+
+  <button class="theme-toggle" type="button" aria-label="Toggle light or dark theme">
+    <span class="theme-toggle-dot" aria-hidden="true"></span>
+    <span class="theme-toggle-label">Light</span>
+  </button>
+
+<main class="page">
+
+  <!-- ===================== MASTHEAD ===================== -->
+  <header class="masthead">
+    <h1 class="masthead-title">Tailored News</h1>
+    <hr class="masthead-rule">
+    <div class="masthead-meta">
+      <span class="masthead-date">Saturday, November 28, 2026</span>
+      <a class="masthead-link" href="history-and-ideas.html">This week in History &amp; Ideas &rarr;</a>
+    </div>
+  </header>
+
+<!-- EVENING:SLOT:START -->
+<!-- EVENING:SLOT:END -->
+
+<!-- MORNING:START -->
+
+  <!-- ===================== POLITICS ===================== -->
+  <section id="politics">
+    <div class="section-header"><span class="section-label">Politics &amp; Current Events</span></div>
+
+    <details class="story story--politics" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Economy &middot; Data &middot; Commerce Department</span>
+          <h2 class="story-headline">Trump calls the pre-election GDP figures &ldquo;fake&rdquo; after an upward revision and demands an investigation of his own Commerce Department</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>In a Thanksgiving Truth Social post, President Trump said the &ldquo;REAL Numbers on the Economy, published before the Election, were FAKE.&rdquo; He called the revision a &ldquo;massive, and purposeful, error&rdquo; and demanded an &ldquo;immediate investigation.&rdquo; He offered no evidence. His target was the Bureau of Economic Analysis, part of the Commerce Department led by his ally Howard Lutnick. The BEA&rsquo;s second estimate, released on its published schedule, raised third-quarter annualized growth to 4.3% from the 3.4% advance estimate issued Oct. 29, five days before the midterms. The agency said the change mainly reflected higher investment and consumer spending as more complete data came in. That same day the White House had hailed the 3.4% figure as &ldquo;the strongest pace in a year.&rdquo; Trump also said the revision came &ldquo;three weeks late,&rdquo; but the BEA calendar shows it was on time. He did not say who should carry out an investigation, and the Commerce Department did not immediately comment.</p>
+          <p>The 0.9-point revision is the largest since a 1.2-point revision in 2020, CNBC reported. However, revisions are routine, and a study coauthored by BEA Director Vipin Arora found that the third estimate has differed from the first by about half a point on average this century. AP noted the precedent of August 2025, when Trump fired the Bureau of Labor Statistics commissioner after a weak jobs report. The BEA also reported this week that PCE inflation accelerated to 3.8% in October. Its next GDP estimate is due Dec. 23.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window column turned up at Mother Jones, Vox, Slate or Guardian Opinion. The critique in the coverage is that Trump is blaming the statisticians for a midterm loss. In this view, attacking figures that were good news, and that his own White House celebrated, is a further step in politicizing federal data after the BLS firing. Critics say that erodes the credibility markets and the Fed depend on.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window reaction turned up at National Review, The Dispatch, Reason or the WSJ editorial page. Business-friendly outlets such as Fox Business framed the news around the stronger 4.3% figure, and Lutnick welcomed the upgrade. That leaves the administration in the odd position of touting the number while its leader calls the process behind it rigged. Market-oriented conservatives have generally defended the independence of federal statistics, so a probe is likely to divide them.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.dailyherald.com/2026/11/27/trump-gdp-figures-commerce-department/">AP via Daily Herald, Nov 27</a>, <a href="https://www.adn.com/nation-world/2026/11/26/trump-calls-the-pre-election-gdp-figures-fake-and-demands-an-investigation-of-commerce-department/">AP via Anchorage Daily News</a>, <a href="https://www.cnbc.com/2026/11/26/trump-gdp-revision-investigation.html">CNBC</a>, <a href="https://www.axios.com/2026/11/26/trump-gdp-investigation-economy-statistics">Axios</a>, <a href="https://fortune.com/2026/11/27/trump-blasts-bea-growth-data-midterm-election-lutnick/">Fortune, Nov 27</a> <em>(Read through search excerpts; article pages could not be fetched from this environment.)</em></div>
+      </div>
+    </details>
+
+    <details class="story story--politics">
+      <summary>
+        <div>
+          <span class="story-kicker">Washington &middot; Federal Planning &middot; New Congress</span>
+          <h2 class="story-headline">The White House schedules a New Year&rsquo;s Eve planning-commission meeting to advance Trump&rsquo;s D.C. projects before Democrats gain seats on the panel</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Mark Paoletta chairs the National Capital Planning Commission and is also a White House official. The Washington Post reported that he has called a special meeting of the commission for Dec. 31, and that a tentative agenda is still to come. Reports say the session could give final approval to Trump&rsquo;s overhaul of the East Potomac Park golf course, along with work around the Tidal Basin and a plan to paint the Eisenhower Executive Office Building white. The commission&rsquo;s regular Dec. 3 meeting is expected to give the golf-course concept only preliminary review.</p>
+          <p>Reports tie the timing to the new Congress. Democrats won the House in this month&rsquo;s midterms, which will give them additional seats on the 12-member panel in January. That could produce a 6&ndash;6 split, and commission rules reportedly block projects from advancing on a tie. Separately, a federal judge&rsquo;s temporary order has delayed closure of the golf course, reportedly through at least Dec. 12, and further litigation is possible.</p>
+        </div>
+        <div class="takes">
+          <div class="take take--left">
+            <span class="take-label">The Left-Leaning Take</span>
+            <p>No in-window column turned up at the left-leaning outlets. Critics quoted in the coverage call the date a deliberate end-run around the incoming Congress. They see it as part of a pattern of using friendly appointees to lock in Trump&rsquo;s personal stamp on federal land and landmarks before oversight arrives.</p>
+          </div>
+          <div class="take take--right">
+            <span class="take-label">The Right-Leaning Take</span>
+            <p>No in-window reaction turned up at the right-leaning outlets. The administration&rsquo;s position is that these are long-delayed improvements to neglected federal property, and that a sitting commission is entitled to finish its business before its membership changes.</p>
+          </div>
+        </div>
+        <div class="sources">Sources: <a href="https://www.washingtonpost.com/politics/2026/11/27/white-house-speed-trump-projects-with-special-meeting-ahead-new-congress/">Washington Post, Nov 27</a>, <a href="https://www.yahoo.com/news/politics/articles/trump-d-c-projects-dec-211433199.html">Yahoo News</a>, <a href="https://time.news/ncpc-may-approve-trump-projects-in-new-years-eve-meeting/">Time News</a> <em>(Read through search excerpts; the Post article could not be fetched. The agenda had not been published at the time of reporting.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== FOREIGN AFFAIRS ===================== -->
+  <section id="foreign-affairs">
+    <div class="section-header"><span class="section-label">Foreign Affairs</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Iran &middot; Blockade &middot; Hormuz &middot; South Korea</span>
+          <h2 class="story-headline">U.S. aircraft disable a ship trying to leave Iran, a Khamenei adviser says Hormuz stays shut while the blockade holds, and Tehran warns Seoul off a Gulf naval role</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>U.S. Central Command said its aircraft struck the stern of the Palau-flagged M/V Pacific Archer in the Gulf of Oman after the vessel left Bandar Abbas and ignored warnings to stop. CENTCOM said the strike knocked out the ship&rsquo;s propulsion and did not harm the civilian crew. Mohammad Mokhber, an adviser to Supreme Leader Mojtaba Khamenei, said the Strait of Hormuz would not reopen while the blockade was in force and that it &ldquo;would not be tolerated.&rdquo; He gave no details of how Iran intends to break it. Washington reinstated its naval blockade of Iranian ports in July. Al Jazeera reports the operation has cost about $2 billion since then.</p>
+          <p>Separately, Foreign Minister Abbas Araghchi phoned South Korea&rsquo;s Cho Hyun, according to the Iranian embassy in Seoul. He warned that an expanded foreign military presence in the Gulf &ldquo;would instead heighten tensions and expand the scope of conflict.&rdquo; South Korea&rsquo;s parliament is weighing a motion to extend its Cheonghae anti-piracy unit&rsquo;s area of operations to the outer Gulf of Oman to protect Korean shipping. The embassy says Cho replied that Seoul has no plan to enter any war. Analysis: Asian importers are being pulled toward the strait. South Korea drew about 70% of its oil from the Middle East in 2025, mostly through Hormuz. Each new navy that arrives gives Tehran another government to pressure over the blockade.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.usnews.com/news/world/articles/2026-11-27/us-disables-ship-trying-to-leave-iran-as-tehran-vows-to-confront-blockade">Reuters via U.S. News, Nov 27</a>, <a href="https://www.internazionale.it/ultime-notizie-reuters/2026/11/27/us-disables-ship-trying-to-leave-iran-as-tehran-vows-to-confront-blockade">Reuters via Internazionale, Nov 27</a>, <a href="https://www.aljazeera.com/video/newsfeed/2026/11/27/us-disables-ship-attempting-to-breach-iran-blockade">Al Jazeera, Nov 27</a>, <a href="https://www.usnews.com/news/world/articles/2026-11-27/iran-warns-on-gulf-military-presence-as-south-korea-readies-expanded-naval-role">Reuters via U.S. News (South Korea), Nov 27</a> <em>(Read through search excerpts; the account of the Araghchi&ndash;Cho call is Iran&rsquo;s.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Canada &middot; Courts &middot; Religious Freedom</span>
+          <h2 class="story-headline">Canada&rsquo;s Supreme Court largely upholds Quebec&rsquo;s ban on religious symbols for teachers, police and other public workers</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Canada&rsquo;s Supreme Court on Friday left in place most of Quebec&rsquo;s secularism law, Bill 21. The law bars public school teachers, police officers and other public employees in positions of authority from wearing religious symbols such as hijabs, kippahs and turbans at work. The court upheld Quebec&rsquo;s pre-emptive use of the Charter&rsquo;s &ldquo;notwithstanding clause,&rdquo; which lets legislatures override certain rights, including religious freedom and equality. The justices unanimously struck down one provision, which required members of the provincial legislature to keep their faces uncovered. They found it violated lawmakers&rsquo; right to take part in the legislative process. Reports differ on the vote. One wire report describes a 4&ndash;3 split on the law&rsquo;s central provisions, with three dissenters who found a violation of the Charter&rsquo;s sex-equality guarantee. Others report that six of seven justices endorsed the use of the clause. The two counts may describe different questions.</p>
+          <p>The National Council of Canadian Muslims called it &ldquo;a dark day in our constitutional democracy,&rdquo; and Manitoba Premier Wab Kinew, whose province intervened, called Bill 21 &ldquo;legislative racism.&rdquo; Analysis: the ruling matters well beyond Quebec. It confirms that provinces can shield laws from most Charter challenges in advance. Several other provinces have also turned to the clause in recent years.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.pbs.org/newshour/world/canadas-supreme-court-largely-upholds-a-quebec-ban-on-religious-symbols-for-public-servants">AP via PBS NewsHour</a>, <a href="https://www.aljazeera.com/news/2026/11/27/canadas-top-court-largely-upholds-quebecs-religious-symbols-ban">Al Jazeera, Nov 27</a>, <a href="https://www.cbc.ca/news/politics/supreme-court-decison-bill-21-9.7437512">CBC News</a>, <a href="https://www.yahoo.com/news/world/articles/canadas-top-court-upholds-quebec-220639459.html">Yahoo News</a> <em>(Vote counts differ between reports; check the court&rsquo;s published reasons.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SCIENCE, TECH, ENERGY & CLIMATE ===================== -->
+  <section id="science-tech">
+    <div class="section-header"><span class="section-label">Science, Tech, Energy &amp; Climate</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Cybersecurity &middot; Cloud &middot; Defense</span>
+          <h2 class="story-headline">Hackers breached the Air Force&rsquo;s flagship Cloud One platform, which hosts air-defense and munitions-tracking systems, Reuters reports</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Reuters reported, citing three people familiar with the matter, that hackers broke into Cloud One, the Air Force&rsquo;s main cloud computing environment. One source said the attackers exploited a software vulnerability to reach the platform&rsquo;s control plane, the layer that manages the whole system. The intrusion was reportedly found during upgrade work. The Air Force then suspended the migration of administrative applications to Cloud One and revoked administrator privileges for some users. Cloud One hosts Cloud-Based Command and Control, which collates air-defense radar and other feeds from across North America. It also hosts the Theater Integrated Combat Munitions System, which tracks bombs and missiles at more than 200 Air Force sites worldwide.</p>
+          <p>Reuters said it could not establish who the hackers were, the full scope of the intrusion, or whether data had been stolen. The Air Force said it &ldquo;does not comment on the security posture, vulnerabilities or operational status of specific networks and systems.&rdquo; The Hill noted that the report follows the CIA&rsquo;s disclosure on Tuesday that some of its unclassified systems were exposed in a separate hack. It also raises questions about the Pentagon&rsquo;s push to consolidate sensitive workloads in commercial-style cloud environments.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.militarytimes.com/news/your-military/2026/11/27/hackers-breach-us-air-force-flagship-cloud-one-computing-platform/">Reuters via Military Times, Nov 27</a>, <a href="https://thehill.com/policy/defense/6245197-air-force-cloud-one-hack/">The Hill</a>, <a href="https://www.siliconrepublic.com/enterprise/hackers-breach-us-air-force-flagship-cloud-computing-platform">Silicon Republic</a> <em>(Read through search excerpts; sources differ on when Leidos took over Cloud One from SAIC.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Oil &middot; OPEC &middot; Energy Policy</span>
+          <h2 class="story-headline">The U.S. pushed Venezuela and Iraq to consider leaving OPEC and blocked Venezuela&rsquo;s dues, Reuters reports, days before Sunday&rsquo;s OPEC+ meeting</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Reuters reported that the Trump administration encouraged Venezuela and Iraq this year to weigh leaving OPEC, citing ten people familiar with the matter. Its aim was more output from both countries without the cartel&rsquo;s quotas. Five sources said the State Department held talks in Washington on whether Venezuela should exit. The administration also blocked Caracas from paying its annual OPEC dues. In Iraq, Prime Minister Ali Faleh al-Zaidi raised leaving at a government meeting this summer, but the Oil Ministry talked him into staying and seeking a bigger quota instead. Saudi Crown Prince Mohammed bin Salman reportedly intervened over the summer and persuaded Washington to drop the issue. The State Department did not answer questions about the dues. OPEC sources said the group could overlook the unpaid fees and has no plans to expel Venezuela.</p>
+          <p>The report lands before OPEC+ ministers meet online on Sunday, Nov. 29, to set 2027 policy, following the UAE&rsquo;s exit from the group in May. Iraq is pressing for a higher baseline after an outside capacity audit put its sustainable output near 4.9 million barrels a day. Its current quota is 4.43 million. Members want higher quotas while forecasters project a supply surplus in 2027, so the meeting may end without firm 2027 targets.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.bnnbloomberg.ca/business/international/2026/11/27/us-pushed-venezuela-iraq-to-consider-leaving-opec-sources-say-reuters-exclusive/">Reuters via BNN Bloomberg, Nov 27</a>, <a href="https://boereport.com/2026/11/27/us-pushed-venezuela-iraq-to-consider-leaving-opec-sources-say/">Reuters via BOE Report, Nov 27</a>, <a href="https://www.investing.com/news/commodities-news/exclusiveus-pushed-venezuela-iraq-to-consider-leaving-opec-sources-say-5052970">Reuters via Investing.com</a>, <a href="https://oilprice.com/Latest-Energy-News/World-News/US-Pushed-Iraq-and-Venezuela-to-Consider-Quitting-OPEC-Sources-Say.html">OilPrice.com</a> <em>(Based on anonymous sources; the governments involved did not comment.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">AI &middot; E-commerce</span>
+          <h2 class="story-headline">Black Friday online spending runs ahead of Adobe&rsquo;s forecast, and traffic to retail sites from AI assistants is up 162% from last year</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Adobe Analytics said U.S. online Black Friday spending reached $9.7 billion by 6:30 p.m. ET on Friday, up 12.8% from the same point a year earlier. That puts the day on track for $13&ndash;13.4 billion, above Adobe&rsquo;s $12.9 billion forecast and last year&rsquo;s $11.8 billion. Thanksgiving Day online sales set a record of $7.1 billion, up 10.4%.</p>
+          <p>The faster-growing figure is AI. Adobe said visits to retail sites referred by AI chatbots and AI-enabled browsers rose 162% over Thanksgiving 2025. It also said that traffic now produces 92% more revenue per visit than other traffic, up from 78% a year ago. Adobe counts only clicks that arrive from AI sources, not purchases an AI agent completes, so the figure measures where shoppers start rather than who presses &ldquo;buy.&rdquo; Still, it is the clearest early sign that chat assistants are becoming a front door to retail.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.forbes.com/sites/joanverdon/2026/11/28/black-friday-isnt-dead-but-definitely-different-as-ai-and-online-grow/">Forbes, Nov 28</a>, <a href="https://theintelligent.us/economy/2026/black-friday-online-spending-surges-past-earlier-forecasts">The Intelligent</a>, <a href="https://www.digitalapplied.com/blog/black-friday-what-counts-as-an-ai-sale">Digital Applied (methodology)</a> <em>(Intraday figures; Adobe&rsquo;s final Black Friday tally may differ.)</em></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ===================== SPORTS ===================== -->
+  <section id="sports">
+    <div class="section-header"><span class="section-label">Sports</span></div>
+
+    <details class="story" open>
+      <summary>
+        <div>
+          <span class="story-kicker">Arsenal</span>
+          <h2 class="story-headline">Arteta says Raya and Saka are &ldquo;all training&rdquo; and wants &ldquo;peak hunger&rdquo; against a wounded Manchester City on Sunday</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Arsenal host Manchester City at the Emirates on Sunday (4:30 p.m. GMT), six points clear of City, who have won once in their last seven games. At Friday&rsquo;s pre-match press conference Mikel Arteta warned against reading too much into City&rsquo;s slump. He praised Pep Guardiola, his under-fire former boss, and said he hopes a win can drive the push for a second straight title. On fitness, he said the injured players are &ldquo;all training,&rdquo; including Bukayo Saka and goalkeeper David Raya: &ldquo;We still have a few hours before the game, so we&rsquo;re just trying to get everybody back.&rdquo; He also explained the club&rsquo;s careful handling of William Saliba&rsquo;s return after a long absence. He repeated his ambition of 100 points and declined to discuss City&rsquo;s financial charges. City are without Antoine Semenyo, who has a knee injury.</p>
+          <p>The Arseblog fan view could not be read from this environment, and no in-window Arseblog post on the match surfaced in search. Previews from other outlets diverge on Saka. Some expect him to sit out after a month out with a thigh problem, while Raya is widely expected to return. Treat both as unconfirmed until the team sheet.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://iol.co.za/sport/soccer/premier-league/2026-11-28-mikel-arteta-wants-peak-hunger-as-arsenal-brace-for-wounded-manchester-city/">IOL, Nov 28</a>, <a href="https://www.arsenal.com/news/arteta-on-whether-raya-or-saka-will-be-fit-to-face-man-city-aeVRG0h6htqQ">Arsenal.com</a>, <a href="https://www.nowarsenal.com/latest-news/mikel-arteta-sets-arsenal-record-target-ahead-of-man-city-clash/">NowArsenal</a>, <a href="https://readarsenal.com/2026/11/28/arsenal-vs-manchester-city-preview-predicted-lineups/">ReadArsenal, Nov 28</a> <em>(Arseblog and The Athletic not reachable from this environment.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">Premier League</span>
+          <h2 class="story-headline">Gibbs-White scores twice as Nottingham Forest beat Chelsea 3&ndash;2, handing Xabi Alonso a third straight league defeat as fans boo Fofana</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>Friday night&rsquo;s match at the City Ground opened the weekend&rsquo;s Premier League round. Igor Jesus gave Forest the lead inside five minutes. Early in the second half Wesley Fofana fouled Liam Delap in the box, and Morgan Gibbs-White converted the penalty. Substitute Emmanuel Emegha pulled one back almost at once, but Gibbs-White restored the two-goal lead on 72 minutes, dinking over the keeper from Xaver Schlager&rsquo;s reverse pass. Emegha headed in a second in the 89th minute, but Forest held on for their first home league win over Chelsea since 1997.</p>
+          <p>The win lifts Oliver Glasner&rsquo;s side to 14th. Chelsea stay eighth on 16 points from 12 games after a third consecutive league defeat. Chelsea&rsquo;s own fans jeered Fofana, and Alonso afterwards appealed for support for the defender.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.espn.com/soccer/report/_/gameId/401879225">ESPN match report, Nov 27</a>, <a href="https://www.skysports.com/football/nottingham-forest-vs-chelsea/report/559562">Sky Sports</a>, <a href="https://www.chelseafc.com/en/news/article/match-report-nottingham-forest-3-2-chelsea">Chelsea FC</a>, <a href="https://www.goal.com/en/news/xabi-alonso-chelsea-wesley-fofana-nottingham-forest-defeat/blt62ec909399ed0e27">Goal</a> <em>(BBC Sport not reachable from this environment; reports differ on whether Gibbs-White&rsquo;s second came in the 72nd or 73rd minute.)</em></div>
+      </div>
+    </details>
+
+    <details class="story">
+      <summary>
+        <div>
+          <span class="story-kicker">College Football &middot; Rivalry Week</span>
+          <h2 class="story-headline">Texas grinds out a 16&ndash;6 win at Texas A&amp;M to set up an SEC title game against Georgia, while Florida beats Florida State and Iowa routs Nebraska</h2>
+        </div>
+        <span class="story-toggle" aria-hidden="true">+</span>
+      </summary>
+      <div class="story-body">
+        <div class="facts">
+          <p>At Kyle Field on Friday night, Texas&rsquo;s defense held Texas A&amp;M to 234 total yards. The Longhorns&rsquo; only touchdown was Arch Manning&rsquo;s 3-yard pass to Cam Coleman, and kicker Gianni Spetic added three field goals. Manning finished with 143 passing yards, a touchdown and an interception. The win sends Texas to the SEC Championship Game against No. 1 Georgia on Dec. 5 in Atlanta and all but secures a College Football Playoff berth.</p>
+          <p>Elsewhere on Black Friday, Florida won 26&ndash;10 at Florida State for its third straight win in the series, and Iowa beat No. 25 Nebraska 31&ndash;7 to keep its playoff hopes alive. Ole Miss beat Mississippi State 41&ndash;17 in the Egg Bowl, and Utah beat West Virginia 52&ndash;28.</p>
+        </div>
+        <div class="sources">Sources: <a href="https://www.espn.com/college-football/story/_/id/50596213/rivalry-week-live-cfp-takeaways">ESPN Rivalry Week live</a>, <a href="https://sports.yahoo.com/college-football/articles/texas-clinches-sec-championship-spot-053355730.html">Yahoo Sports</a>, <a href="https://bleacherreport.com/articles/25538233-arch-manning-no-3-texas-beat-texas-am-final-box-score-stats-highlights-draft-stock-after-win">Bleacher Report</a>, <a href="https://sports.yahoo.com/college-football/articles/five-key-takeaways-floridas-road-005545788.html">Yahoo Sports (Florida&ndash;FSU)</a>, <a href="https://www.yardbarker.com/college_football/articles/winners_losers_from_college_footballs_black_friday_games_iowa_texas_take_care_of_business/s1_13132_44629249">Yardbarker</a></div>
+      </div>
+    </details>
+  </section>
+
+  <!-- MORNING:END -->
+
+  <footer class="colophon">
+    <div>Tailored News &middot; A personal front page</div>
+    <div>Facts from Tier-1 wire/news desks; Left/Right takes synthesized from opinion outlets and never used to select stories.</div>
+    <div><a href="history-and-ideas.html">History &amp; Ideas &rarr;</a></div>
+  </footer>
+
+</main>
+
+<script>
+  /* Theme toggle: overrides prefers-color-scheme and persists the choice. */
+  (function () {
+    var btn = document.querySelector('.theme-toggle');
+    var label = btn.querySelector('.theme-toggle-label');
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    function current() {
+      var explicit = document.documentElement.getAttribute('data-theme');
+      return explicit || (mq.matches ? 'dark' : 'light');
+    }
+    function sync() { label.textContent = current() === 'dark' ? 'Dark' : 'Light'; }
+    btn.addEventListener('click', function () {
+      var next = current() === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('brief-theme', next); } catch (e) {}
+      sync();
+    });
+    mq.addEventListener('change', sync);
+    sync();
+  })();
+</script>
+</body>
+</html>
